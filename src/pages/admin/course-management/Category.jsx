@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react'
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const Category = () => {
   const [activeTab, setActiveTab] = useState('category-list');
-  const axiosPrivate = useAxiosPrivate();
+  // const axiosPrivate = useAxiosPrivate();
+  const { getCategoriesData, putCategoriesData, postCategoriesData, getBranchesData, deleteCategoriesData } = AdminService();
   const [categories, setCategories] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,6 +20,8 @@ export const Category = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState(null);
 
   const headData = "Category Management"
 
@@ -31,8 +35,9 @@ export const Category = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/category');
-      setCategories(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/category');
+      const res = await getCategoriesData();
+      setCategories(res?.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load categories');
     } finally {
@@ -43,10 +48,9 @@ export const Category = () => {
   const fetchBranches = async () => {
     try {
       setBranchesLoading(true);
-      console.log('Fetching branches from API...');
-      const res = await axiosPrivate.get('http://localhost:3000/api/branches');
-      console.log('Branches API response:', res.data);
-      setBranches(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/branches');
+      const res = await getBranchesData();
+      setBranches(res?.data || []);
     } catch (err) {
       console.error('Failed to load branches:', err);
       console.error('Error details:', err.response?.data);
@@ -119,6 +123,34 @@ export const Category = () => {
     setActiveTab('category-list');
   };
 
+  const handleDeleteCategory = (category) => {
+    setDeletingCategory(category);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    
+    try {
+      setLoading(true);
+      setError('');
+      const res = await deleteCategoriesData(deletingCategory._id);
+      setSuccess('Category deleted successfully.');
+      await fetchCategories();
+      setShowDeleteModal(false);
+      setDeletingCategory(null);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to delete category');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingCategory(null);
+  };
+
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     setError('');
@@ -135,11 +167,13 @@ export const Category = () => {
       let res;
       if (isEditMode && editingCategory) {
         // Update existing category
-        res = await axiosPrivate.put(`http://localhost:3000/api/category/${editingCategory._id}`, payload);
+        // res = await axiosPrivate.put(`http://localhost:3000/api/category/${editingCategory._id}`, payload);
+        res = await putCategoriesData(editingCategory._id, payload);
         setSuccess('Category updated successfully.');
       } else {
         // Create new category
-        res = await axiosPrivate.post('http://localhost:3000/api/category', payload);
+        // res = await axiosPrivate.post('http://localhost:3000/api/category', payload);
+        res = await postCategoriesData(payload);
         setSuccess('Category created successfully.');
       }
       
@@ -316,7 +350,12 @@ export const Category = () => {
                             >
                               Edit
                             </button>
-                            <button className="text-red-600 hover:text-red-900">Delete</button>
+                            <button 
+                              onClick={() => handleDeleteCategory(category)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -454,6 +493,45 @@ export const Category = () => {
           </div>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">Delete Category</h3>
+              </div>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-500">
+                Are you sure you want to delete the category <strong>"{deletingCategory?.categoryName}"</strong>? 
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteCategory}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -2,8 +2,14 @@ import React, { useEffect, useState } from 'react'
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const Courses = () => {
+  // const axiosPrivate = useAxiosPrivate();
+
+  const { getCategoriesData, getCoursesData, postCoursesData, putCoursesData, deleteCoursesData } = AdminService();  
+
+
   const [activeTab, setActiveTab] = useState('courses');
   const [activeSubModule, setActiveSubModule] = useState('courseManagement');
   const [openSections, setOpenSections] = useState({
@@ -35,7 +41,6 @@ export const Courses = () => {
   const roles = ['Choose Role', 'Super Admin', 'Admin', 'Mentor', 'Student'];
   const durations = ['3 Months', '6 Months', '1 Year'];
   const courseTypes = ['Regular', 'Fast Track', 'Online'];
-  const axiosPrivate = useAxiosPrivate();
   const [categories, setCategories] = useState([]);
   const [courseList, setCourseList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -45,6 +50,8 @@ export const Courses = () => {
   const [editingCourse, setEditingCourse] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingCourse, setDeletingCourse] = useState(null);
 
   const tabOptions = [
     { value: "courses", label: "Courses" },
@@ -57,11 +64,12 @@ export const Courses = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/category');
-      console.log("categories==", res.data);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/category');
+      const res = await getCategoriesData();
+      console.log("categories==", res);
 
-      // setCategories(res.data || []);
-      setCategories(res.data);
+      setCategories(res?.data || []);
+      // setCategories(res);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load categories');
     } finally {
@@ -73,8 +81,9 @@ export const Courses = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/course');
-      setCourseList(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/course');
+      const res = await getCoursesData();
+      setCourseList(res?.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load courses');
     } finally {
@@ -120,6 +129,34 @@ export const Courses = () => {
     setIsEditMode(false);
     setFormData({});
     setActiveTab('courses');
+  };
+
+  const handleDeleteCourse = (course) => {
+    setDeletingCourse(course);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCourse = async () => {
+    if (!deletingCourse) return;
+    
+    try {
+      setLoading(true);
+      setError('');
+      const res = await deleteCoursesData(deletingCourse._id);
+      setSuccess('Course deleted successfully.');
+      await fetchCourses();
+      setShowDeleteModal(false);
+      setDeletingCourse(null);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to delete course');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingCourse(null);
   };
 
   const [permissions, setPermissions] = useState({
@@ -687,7 +724,12 @@ export const Courses = () => {
                       >
                         Edit
                       </button>
-                      <button className="text-red-600 hover:text-red-900">Delete</button>
+                      <button 
+                        onClick={() => handleDeleteCourse(course)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -729,11 +771,13 @@ export const Courses = () => {
         let res;
         if (isEditMode && editingCourse) {
           // Update existing course
-          res = await axiosPrivate.put(`http://localhost:3000/api/course/${editingCourse._id}`, payload);
+          // res = await axiosPrivate.put(`http://localhost:3000/api/course/${editingCourse._id}`, payload);
+          res = await putCoursesData(editingCourse._id, payload);
           setSuccess('Course updated successfully.');
         } else {
           // Create new course
-          res = await axiosPrivate.post('http://localhost:3000/api/course', payload);
+          // res = await axiosPrivate.post('http://localhost:3000/api/course', payload);
+          res = await postCoursesData(payload);
           setSuccess('Course created successfully.');
         }
         
@@ -951,6 +995,45 @@ export const Courses = () => {
   return (
     <>
       {renderContent()}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">Delete Course</h3>
+              </div>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-500">
+                Are you sure you want to delete the course <strong>"{deletingCourse?.courseName}"</strong>? 
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteCourse}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

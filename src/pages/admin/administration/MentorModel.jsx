@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import api from "../../../axios";
 import Tabs from "../../../components/button/Tabs";
 import { Navbar } from "../../../components/admin/AdminNavBar";
+import AdminService from "../../../services/admin-api-service/AdminService";
 
 export const MentorModel = () => {
+    const { getMentorsData,putMentorsData,postMentorsData,getBranchesData,deleteMentorsData } = AdminService();
+
+
     const [activeTab, setActiveTab] = useState('mentorsList');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -15,6 +19,8 @@ export const MentorModel = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [editingMentor, setEditingMentor] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deletingMentor, setDeletingMentor] = useState(null);
     const [formData, setFormData] = useState({
         // Basic Details
         fullName: "",
@@ -66,7 +72,8 @@ export const MentorModel = () => {
         try {
             setLoading(true);
             setError('');
-            const res = await api.get('http://localhost:3000/api/mentor');
+            // const res = await api.get('http://localhost:3000/api/mentor');
+            const res = await getMentorsData();
             // Handle different response structures
             const mentorsData = res.data?.data || res.data || [];
             setMentors(Array.isArray(mentorsData) ? mentorsData : []);
@@ -82,7 +89,8 @@ export const MentorModel = () => {
     // Fetch branches from backend
     const fetchBranches = async () => {
         try {
-            const res = await api.get('http://localhost:3000/api/branches');
+            // const res = await api.get('http://localhost:3000/api/branches');
+            const res = await getBranchesData();
             // Handle different response structures
             const branchesData = res.data?.data || res.data || [];
             setBranches(Array.isArray(branchesData) ? branchesData : []);
@@ -195,6 +203,34 @@ export const MentorModel = () => {
         setActiveTab('mentorsList');
     };
 
+    const handleDeleteMentor = (mentor) => {
+        setDeletingMentor(mentor);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDeleteMentor = async () => {
+        if (!deletingMentor) return;
+        
+        try {
+            setLoading(true);
+            setError('');
+            const res = await deleteMentorsData(deletingMentor._id);
+            setSuccess('Mentor deleted successfully.');
+            await fetchMentors();
+            setShowDeleteModal(false);
+            setDeletingMentor(null);
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to delete mentor');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteModal(false);
+        setDeletingMentor(null);
+    };
+
     const handleCreateMentor = async (e) => {
         e.preventDefault();
         resetMessages();
@@ -257,11 +293,14 @@ export const MentorModel = () => {
             let res;
             if (isEditMode && editingMentor) {
                 // Update existing mentor
-                res = await api.put(`http://localhost:3000/api/mentor/${editingMentor._id}`, payload);
+                // res = await api.put(`http://localhost:3000/api/mentor/${editingMentor._id}`, payload);
+
+                res = await putMentorsData(editingMentor._id, payload);
                 setSuccess('Mentor updated successfully.');
             } else {
                 // Create new mentor
-                res = await api.post('http://localhost:3000/api/mentor', payload);
+                // res = await api.post('http://localhost:3000/api/mentor', payload);
+                res = await postMentorsData(payload);
                 setSuccess('Mentor created successfully.');
             }
             
@@ -414,7 +453,12 @@ export const MentorModel = () => {
                                             >
                                                 Edit
                                             </button>
-                                            <button className="text-red-600 hover:text-red-900">Delete</button>
+                                            <button 
+                                                onClick={() => handleDeleteMentor(mentor)}
+                                                className="text-red-600 hover:text-red-900"
+                                            >
+                                                Delete
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -615,6 +659,45 @@ export const MentorModel = () => {
 
             {/* Conditional Rendering */}
             {activeTab === 'mentorsList' ? renderMentorsList() : renderNewMentorForm()}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center mb-4">
+                            <div className="flex-shrink-0">
+                                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-lg font-medium text-gray-900">Delete Mentor</h3>
+                            </div>
+                        </div>
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-500">
+                                Are you sure you want to delete the mentor <strong>"{deletingMentor?.fullName}"</strong>? 
+                                This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={cancelDelete}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteMentor}
+                                disabled={loading}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? 'Deleting...' : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     )

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
-import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+// import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const TaskManagement = () => {
 
@@ -22,7 +23,7 @@ export const TaskManagement = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({});
 
-  const axiosPrivate = useAxiosPrivate();
+  // const axiosPrivate = useAxiosPrivate();
 
   const tabOptions = [
     { value: "tasks-list", label: "Tasks List" },
@@ -80,13 +81,21 @@ export const TaskManagement = () => {
     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0006 0v-1m-4-4l4-4m0 0l4 4m-4-4v12"></path></svg>
   );
 
+  const { getBatchesData, getModulesData, getMentorsData, getTasksData, putTasksData, postTasksData } = AdminService();
+
   // API functions to fetch data
   const fetchTasks = async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/tasks');
-      setTasks(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/tasks');
+      const res = await getTasksData();
+      const tasksData =  res?.data || [];
+      if (Array.isArray(tasksData)) {
+        setTasks(tasksData);
+      } else {
+        setTasks([]);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load tasks');
     } finally {
@@ -97,8 +106,14 @@ export const TaskManagement = () => {
   const fetchBatches = async () => {
     try {
       setBatchesLoading(true);
-      const res = await axiosPrivate.get('http://localhost:3000/api/batches');
-      setBatches(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/batches');
+      const res = await getBatchesData();
+      const batchesData =  res?.data || [];
+      if (Array.isArray(batchesData)) {
+        setBatches(batchesData);
+      } else {
+        setBatches([]);
+      }
     } catch (err) {
       console.error('Failed to load batches:', err);
       setBatches([
@@ -114,10 +129,16 @@ export const TaskManagement = () => {
       console.log("fetchModules");
 
       setModulesLoading(true);
-      const res = await axiosPrivate.get('http://localhost:3000/api/module');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/module');
+      const res = await getModulesData();
       console.log("modules==", res.data);
 
-      setModules(res.data || []);
+      const modulesData =  res?.data || [];
+      if (Array.isArray(modulesData)) {
+        setModules(modulesData);
+      } else {
+        setModules([]);
+      }
     } catch (err) {
       console.error('Failed to load modules:', err);
       setModules([
@@ -131,8 +152,14 @@ export const TaskManagement = () => {
   const fetchMentors = async () => {
     try {
       setMentorsLoading(true);
-      const res = await axiosPrivate.get('http://localhost:3000/api/mentor');
-      setMentors(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/mentor');
+      const res = await getMentorsData();
+      const mentorsData =  res?.data || [];
+      if (Array.isArray(mentorsData)) {
+        setMentors(mentorsData);
+      } else {
+        setMentors([]);
+      }
     } catch (err) {
       console.error('Failed to load mentors:', err);
       setMentors([
@@ -158,7 +185,7 @@ export const TaskManagement = () => {
   }, [activeTab]);
 
   // Filter tasks based on search term
-  const filteredTasks = tasks.filter(task =>
+  const filteredTasks = (tasks || []).filter(task =>
     task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     task.batch?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     task.module?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -233,7 +260,8 @@ export const TaskManagement = () => {
       if (isEditMode && editingTask) {
         // Update existing task
         console.log('Updating task with payload:', payload);
-        res = await axiosPrivate.put(`http://localhost:3000/api/tasks/${editingTask._id}`, payload);
+        // res = await axiosPrivate.put(`http://localhost:3000/api/tasks/${editingTask._id}`, payload);
+        const res = await putTasksData(editingTask._id, payload);
         console.log('Update response:', res);
         
         if (res.status === 200 || res.status === 201) {
@@ -245,7 +273,8 @@ export const TaskManagement = () => {
       } else {
         // Create new task
         console.log('Creating task with payload:', payload);
-        res = await axiosPrivate.post('http://localhost:3000/api/tasks', payload);
+        // res = await axiosPrivate.post('http://localhost:3000/api/tasks', payload);
+        const res = await postTasksData(payload);
         console.log('Create response:', res);
         
         if (res.status === 200 || res.status === 201) {
@@ -477,7 +506,7 @@ export const TaskManagement = () => {
                     {batchesLoading ? (
                       <option>Loading batches...</option>
                     ) : (
-                      batches.map(batch => (
+                      (batches || []).map(batch => (
                         <option key={batch._id} value={batch.batchName}>
                           {batch.batchName}
                         </option>
@@ -498,7 +527,7 @@ export const TaskManagement = () => {
                     {modulesLoading ? (
                       <option>Loading modules...</option>
                     ) : (
-                      modules.map(module => (
+                      (modules || []).map(module => (
                         <option key={module._id} value={module.moduleName}>
                           {module.moduleName}
                         </option>
@@ -519,7 +548,7 @@ export const TaskManagement = () => {
                     {mentorsLoading ? (
                       <option>Loading mentors...</option>
                     ) : (
-                      mentors.map(mentor => (
+                      (mentors || []).map(mentor => (
                         <option key={mentor._id} value={mentor.fullName}>
                           {mentor.fullName}
                         </option>

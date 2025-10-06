@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react'
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const StudentManagement = () => {
+
+    const { getInternsData, getBatchesData,putInternsData,postInternsData,getBranchesData,getCoursesData,deleteInternsData } = AdminService();
 
   const [activeTab, setActiveTab] = useState('studentsList');
   const [activeSubModule, setActiveSubModule] = useState('studentManagement');
@@ -21,6 +24,8 @@ export const StudentManagement = () => {
   const [success, setSuccess] = useState('');
   const [editingStudent, setEditingStudent] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingStudent, setDeletingStudent] = useState(null);
   const [formData, setFormData] = useState({});
   const [openSections, setOpenSections] = useState({
     administration: true,
@@ -56,8 +61,10 @@ export const StudentManagement = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/intern');
-      setInterns(res.data?.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/intern');
+      const res = await getInternsData();
+      console.log("interns==", res.data);
+      setInterns(res?.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load students');
     } finally {
@@ -68,8 +75,9 @@ export const StudentManagement = () => {
   const fetchBranches = async () => {
     try {
       setBranchesLoading(true);
-      const res = await axiosPrivate.get('http://localhost:3000/api/branches');
-      setBranches(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/branches');
+      const res = await getBranchesData();
+      setBranches(res?.data || []);
     } catch (err) {
       console.error('Failed to load branches:', err);
       // Set default branches if API fails
@@ -87,8 +95,9 @@ export const StudentManagement = () => {
   const fetchBatches = async () => {
     try {
       setBatchesLoading(true);
-      const res = await axiosPrivate.get('http://localhost:3000/api/batches');
-      setBatches(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/batches');
+      const res = await getBatchesData();
+      setBatches(res?.data || []);
     } catch (err) {
       console.error('Failed to load batches:', err);
       // Set default batches if API fails
@@ -106,8 +115,10 @@ export const StudentManagement = () => {
   const fetchCourses = async () => {
     try {
       setCoursesLoading(true);
-      const res = await axiosPrivate.get('http://localhost:3000/api/course');
-      setCourses(res.data || []);
+      // const res = await axiosPrivate.get('http://localhost:3000/api/course');
+      const res = await getCoursesData();
+      console.log("courses==", res);
+      setCourses(res?.data || []);
     } catch (err) {
       console.error('Failed to load courses:', err);
       // Set default courses if API fails
@@ -211,6 +222,34 @@ export const StudentManagement = () => {
     setActiveTab('studentsList');
   };
 
+  const handleDeleteStudent = (student) => {
+    setDeletingStudent(student);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteStudent = async () => {
+    if (!deletingStudent) return;
+    
+    try {
+      setLoading(true);
+      setError('');
+      const res = await deleteInternsData(deletingStudent._id);
+      setSuccess('Student deleted successfully.');
+      await fetchInterns();
+      setShowDeleteModal(false);
+      setDeletingStudent(null);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to delete student');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeletingStudent(null);
+  };
+
   const handleCreateStudent = async (e) => {
     e.preventDefault();
     setError('');
@@ -265,12 +304,14 @@ export const StudentManagement = () => {
       let res;
       if (isEditMode && editingStudent) {
         // Update existing student
-        res = await axiosPrivate.put(`http://localhost:3000/api/intern/${editingStudent._id}`, payload);
-        setSuccess(res.data?.message || 'Student updated successfully.');
+        // res = await axiosPrivate.put(`http://localhost:3000/api/intern/${editingStudent._id}`, payload);
+        res = await putInternsData(editingStudent._id, payload);
+        setSuccess(res?.data?.message || 'Student updated successfully.');
       } else {
         // Create new student
-        res = await axiosPrivate.post('http://localhost:3000/api/intern', payload);
-        setSuccess(res.data?.message || 'Student created successfully.');
+        // res = await axiosPrivate.post('http://localhost:3000/api/intern', payload);
+        res = await postInternsData(payload);
+        setSuccess(res?.data?.message || 'Student created successfully.');
       }
       
       // refresh list and switch tab
@@ -497,7 +538,12 @@ export const StudentManagement = () => {
                       >
                         Edit
                       </button>
-                      <button className="text-red-600 hover:text-red-900">Delete</button>
+                      <button 
+                        onClick={() => handleDeleteStudent(intern)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -692,6 +738,7 @@ export const StudentManagement = () => {
             className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             disabled={coursesLoading}
           >
+            <option value="">Choose Course</option>
             {coursesLoading ? (
               <option>Loading courses...</option>
             ) : (
@@ -753,6 +800,7 @@ export const StudentManagement = () => {
             className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             disabled={batchesLoading}
           >
+            <option value="">Choose Batch</option>
             {batchesLoading ? (
               <option>Loading batches...</option>
             ) : (
@@ -1065,6 +1113,45 @@ export const StudentManagement = () => {
 
           {activeTab === 'studentsList' ? renderStudentsList() : renderNewStudentForm()}
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-medium text-gray-900">Delete Student</h3>
+                </div>
+              </div>
+              <div className="mb-4">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete the student <strong>"{deletingStudent?.fullName}"</strong>? 
+                  This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteStudent}
+                  disabled={loading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </>
       );
     } else if (activeSubModule === 'roleManagement') {

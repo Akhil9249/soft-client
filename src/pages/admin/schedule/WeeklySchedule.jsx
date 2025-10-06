@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Navbar } from '../../../components/admin/AdminNavBar';
-import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import AdminService from '../../../services/admin-api-service/AdminService';
 import { IoEyeOutline } from "react-icons/io5";
 
 export const WeeklySchedule = () => {
@@ -19,7 +19,7 @@ export const WeeklySchedule = () => {
   const [weeklySchedules, setWeeklySchedules] = useState([]);
   const [mentors, setMentors] = useState([]);
 
-  const axiosPrivate = useAxiosPrivate();
+  const { getBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, deleteWeeklySchedulesData } = AdminService();
 
   const headData = "Batch Management";
 
@@ -28,7 +28,8 @@ export const WeeklySchedule = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/batches');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/batches');
+      const res = await getBatchesData();
       setBatches(res.data || []);
     } catch (err) {
       console.error('Failed to load batches:', err);
@@ -52,7 +53,8 @@ export const WeeklySchedule = () => {
       console.log('Fetching weekly schedules...');
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/weekly-schedules');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/weekly-schedules');
+      const res = await getWeeklySchedulesData();
       console.log('Weekly schedules response:', res.data);
       setWeeklySchedules(res.data || []);
 
@@ -162,7 +164,8 @@ export const WeeklySchedule = () => {
   const saveWeeklySchedule = async (scheduleData) => {
     try {
       console.log('Saving weekly schedule:', scheduleData);
-      const response = await axiosPrivate.post('http://localhost:3000/api/weekly-schedules', scheduleData);
+      // const response = await axiosPrivate.post('http://localhost:3000/api/weekly-schedules', scheduleData);
+      const response = await postWeeklySchedulesData(scheduleData);
       console.log('Weekly schedule saved:', response.data);
       return response.data;
     } catch (error) {
@@ -187,7 +190,8 @@ export const WeeklySchedule = () => {
       const subDetailIndex = timeSlot.sub_details.findIndex(detail => detail.days === days);
       if (subDetailIndex === -1) return;
 
-      const response = await axiosPrivate.delete(`http://localhost:3000/api/weekly-schedules/${scheduleId}/batch`, {
+      // const response = await axiosPrivate.delete(`http://localhost:3000/api/weekly-schedules/${scheduleId}/batch`, {
+      const response = await deleteWeeklySchedulesData(scheduleId, {
         data: {
           timeIndex,
           subDetailIndex,
@@ -308,7 +312,8 @@ export const WeeklySchedule = () => {
         }
 
         // Add batch to database
-        const response = await axiosPrivate.post(`http://localhost:3000/api/weekly-schedules/${mentorSchedule._id}/batch`, {
+        // const response = await axiosPrivate.post(`http://localhost:3000/api/weekly-schedules/${mentorSchedule._id}/batch`, {
+        const response = await postWeeklySchedulesData(mentorSchedule._id, {
           timeIndex: slotIndex,
           subDetailIndex: subDetailIndex,
           batchId: draggingItem.id

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
-import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+// import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const Topics = () => {
 
@@ -18,7 +19,8 @@ export const Topics = () => {
   const [formData, setFormData] = useState({});
   const [deletingTopic, setDeletingTopic] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const axiosPrivate = useAxiosPrivate();
+  // const axiosPrivate = useAxiosPrivate();
+  const { getModulesData, getTopicsData, putTopicsData, postTopicsData, deleteTopicsData } = AdminService();
 
   const tabOptions = [
     { value: "topics-list", label: "Topics List" },
@@ -32,7 +34,8 @@ export const Topics = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/module');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/module');
+      const res = await getModulesData();
       setModules(res.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load modules');
@@ -45,7 +48,8 @@ export const Topics = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/topics');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/topics');
+      const res = await getTopicsData();
       setTopics(res.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load topics');
@@ -100,7 +104,8 @@ export const Topics = () => {
 
     try {
       setLoading(true);
-      await axiosPrivate.delete(`http://localhost:3000/api/topics/${deletingTopic._id}`);
+      // await axiosPrivate.delete(`http://localhost:3000/api/topics/${deletingTopic._id}`);
+      const res = await deleteTopicsData(deletingTopic._id);
       setSuccess('Topic deleted successfully.');
       await fetchTopics();
       setShowDeleteModal(false);
@@ -143,11 +148,13 @@ export const Topics = () => {
       let res;
       if (isEditMode && editingTopic) {
         // Update existing topic
-        res = await axiosPrivate.put(`http://localhost:3000/api/topics/${editingTopic._id}`, payload);
+        // res = await axiosPrivate.put(`http://localhost:3000/api/topics/${editingTopic._id}`, payload);
+        const res = await putTopicsData(editingTopic._id, payload);
         setSuccess('Topic updated successfully.');
       } else {
         // Create new topic
-        res = await axiosPrivate.post('http://localhost:3000/api/topics', payload);
+        // res = await axiosPrivate.post('http://localhost:3000/api/topics', payload);
+        const res = await postTopicsData(payload);
         setSuccess('Topic created successfully.');
       }
       

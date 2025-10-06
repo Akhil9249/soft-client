@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
-import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+// import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const Modules = () => {
+
+  // const axiosPrivate = useAxiosPrivate();
+  const { getCoursesData, getModulesData, putModulesData, postModulesData, deleteModulesData } = AdminService();
 
   // State to manage the active tab. 'modules-list' is the default.
   const [activeTab, setActiveTab] = useState('modules-list');
@@ -18,7 +22,7 @@ export const Modules = () => {
   const [formData, setFormData] = useState({});
   const [deletingModule, setDeletingModule] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const axiosPrivate = useAxiosPrivate();
+ 
 
   const tabOptions = [
     { value: "modules-list", label: "Modules List" },
@@ -31,7 +35,8 @@ export const Modules = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/course');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/course');
+      const res = await getCoursesData();
       setCourses(res.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load courses');
@@ -44,7 +49,8 @@ export const Modules = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/module');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/module');
+      const res = await getModulesData();
       setModules(res.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load modules');
@@ -100,7 +106,8 @@ export const Modules = () => {
 
     try {
       setLoading(true);
-      await axiosPrivate.delete(`http://localhost:3000/api/module/${deletingModule._id}`);
+      // await axiosPrivate.delete(`http://localhost:3000/api/module/${deletingModule._id}`);
+      const res = await deleteModulesData(deletingModule._id);
       setSuccess('Module deleted successfully.');
       await fetchModules();
       setShowDeleteModal(false);
@@ -146,11 +153,13 @@ export const Modules = () => {
       let res;
       if (isEditMode && editingModule) {
         // Update existing module
-        res = await axiosPrivate.put(`http://localhost:3000/api/module/${editingModule._id}`, payload);
+        // res = await axiosPrivate.put(`http://localhost:3000/api/module/${editingModule._id}`, payload);
+        const res = await putModulesData(editingModule._id, payload);
         setSuccess('Module updated successfully.');
       } else {
         // Create new module
-        res = await axiosPrivate.post('http://localhost:3000/api/module', payload);
+        // res = await axiosPrivate.post('http://localhost:3000/api/module', payload);
+        const res = await postModulesData(payload);
         setSuccess('Module created successfully.');
       }
       

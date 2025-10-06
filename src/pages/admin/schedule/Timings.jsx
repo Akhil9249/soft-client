@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react'
 
 import { X } from 'lucide-react';
 import { Navbar } from '../../../components/admin/AdminNavBar';
-import Tabs from '../../../components/button/Tabs';
-import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import Tabs from '../../../components/button/Tabs';   
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const Timings = () => {
 
@@ -16,7 +16,7 @@ export const Timings = () => {
   const [selectedBranch, setSelectedBranch] = useState('');
   const [deletingTiming, setDeletingTiming] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const axiosPrivate = useAxiosPrivate();
+  const { getBranchesData, getTimingsData, postTimingsData, deleteTimingsData } = AdminService();
   const headData = "Settings"
 
   const tabOptions = [
@@ -30,7 +30,8 @@ export const Timings = () => {
       
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/branches');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/branches');
+      const res = await getBranchesData();
       console.log("branches==",res.data);
       
       setBranches(res.data || []);
@@ -49,7 +50,8 @@ export const Timings = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/timings');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/timings');
+      const res = await getTimingsData();
       console.log("timings==", res.data);
       setTimings(res.data || []);
     } catch (err) {
@@ -88,7 +90,8 @@ export const Timings = () => {
 
     try {
       setLoading(true);
-      await axiosPrivate.delete(`http://localhost:3000/api/timings/${deletingTiming._id}`);
+      // await axiosPrivate.delete(`http://localhost:3000/api/timings/${deletingTiming._id}`);
+      await deleteTimingsData(deletingTiming._id);
       setSuccess('Timing deleted successfully.');
       await fetchTimings();
       setShowDeleteModal(false);
@@ -185,7 +188,8 @@ export const Timings = () => {
 
     try {
       setLoading(true);
-      const response = await axiosPrivate.post('http://localhost:3000/api/timings', {
+      // const response = await axiosPrivate.post('http://localhost:3000/api/timings', {
+      const response = await postTimingsData({
         branch: branchId,
         timeSlot: timeSlot
       });

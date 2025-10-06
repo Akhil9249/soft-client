@@ -47,7 +47,8 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 bg-white p-6 shadow-md flex flex-col justify-between rounded-r-2xl max-h-screen  overflow-y-auto">
+    <aside className="w-64 bg-white p-6 shadow-md flex flex-col justify-between rounded-r-2xl ">
+    {/* <aside className="w-64 bg-white p-6 shadow-md flex flex-col justify-between rounded-r-2xl max-h-screen  overflow-y-auto"> */}
       <div>
         <div className="flex items-center mb-8">
           <svg

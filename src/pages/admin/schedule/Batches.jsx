@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const Batches = () => {
 
@@ -27,7 +28,7 @@ export const Batches = () => {
   const [formData, setFormData] = useState({});
   const [deletingBatch, setDeletingBatch] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const axiosPrivate = useAxiosPrivate();
+  const { getBranchesData, getCoursesData, getBatchesData, getInternsData, postBatchesData, putBatchesData, deleteBatchesData } = AdminService();
 
   const tabOptions = [
     { value: "batches", label: "Batches" },
@@ -41,7 +42,8 @@ export const Batches = () => {
 
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/branches');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/branches');
+      const res = await getBranchesData();
 
       setBranches(res.data || []);
     } catch (err) {
@@ -58,7 +60,8 @@ export const Batches = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('/api/course');
+      // const res = await axiosPrivate.get('/api/course');
+      const res = await getCoursesData();
       setCourses(res.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load courses');
@@ -72,7 +75,8 @@ export const Batches = () => {
 
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/batches');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/batches');
+      const res = await getBatchesData();
 
       setBatches(res.data || []);
     } catch (err) {
@@ -86,7 +90,8 @@ export const Batches = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await axiosPrivate.get('http://localhost:3000/api/intern');
+      // const res = await axiosPrivate.get('http://localhost:3000/api/intern');
+      const res = await getInternsData();
       setAvailableInterns(res.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load interns');
@@ -103,7 +108,8 @@ export const Batches = () => {
 
     try {
       setLoading(true);
-      const res = await axiosPrivate.get(`http://localhost:3000/api/intern/search?q=${encodeURIComponent(searchTerm)}`);
+      // const res = await axiosPrivate.get(`http://localhost:3000/api/intern/search?q=${encodeURIComponent(searchTerm)}`);
+      const res = await getInternsData(searchTerm);
       setFilteredInterns(res.data || []);
     } catch (err) {
       console.error('Search error:', err);
@@ -171,7 +177,8 @@ export const Batches = () => {
       
       if (editingBatch && editingBatch._id) {
         // Edit mode: Make API call to remove intern from existing batch
-        await axiosPrivate.delete(`http://localhost:3000/api/batches/${editingBatch._id}/interns/${internId}`);
+        // await axiosPrivate.delete(`http://localhost:3000/api/batches/${editingBatch._id}/interns/${internId}`);
+        await deleteBatchesData(editingBatch._id, internId);
         setSuccess('Intern removed successfully from batch.');
         
         // Update local state after successful backend removal
@@ -239,7 +246,8 @@ export const Batches = () => {
 
     try {
       setLoading(true);
-      await axiosPrivate.delete(`http://localhost:3000/api/batches/${deletingBatch._id}`);
+      // await axiosPrivate.delete(`http://localhost:3000/api/batches/${deletingBatch._id}`);
+      await deleteBatchesData(deletingBatch._id);
       setSuccess('Batch deleted successfully.');
       await fetchBatches();
       setShowDeleteModal(false);
@@ -290,11 +298,13 @@ export const Batches = () => {
       let res;
       if (isEditMode && editingBatch) {
         // Update existing batch
-        res = await axiosPrivate.put(`http://localhost:3000/api/batches/${editingBatch._id}`, payload);
+        // res = await axiosPrivate.put(`http://localhost:3000/api/batches/${editingBatch._id}`, payload);
+        res = await putBatchesData(editingBatch._id, payload);
         setSuccess('Batch updated successfully.');
       } else {
         // Create new batch
-        res = await axiosPrivate.post('http://localhost:3000/api/batches', payload);
+        // res = await axiosPrivate.post('http://localhost:3000/api/batches', payload);
+        res = await postBatchesData(payload);
         setSuccess('Batch created successfully.');
       }
       
