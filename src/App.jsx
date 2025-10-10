@@ -9,7 +9,7 @@ import AdminProtectedRoute from "./components/protected-route/AdminProtectedRout
 // import Dashboard from "./pages/admin/dashboard";
 // import AddRole from "./pages/admin/addrole";
 import { RoleManagement } from "./pages/admin/administration/RoleManagement";
-import { MentorModel } from "./pages/admin/administration/MentorModel";
+import { StaffManagement } from "./pages/admin/administration/StaffManagement";
 import { StudentManagement } from "./pages/admin/administration/StudentManagement";
 import { Courses } from "./pages/admin/course-management/Courses";
 import { Category } from "./pages/admin/course-management/Category";
@@ -22,6 +22,7 @@ import { StaticPages } from "./pages/admin/settings/StaticPages";
 import { Timings } from "./pages/admin/schedule/Timings";
 import { Notification } from "./pages/admin/settings/Notification";
 import { Branch } from "./pages/admin/settings/Branch";
+import { StudentAttendance } from "./pages/admin/attendance/studentAttendance";
 
 
 
@@ -35,8 +36,8 @@ function App() {
     <Routes>
 
       
-      {/* <Route path="/register" element={<Register />} />
-      <Route path="/login" element={<Login />} /> */}
+      {/* <Route path="/register" element={<Register />} /> */}
+      <Route path="/login" element={<Login />} />
 
       {/* <Route element={<DefaultProtectedRoute />}>
         <Route path="/" element={<Home />} />
@@ -48,13 +49,14 @@ function App() {
 
       <Route element={<AdminProtectedRoute />}>
         <Route path="/" element={<RoleManagement/>} />
-        <Route path="/mentor-model" element={<MentorModel/>} />
+        <Route path="/staff-management" element={<StaffManagement/>} />
         <Route path="/student-management" element={<StudentManagement/>} />
         <Route path="/courses" element={<Courses/>} />
         <Route path="/category" element={<Category/>} /> 
         <Route path="/modules" element={<Modules/>} /> 
         <Route path="/topics" element={<Topics/>} /> 
         <Route path="/task-management" element={<TaskManagement/>} /> 
+        <Route path="/student-attendance" element={<StudentAttendance />} /> 
         <Route path="/batches" element={<Batches/>} /> 
         <Route path="/weekly-schedule" element={<WeeklySchedule/>} /> 
         <Route path="/static-pages" element={<StaticPages/>} /> 

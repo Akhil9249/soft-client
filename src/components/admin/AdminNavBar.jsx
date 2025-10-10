@@ -36,6 +36,7 @@ const Sidebar = () => {
     syllabus: false,
     task: false,
     schedule: false,
+    attendance: false,
     settings: false,
   });
 
@@ -81,7 +82,7 @@ const Sidebar = () => {
             {openSections.administration && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
                 <li> <Link to="/" className="block py-1 text-orange-500 font-semibold">Role Management</Link></li>
-                <li><Link to="/mentor-model" className="block py-1 hover:text-orange-500">Mentor Module</Link></li>
+                <li><Link to="/staff-management" className="block py-1 hover:text-orange-500">Staff Management</Link></li>
                 <li><Link to="/student-management" className="block py-1 hover:text-orange-500">Intern Management</Link></li>
               </ul>
             )}
@@ -123,14 +124,19 @@ const Sidebar = () => {
           </div>
 
           <div className={`font-medium ${openSections.task ? 'text-orange-500' : 'text-gray-600'}`}>
-            <Link to="/task-management" onClick={() => toggleSection('task')} className="flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-              {/* <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h6z"></path></svg> */}
+            <div onClick={() => toggleSection('task')} className="flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
               <SquarePen className="w-5 h-5 mr-3" />
               Task Management
-              {/* <svg className={`ml-auto w-4 h-4 transform transition-transform duration-200 ${openSections.task ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+              <svg className={`ml-auto w-4 h-4 transform transition-transform duration-200 ${openSections.task ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
-              </svg> */}
-            </Link>
+              </svg>
+            </div>
+            {openSections.task && (
+              <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
+                <li><Link to="/task-management" className="block py-1 hover:text-orange-500">Task</Link></li>
+                <li><Link to="/material" className="block py-1 hover:text-orange-500">Material</Link></li>
+              </ul>
+            )}
           </div>
 
           <div className={`font-medium ${openSections.schedule ? 'text-orange-500' : 'text-gray-600'}`}>
@@ -149,6 +155,22 @@ const Sidebar = () => {
                 <li><Link to="/timings" className="block py-1 hover:text-orange-500">Timings</Link></li>
                 {/* <li><a href="#" onClick={() => setActiveTab('timings')} className={`block py-1 ${activeTab === 'timings' ? 'text-orange-500 font-semibold' : 'hover:text-orange-500'}`}>Timings</a></li> */}
                 <li><Link to="/weekly-schedule" className="block py-1 hover:text-orange-500">Weekly Schedule</Link></li>
+              </ul>
+            )}
+          </div>
+
+          <div className={`font-medium ${openSections.attendance ? 'text-orange-500' : 'text-gray-600'}`}>
+            <div onClick={() => toggleSection('attendance')} className="flex items-center cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+              <Calendar className="w-5 h-5 mr-3" />
+              Attendance
+              <svg className={`ml-auto w-4 h-4 transform transition-transform duration-200 ${openSections.attendance ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+              </svg>
+            </div>
+            {openSections.attendance && (
+              <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
+                <li><Link to="/student-attendance" className="block py-1 hover:text-orange-500">Student Attendance</Link></li>
+                <li><Link to="/leave-request" className="block py-1 hover:text-orange-500">Leave Request</Link></li>
               </ul>
             )}
           </div>

@@ -20,7 +20,7 @@ export const WeeklySchedule = () => {
   const [weeklySchedules, setWeeklySchedules] = useState([]);
   const [mentors, setMentors] = useState([]);
 
-  const { getBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, putWeeklySchedulesData, deleteWeeklySchedulesData, getStaffData } = AdminService();
+  const { getBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, deleteWeeklySchedulesData } = AdminService();
 
   const headData = "Batch Management";
 
@@ -31,7 +31,7 @@ export const WeeklySchedule = () => {
       setError('');
       // const res = await axiosPrivate.get('http://localhost:3000/api/batches');
       const res = await getBatchesData();
-      // console.log('Batches response:', res.data);
+      console.log('Batches response:', res.data);
       setBatches(res.data || []);
     } catch (err) {
       console.error('Failed to load batches:', err);
@@ -49,60 +49,6 @@ export const WeeklySchedule = () => {
     }
   };
 console.log('loading=====', loading);
-  // Fetch mentors (staff) from backend
-  const fetchMentors = async () => {
-    try {
-      // console.log('Fetching mentors (staff)...');
-      setLoading(true);
-      setError('');
-      const res = await getStaffData();
-      // console.log('Staff response:', res);
-      
-      // Filter staff with role "Mentor" and transform to the expected format
-      const mentorStaff = res.data?.filter(staff => staff.role === 'Mentor') || [];
-      
-      const transformedMentors = mentorStaff.map(staff => ({
-        name: staff.fullName,
-        schedule: [
-          { time: '08.30 am - 11.30 am', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
-          { time: '11.30 am - 02.30 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
-          { time: '02.30 pm - 05.00 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' }
-        ]
-      }));
-      
-      setMentors(transformedMentors);
-    } catch (err) {
-      console.error('Failed to load mentors:', err);
-      setError('Failed to load mentors');
-      // Set default mentors if API fails
-      // setMentors([
-      //   {
-      //     name: 'Priyash Manu', schedule: [
-      //       { time: '08.30 am - 11.30 am', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
-      //       { time: '11.30 am - 02.30 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
-      //       { time: '02.30 pm - 05.00 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' }
-      //     ]
-      //   },
-      //   {
-      //     name: 'John', schedule: [
-      //       { time: '08.30 am - 11.30 am', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
-      //       { time: '11.30 am - 02.30 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
-      //       { time: '02.30 pm - 05.00 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' }
-      //     ]
-      //   },
-      //   {
-      //     name: 'Faizal', schedule: [
-      //       { time: '08.30 am - 11.30 am', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
-      //       { time: '11.30 am - 02.30 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
-      //       { time: '02.30 pm - 05.00 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' }
-      //     ]
-      //   }
-      // ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Fetch weekly schedules from backend
   const fetchWeeklySchedules = async () => {
     try {
@@ -111,14 +57,39 @@ console.log('loading=====', loading);
       setError('');
       // const res = await axiosPrivate.get('http://localhost:3000/api/weekly-schedules');
       const res = await getWeeklySchedulesData();
-      // console.log('Weekly schedules response:', res.data);
+      console.log('Weekly schedules response:', res.data);
       setWeeklySchedules(res.data || []);
 
-      // Note: Mentors are now fetched separately via fetchMentors()
-      // Weekly schedules are used for existing schedule data
+      // Transform the data to match the expected format
+      const transformedMentors = transformWeeklyScheduleData(res.data || []);
+      setMentors(transformedMentors);
     } catch (err) {
       console.error('Failed to load weekly schedules:', err);
       setError('Failed to load weekly schedules');
+      // Set default mentors if API fails
+      setMentors([
+        {
+          name: 'Priyash Manu', schedule: [
+            { time: '08.30 am - 11.30 am', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
+            { time: '11.30 am - 02.30 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
+            { time: '02.30 pm - 05.00 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' }
+          ]
+        },
+        {
+          name: 'John', schedule: [
+            { time: '08.30 am - 11.30 am', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
+            { time: '11.30 am - 02.30 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
+            { time: '02.30 pm - 05.00 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' }
+          ]
+        },
+        {
+          name: 'Faizal', schedule: [
+            { time: '08.30 am - 11.30 am', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
+            { time: '11.30 am - 02.30 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' },
+            { time: '02.30 pm - 05.00 pm', days: 'Mon, Wen, Fri', subject: 'No class assigned', days2: 'Tue, Tur, Sat', subject2: 'No class assigned' }
+          ]
+        }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -163,18 +134,17 @@ console.log('loading=====', loading);
   // Load data when component mounts
   useEffect(() => {
     fetchBatches();
-    fetchMentors();
     fetchWeeklySchedules();
   }, []);
 
   // Debug: Log canvas items whenever they change
   useEffect(() => {
-    // console.log('Canvas items updated:', canvasItems);
+    console.log('Canvas items updated:', canvasItems);
   }, [canvasItems]);
 
   // Debug: Log mentors data whenever it changes
   useEffect(() => {
-    // console.log('Mentors data updated:', mentors);
+    console.log('Mentors data updated:', mentors);
   }, [mentors]);
 
   // Handle drag start
@@ -195,10 +165,10 @@ console.log('loading=====', loading);
   // Save weekly schedule to backend
   const saveWeeklySchedule = async (scheduleData) => {
     try {
-      // console.log('Saving weekly schedule:', scheduleData);
+      console.log('Saving weekly schedule:', scheduleData);
       // const response = await axiosPrivate.post('http://localhost:3000/api/weekly-schedules', scheduleData);
       const response = await postWeeklySchedulesData(scheduleData);
-      // console.log('Weekly schedule saved:', response.data);
+      console.log('Weekly schedule saved:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error saving weekly schedule:', error);
@@ -210,7 +180,7 @@ console.log('loading=====', loading);
   // Remove batch from database
   const handleRemoveBatchFromDatabase = async (scheduleId, timeIndex, days, batchId) => {
     try {
-      // console.log('Removing batch from database:', { scheduleId, timeIndex, days, batchId });
+      console.log('Removing batch from database:', { scheduleId, timeIndex, days, batchId });
 
       // Find the sub-detail index for the specific days
       const schedule = weeklySchedules.find(ws => ws._id === scheduleId);
@@ -231,7 +201,7 @@ console.log('loading=====', loading);
         }
       });
 
-      // console.log('Batch removed from database:', response.data);
+      console.log('Batch removed from database:', response.data);
 
       // Refresh the data
       await fetchWeeklySchedules();
@@ -245,8 +215,6 @@ console.log('loading=====', loading);
     e.preventDefault();
     // Clear any existing warnings
     setWarning('');
-
-    console.log('draggingItem=====');
 
     if (draggingItem) {
       try {
@@ -269,17 +237,17 @@ console.log('loading=====', loading);
         const isMWF = dataZoneId?.includes('-2');
         const isTTS = dataZoneId?.includes('-4');
 
-        // console.log('Drop detected:', {
-        //   rowData,
-        //   mentorIndex,
-        //   slotIndex,
-        //   cellIndex: Array.from(row.children).indexOf(cell),
-        //   mentorName: mentors[mentorIndex]?.name,
-        //   isMWF,
-        //   isTTS,
-        //   dataZoneId,
-        //   hasDropZoneClass: cell.classList.contains('drop-zone')
-        // });
+        console.log('Drop detected:', {
+          rowData,
+          mentorIndex,
+          slotIndex,
+          cellIndex: Array.from(row.children).indexOf(cell),
+          mentorName: mentors[mentorIndex]?.name,
+          isMWF,
+          isTTS,
+          dataZoneId,
+          hasDropZoneClass: cell.classList.contains('drop-zone')
+        });
 
         if (!isMWF && !isTTS) {
           setWarning('Invalid drop zone! Only MWF and TTS columns are drop zones.');
@@ -287,28 +255,10 @@ console.log('loading=====', loading);
           return;
         }
 
-        console.log("weeklySchedules",weeklySchedules);
-        // console.log("mentors",mentors);
-        // console.log("mentorIndex",mentorIndex);
-        // console.log("slotIndex",slotIndex);
-        // console.log("isMWF",isMWF);
-        // console.log("isTTS",isTTS);
-        // console.log("dataZoneId",dataZoneId);
-        // console.log("draggingItem",draggingItem);
-        // console.log("rowData",rowData);
-        // console.log("row",row);
-        // console.log("cell",cell);
-        // console.log("e",e);
-        console.log("mentors[mentorIndex]?.name",mentors[mentorIndex]?.name);
-        
-        
-        
-
         // Find the mentor schedule
         const mentorSchedule = weeklySchedules.find(ws =>
           ws.mentor?.fullName === mentors[mentorIndex]?.name
         );
-        console.log("mentorSchedule",mentorSchedule);
 
         if (!mentorSchedule) {
           setWarning('Mentor schedule not found!');
@@ -365,13 +315,13 @@ console.log('loading=====', loading);
 
         // Add batch to database
         // const response = await axiosPrivate.post(`http://localhost:3000/api/weekly-schedules/${mentorSchedule._id}/batch`, {
-        const response = await putWeeklySchedulesData(mentorSchedule._id, {
+        const response = await postWeeklySchedulesData(mentorSchedule._id, {
           timeIndex: slotIndex,
           subDetailIndex: subDetailIndex,
           batchId: draggingItem.id
         });
 
-        // console.log('Batch added to database:', response.data);
+        console.log('Batch added to database:', response.data);
 
         // Refresh the data
         await fetchWeeklySchedules();

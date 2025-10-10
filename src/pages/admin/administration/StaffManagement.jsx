@@ -6,36 +6,37 @@ import Tabs from "../../../components/button/Tabs";
 import { Navbar } from "../../../components/admin/AdminNavBar";
 import AdminService from "../../../services/admin-api-service/AdminService";
 
-export const MentorModel = () => {
-    const { getMentorsData,putMentorsData,postMentorsData,getBranchesData,deleteMentorsData } = AdminService();
+export const StaffManagement = () => {
+    const { getStaffData,putStaffData,postStaffData,getBranchesData,deleteStaffData } = AdminService();
 
 
-    const [activeTab, setActiveTab] = useState('mentorsList');
+    const [activeTab, setActiveTab] = useState('staffList');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
-    const [mentors, setMentors] = useState([]);
+    const [staff, setStaff] = useState([]);
     const [branches, setBranches] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [editingMentor, setEditingMentor] = useState(null);
+    const [editingStaff, setEditingStaff] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [deletingMentor, setDeletingMentor] = useState(null);
+    const [deletingStaff, setDeletingStaff] = useState(null);
     const [formData, setFormData] = useState({
         // Basic Details
         fullName: "",
         dateOfBirth: "",
         gender: "",
         email: "",
-        mentorPhoneNumber: "",
-        mentorWhatsAppNumber: "",
-        mentorPermanentAddress: "",
+        staffPhoneNumber: "",
+        staffWhatsAppNumber: "",
+        staffPermanentAddress: "",
         district: "",
         state: "",
         photo: "",
 
         // Professional Details
         department: "",
+        typeOfEmployee: "",
         branch: "",
         yearsOfExperience: "",
         dateOfJoining: "",
@@ -65,22 +66,22 @@ export const MentorModel = () => {
         }));
     };
 
-    const headData = "Mentor Management"
+    const headData = "Staff Management"
 
-    // Fetch mentors from backend
-    const fetchMentors = async () => {
+    // Fetch staff from backend
+    const fetchStaff = async () => {
         try {
             setLoading(true);
             setError('');
             // const res = await api.get('http://localhost:3000/api/mentor');
-            const res = await getMentorsData();
+            const res = await getStaffData();
             // Handle different response structures
-            const mentorsData = res.data?.data || res.data || [];
-            setMentors(Array.isArray(mentorsData) ? mentorsData : []);
+            const staffData = res.data?.data || res.data || [];
+            setStaff(Array.isArray(staffData) ? staffData : []);
         } catch (err) {
-            console.error('Failed to load mentors:', err);
-            setError('Failed to load mentors');
-            setMentors([]);
+            console.error('Failed to load staff:', err);
+            setError('Failed to load staff');
+            setStaff([]);
         } finally {
             setLoading(false);
         }
@@ -100,9 +101,9 @@ export const MentorModel = () => {
         }
     };
 
-    // Load mentors and branches when component mounts
+    // Load staff and branches when component mounts
     useEffect(() => {
-        fetchMentors();
+        fetchStaff();
         fetchBranches();
     }, []);
 
@@ -112,19 +113,20 @@ export const MentorModel = () => {
         setSuccess('');
     }, [activeTab]);
 
-    // Filter mentors based on search term
-    const filteredMentors = (mentors || []).filter(mentor =>
-        mentor.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mentor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mentor.department?.toLowerCase().includes(searchTerm.toLowerCase())
+    // Filter staff based on search term
+    const filteredStaff = (staff || []).filter(staffMember =>
+        staffMember.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        staffMember.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        staffMember.department?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const tabOptions = [
-        { value: "mentorsList", label: "Mentors List" },
-        { value: "newMentor", label: isEditMode ? "Edit Mentor" : "New Mentor" }
+        { value: "staffList", label: "Staff List" },
+        { value: "newStaff", label: isEditMode ? "Edit Staff" : "New Staff" }
     ];
 
-    const departments = ['Choose Department', 'Computer Science', 'Electrical Engineering', 'Mechanical Engineering'];
+    const departments = ['Choose Department', 'UI/UX', 'Sales', 'Front office','Mern','Flutter','Python','Accounting','Digital Marketing'];
+    const typeOfEmployee = ['Choose Type of Employee', 'Mentor', 'Carrer advisor', 'Placement coordinator', 'Front office'];
     const employmentStatus = ['Choose Employment Status', 'Active', 'Inactive'];
 
     const handleInputChange = (e) => {
@@ -145,50 +147,52 @@ export const MentorModel = () => {
         return date.toISOString().split('T')[0];
     };
 
-    const handleEditMentor = (mentor) => {
-        setEditingMentor(mentor);
+    const handleEditStaff = (staffMember) => {
+        setEditingStaff(staffMember);
         setIsEditMode(true);
         setFormData({
-            fullName: mentor.fullName || "",
-            dateOfBirth: formatDateForInput(mentor.dateOfBirth),
-            gender: mentor.gender || "",
-            email: mentor.email || "",
-            mentorPhoneNumber: mentor.mentorPhoneNumber || "",
-            mentorWhatsAppNumber: mentor.mentorWhatsAppNumber || "",
-            mentorPermanentAddress: mentor.mentorPermanentAddress || "",
-            district: mentor.district || "",
-            state: mentor.state || "",
-            photo: mentor.photo || "",
-            department: mentor.department || "",
-            branch: mentor.branch?._id || mentor.branch || "",
-            yearsOfExperience: mentor.yearsOfExperience || "",
-            dateOfJoining: formatDateForInput(mentor.dateOfJoining),
-            employmentStatus: mentor.employmentStatus || "",
-            resignationDate: formatDateForInput(mentor.resignationDate),
-            resume: mentor.resume || "",
-            remarks: mentor.remarks || "",
-            officialEmail: mentor.officialEmail || "",
+            fullName: staffMember.fullName || "",
+            dateOfBirth: formatDateForInput(staffMember.dateOfBirth),
+            gender: staffMember.gender || "",
+            email: staffMember.email || "",
+            staffPhoneNumber: staffMember.staffPhoneNumber || "",
+            staffWhatsAppNumber: staffMember.staffWhatsAppNumber || "",
+            staffPermanentAddress: staffMember.staffPermanentAddress || "",
+            district: staffMember.district || "",
+            state: staffMember.state || "",
+            photo: staffMember.photo || "",
+            department: staffMember.department || "",
+            typeOfEmployee: staffMember.typeOfEmployee || "",
+            branch: staffMember.branch?._id || staffMember.branch || "",
+            yearsOfExperience: staffMember.yearsOfExperience || "",
+            dateOfJoining: formatDateForInput(staffMember.dateOfJoining),
+            employmentStatus: staffMember.employmentStatus || "",
+            resignationDate: formatDateForInput(staffMember.resignationDate),
+            resume: staffMember.resume || "",
+            remarks: staffMember.remarks || "",
+            officialEmail: staffMember.officialEmail || "",
             password: "",
             confirmPassword: "",
         });
-        setActiveTab('newMentor');
+        setActiveTab('newStaff');
     };
 
     const handleCancelEdit = () => {
-        setEditingMentor(null);
+        setEditingStaff(null);
         setIsEditMode(false);
         setFormData({
             fullName: "",
             dateOfBirth: "",
             gender: "",
             email: "",
-            mentorPhoneNumber: "",
-            mentorWhatsAppNumber: "",
-            mentorPermanentAddress: "",
+            staffPhoneNumber: "",
+            staffWhatsAppNumber: "",
+            staffPermanentAddress: "",
             district: "",
             state: "",
             photo: "",
             department: "",
+            typeOfEmployee: "",
             branch: "",
             yearsOfExperience: "",
             dateOfJoining: "",
@@ -200,27 +204,27 @@ export const MentorModel = () => {
             password: "",
             confirmPassword: "",
         });
-        setActiveTab('mentorsList');
+        setActiveTab('staffList');
     };
 
-    const handleDeleteMentor = (mentor) => {
-        setDeletingMentor(mentor);
+    const handleDeleteStaff = (staffMember) => {
+        setDeletingStaff(staffMember);
         setShowDeleteModal(true);
     };
 
-    const confirmDeleteMentor = async () => {
-        if (!deletingMentor) return;
+    const confirmDeleteStaff = async () => {
+        if (!deletingStaff) return;
         
         try {
             setLoading(true);
             setError('');
-            const res = await deleteMentorsData(deletingMentor._id);
-            setSuccess('Mentor deleted successfully.');
-            await fetchMentors();
+            const res = await deleteMentorsData(deletingStaff._id);
+            setSuccess('Staff deleted successfully.');
+            await fetchStaff();
             setShowDeleteModal(false);
-            setDeletingMentor(null);
+            setDeletingStaff(null);
         } catch (err) {
-            setError(err?.response?.data?.message || 'Failed to delete mentor');
+            setError(err?.response?.data?.message || 'Failed to delete staff');
         } finally {
             setLoading(false);
         }
@@ -228,10 +232,10 @@ export const MentorModel = () => {
 
     const cancelDelete = () => {
         setShowDeleteModal(false);
-        setDeletingMentor(null);
+        setDeletingStaff(null);
     };
 
-    const handleCreateMentor = async (e) => {
+    const handleCreateStaff = async (e) => {
         e.preventDefault();
         resetMessages();
 
@@ -244,13 +248,13 @@ export const MentorModel = () => {
         // Different validation for create vs edit
         const requiredFields = isEditMode 
             ? [
-                'fullName', 'dateOfBirth', 'gender', 'email', 'mentorPhoneNumber',
-                'department', 'branch', 'dateOfJoining', 'employmentStatus',
+                'fullName', 'dateOfBirth', 'gender', 'email', 'staffPhoneNumber',
+                'department', 'typeOfEmployee', 'branch', 'dateOfJoining', 'employmentStatus',
                 'officialEmail'
               ]
             : [
-                'fullName', 'dateOfBirth', 'gender', 'email', 'mentorPhoneNumber',
-                'department', 'branch', 'dateOfJoining', 'employmentStatus',
+                'fullName', 'dateOfBirth', 'gender', 'email', 'staffPhoneNumber',
+                'department', 'typeOfEmployee', 'branch', 'dateOfJoining', 'employmentStatus',
                 'officialEmail', 'password'
               ];
 
@@ -266,13 +270,14 @@ export const MentorModel = () => {
             dateOfBirth: formData.dateOfBirth || null,
             gender: formData.gender,
             email: formData.email,
-            mentorPhoneNumber: formData.mentorPhoneNumber,
-            mentorWhatsAppNumber: formData.mentorWhatsAppNumber || "",
-            mentorPermanentAddress: formData.mentorPermanentAddress || "",
+            staffPhoneNumber: formData.staffPhoneNumber,
+            staffWhatsAppNumber: formData.staffWhatsAppNumber || "",
+            staffPermanentAddress: formData.staffPermanentAddress || "",
             district: formData.district || "",
             state: formData.state || "",
             photo: formData.photo || "",
             department: formData.department,
+            typeOfEmployee: formData.typeOfEmployee,
             branch: formData.branch,
             yearsOfExperience: formData.yearsOfExperience ? Number(formData.yearsOfExperience) : 0,
             dateOfJoining: formData.dateOfJoining || null,
@@ -283,7 +288,7 @@ export const MentorModel = () => {
             officialEmail: formData.officialEmail,
         };
 
-        // Only include password if it's provided (for new mentors or password updates)
+        // Only include password if it's provided (for new staff or password updates)
         if (formData.password && formData.password.trim() !== '') {
             payload.password = formData.password;
         }
@@ -291,37 +296,38 @@ export const MentorModel = () => {
         try {
             setLoading(true);
             let res;
-            if (isEditMode && editingMentor) {
-                // Update existing mentor
-                // res = await api.put(`http://localhost:3000/api/mentor/${editingMentor._id}`, payload);
+            if (isEditMode && editingStaff) {
+                // Update existing staff
+                // res = await api.put(`http://localhost:3000/api/staff/${editingStaff._id}`, payload);
 
-                res = await putMentorsData(editingMentor._id, payload);
-                setSuccess('Mentor updated successfully.');
+                res = await putStaffData(editingStaff._id, payload);
+                setSuccess('Staff updated successfully.');
             } else {
-                // Create new mentor
-                // res = await api.post('http://localhost:3000/api/mentor', payload);
-                res = await postMentorsData(payload);
-                setSuccess('Mentor created successfully.');
+                // Create new staff
+                // res = await api.post('http://localhost:3000/api/staff', payload);
+                res = await postStaffData(payload);
+                setSuccess('Staff created successfully.');
             }
             
-            // Refresh mentors list
-            await fetchMentors();
+            // Refresh staff list
+            await fetchStaff();
             // Switch tab and reset form
-            setActiveTab('mentorsList');
-            setEditingMentor(null);
+            setActiveTab('staffList');
+            setEditingStaff(null);
             setIsEditMode(false);
             setFormData({
                 fullName: "",
                 dateOfBirth: "",
                 gender: "",
                 email: "",
-                mentorPhoneNumber: "",
-                mentorWhatsAppNumber: "",
-                mentorPermanentAddress: "",
+                staffPhoneNumber: "",
+                staffWhatsAppNumber: "",
+                staffPermanentAddress: "",
                 district: "",
                 state: "",
                 photo: "",
                 department: "",
+                typeOfEmployee: "",
                 branch: "",
                 yearsOfExperience: "",
                 dateOfJoining: "",
@@ -334,16 +340,16 @@ export const MentorModel = () => {
                 confirmPassword: "",
             });
         } catch (err) {
-            console.error('Mentor operation error:', err);
+            console.error('Staff operation error:', err);
             console.error('Error response:', err?.response?.data);
-            const msg = err?.response?.data?.message || err?.message || `Failed to ${isEditMode ? 'update' : 'create'} mentor`;
+            const msg = err?.response?.data?.message || err?.message || `Failed to ${isEditMode ? 'update' : 'create'} staff`;
             setError(msg);
         } finally {
             setLoading(false);
         }
     };
 
-    const renderMentorsList = () => (
+    const renderStaffList = () => (
         <div className="bg-white p-6 rounded-lg shadow-md flex-grow">
             {/* Error and Success Messages */}
             {error && (
@@ -362,7 +368,7 @@ export const MentorModel = () => {
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Search Mentor"
+                            placeholder="Search Staff"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -385,18 +391,18 @@ export const MentorModel = () => {
                 </div>
             </div>
 
-            {/* Mentors Table */}
+            {/* Staff Table */}
             {loading ? (
                 <div className="flex items-center justify-center p-12">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-                        <p className="text-gray-500">Loading mentors...</p>
+                        <p className="text-gray-500">Loading staff...</p>
                     </div>
                 </div>
-            ) : filteredMentors.length === 0 ? (
+            ) : filteredStaff.length === 0 ? (
                 <div className="flex items-center justify-center p-12">
                     <p className="text-gray-500 text-lg">
-                        {searchTerm ? 'No mentors found matching your search.' : 'No mentors available. Please add mentors to view them here.'}
+                        {searchTerm ? 'No staff found matching your search.' : 'No staff available. Please add staff to view them here.'}
                     </p>
                 </div>
             ) : (
@@ -407,54 +413,56 @@ export const MentorModel = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredMentors.map((mentor) => (
-                                <tr key={mentor._id} className="hover:bg-gray-50">
+                            {filteredStaff.map((staffMember) => (
+                                <tr key={staffMember._id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="flex-shrink-0 h-10 w-10">
                                                 <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
                                                     <span className="text-orange-600 font-medium text-sm">
-                                                        {mentor.fullName?.charAt(0)?.toUpperCase() || 'M'}
+                                                        {staffMember.fullName?.charAt(0)?.toUpperCase() || 'S'}
                                                     </span>
                                                 </div>
                                             </div>
                                             <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">{mentor.fullName}</div>
-                                                <div className="text-sm text-gray-500">{mentor.mentorPhoneNumber}</div>
+                                                <div className="text-sm font-medium text-gray-900">{staffMember.fullName}</div>
+                                                <div className="text-sm text-gray-500">{staffMember.staffPhoneNumber}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{mentor.email}</div>
-                                        <div className="text-sm text-gray-500">{mentor.officialEmail}</div>
+                                        <div className="text-sm text-gray-900">{staffMember.email}</div>
+                                        <div className="text-sm text-gray-500">{staffMember.officialEmail}</div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{mentor.department}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{mentor.branch?.branchName || 'N/A'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{staffMember.department}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{staffMember.typeOfEmployee || 'N/A'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{staffMember.branch?.branchName || 'N/A'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                            mentor.employmentStatus === 'Active' 
+                                            staffMember.employmentStatus === 'Active' 
                                                 ? 'bg-green-100 text-green-800' 
                                                 : 'bg-red-100 text-red-800'
                                         }`}>
-                                            {mentor.employmentStatus}
+                                            {staffMember.employmentStatus}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex space-x-2">
                                             <button 
-                                                onClick={() => handleEditMentor(mentor)}
+                                                onClick={() => handleEditStaff(staffMember)}
                                                 className="text-orange-600 hover:text-orange-900"
                                             >
                                                 Edit
                                             </button>
                                             <button 
-                                                onClick={() => handleDeleteMentor(mentor)}
+                                                onClick={() => handleDeleteStaff(staffMember)}
                                                 className="text-red-600 hover:text-red-900"
                                             >
                                                 Delete
@@ -470,10 +478,10 @@ export const MentorModel = () => {
         </div>
     );
 
-    const renderNewMentorForm = () => (
-        <form onSubmit={handleCreateMentor} className="bg-white p-6 rounded-lg shadow-md flex-grow ">
-        {/* <form onSubmit={handleCreateMentor} className="bg-white p-6 rounded-lg shadow-md flex-grow overflow-auto max-h-[calc(100vh-200px)]"> */}
-            {/* <form onSubmit={handleCreateMentor} className="bg-white p-6 rounded-lg shadow-md flex-grow"> */}
+    const renderNewStaffForm = () => (
+        <form onSubmit={handleCreateStaff} className="bg-white p-6 rounded-lg shadow-md flex-grow ">
+        {/* <form onSubmit={handleCreateStaff} className="bg-white p-6 rounded-lg shadow-md flex-grow overflow-auto max-h-[calc(100vh-200px)]"> */}
+            {/* <form onSubmit={handleCreateStaff} className="bg-white p-6 rounded-lg shadow-md flex-grow"> */}
             {error && (
                 <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded">{error}</div>
             )}
@@ -481,7 +489,7 @@ export const MentorModel = () => {
                 <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded">{success}</div>
             )}
             <h2 className="text-xl font-bold text-gray-800 mb-6">
-                {isEditMode ? `Edit Mentor - ${editingMentor?.fullName}` : 'Create New Mentor'}
+                {isEditMode ? `Edit Staff - ${editingStaff?.fullName}` : 'Create New Staff'}
             </h2>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Basic Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 ">
@@ -507,24 +515,24 @@ export const MentorModel = () => {
                     <input name="email" value={formData.email} onChange={handleInputChange} type="email" placeholder="Enter Email Address" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                 </div>
                 <div>
-                    <label className="block text-gray-700 font-medium mb-2">Mentor Phone Number</label>
-                    <input name="mentorPhoneNumber" value={formData.mentorPhoneNumber} onChange={handleInputChange} type="tel" placeholder="Enter Mentor Phone Number" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+                    <label className="block text-gray-700 font-medium mb-2">Staff Phone Number</label>
+                    <input name="staffPhoneNumber" value={formData.staffPhoneNumber} onChange={handleInputChange} type="tel" placeholder="Enter Staff Phone Number" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                 </div>
                 <div>
-                    <label className="block text-gray-700 font-medium mb-2">Mentor WhatsApp Number</label>
-                    <input name="mentorWhatsAppNumber" value={formData.mentorWhatsAppNumber} onChange={handleInputChange} type="tel" placeholder="Enter Mentor WhatsApp Number" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+                    <label className="block text-gray-700 font-medium mb-2">Staff WhatsApp Number</label>
+                    <input name="staffWhatsAppNumber" value={formData.staffWhatsAppNumber} onChange={handleInputChange} type="tel" placeholder="Enter Staff WhatsApp Number" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                 </div>
                 <div>
-                    <label className="block text-gray-700 font-medium mb-2">Mentor Permanent Address</label>
-                    <input name="mentorPermanentAddress" value={formData.mentorPermanentAddress} onChange={handleInputChange} type="text" placeholder="Enter Mentor Permanent Address" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+                    <label className="block text-gray-700 font-medium mb-2">Staff Permanent Address</label>
+                    <input name="staffPermanentAddress" value={formData.staffPermanentAddress} onChange={handleInputChange} type="text" placeholder="Enter Staff Permanent Address" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                 </div>
                 <div>
                     <label className="block text-gray-700 font-medium mb-2">District</label>
-                    <input name="district" value={formData.district} onChange={handleInputChange} type="text" placeholder="Enter Mentor District" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+                    <input name="district" value={formData.district} onChange={handleInputChange} type="text" placeholder="Enter Staff District" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                 </div>
                 <div>
                     <label className="block text-gray-700 font-medium mb-2">State</label>
-                    <input name="state" value={formData.state} onChange={handleInputChange} type="text" placeholder="Enter Mentor State" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+                    <input name="state" value={formData.state} onChange={handleInputChange} type="text" placeholder="Enter Staff State" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                 </div>
                 <div>
                     <label className="block text-gray-700 font-medium mb-2">Photo <span className="text-gray-400">(Photo format: JPG/PNG only)</span></label>
@@ -546,6 +554,12 @@ export const MentorModel = () => {
                     <label className="block text-gray-700 font-medium mb-2">Department</label>
                     <select name="department" value={formData.department} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                         {departments.map((dept) => <option key={dept} value={dept === 'Choose Department' ? '' : dept}>{dept}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-gray-700 font-medium mb-2">Type of Employee</label>
+                    <select name="typeOfEmployee" value={formData.typeOfEmployee} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        {typeOfEmployee.map((type) => <option key={type} value={type === 'Choose Type of Employee' ? '' : type}>{type}</option>)}
                     </select>
                 </div>
                 <div>
@@ -589,7 +603,8 @@ export const MentorModel = () => {
                         </label>
                     </div>
                 </div>
-                <div className="md:col-span-2">
+                <div>
+                {/* <div className="md:col-span-2"> */}
                     <label className="block text-gray-700 font-medium mb-2">Remarks/Notes <span className="text-gray-400">(Optional)</span></label>
                     <input name="remarks" value={formData.remarks} onChange={handleInputChange} type="text" placeholder="Enter Any Remarks or notes" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                 </div>
@@ -597,8 +612,8 @@ export const MentorModel = () => {
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Login & Access</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <div>
-                    <label className="block text-gray-700 font-medium mb-2">Mentor's Official Email Address</label>
-                    <input name="officialEmail" value={formData.officialEmail} onChange={handleInputChange} type="email" placeholder="Enter Mentor's Official Email Address" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
+                    <label className="block text-gray-700 font-medium mb-2">Staff's Official Email Address</label>
+                    <input name="officialEmail" value={formData.officialEmail} onChange={handleInputChange} type="email" placeholder="Enter Staff's Official Email Address" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
                 </div>
                 <div>
                     <label className="block text-gray-700 font-medium mb-2">
@@ -640,7 +655,7 @@ export const MentorModel = () => {
                 <button type="submit" disabled={loading} className="px-6 py-2 bg-orange-500 text-white rounded-md font-medium shadow-md hover:bg-orange-600 transition-colors duration-200 disabled:opacity-60">
                     {loading 
                         ? (isEditMode ? 'Updating...' : 'Creating...') 
-                        : (isEditMode ? 'Update Mentor' : 'Create Mentor')
+                        : (isEditMode ? 'Update Staff' : 'Create Staff')
                     }
                 </button>
             </div>
@@ -658,7 +673,7 @@ export const MentorModel = () => {
             </div>
 
             {/* Conditional Rendering */}
-            {activeTab === 'mentorsList' ? renderMentorsList() : renderNewMentorForm()}
+            {activeTab === 'staffList' ? renderStaffList() : renderNewStaffForm()}
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
@@ -671,12 +686,12 @@ export const MentorModel = () => {
                                 </svg>
                             </div>
                             <div className="ml-3">
-                                <h3 className="text-lg font-medium text-gray-900">Delete Mentor</h3>
+                                <h3 className="text-lg font-medium text-gray-900">Delete Staff</h3>
                             </div>
                         </div>
                         <div className="mb-4">
                             <p className="text-sm text-gray-500">
-                                Are you sure you want to delete the mentor <strong>"{deletingMentor?.fullName}"</strong>? 
+                                Are you sure you want to delete the staff <strong>"{deletingStaff?.fullName}"</strong>? 
                                 This action cannot be undone.
                             </p>
                         </div>
@@ -688,7 +703,7 @@ export const MentorModel = () => {
                                 Cancel
                             </button>
                             <button
-                                onClick={confirmDeleteMentor}
+                                onClick={confirmDeleteStaff}
                                 disabled={loading}
                                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -703,4 +718,4 @@ export const MentorModel = () => {
     )
 }
 
-// export default MentorModel
+// export default StaffManagement

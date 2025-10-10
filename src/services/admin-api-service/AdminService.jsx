@@ -6,26 +6,38 @@ const AdminService = () => {
 
     const axiosPrivate = useAxiosPrivate()
 
-    // ======================================== mentor management ========================================
+    // ======================================== register and login ========================================
 
-    const getMentorsData = async () => {
-        const response = await axiosPrivate.get("/api/mentor");
+    const postRegister = async (data) => {
+        const response = await axiosPrivate.post("/api/signup",data);
+        return response;
+    };
+
+    const postLogin = async (data) => {
+        const response = await axiosPrivate.post("/api/login",data);
+        return response;
+    };
+
+    // ======================================== staff management ========================================
+
+    const getStaffData = async () => {
+        const response = await axiosPrivate.get("/api/staff");
         return response.data;
     };
 
-    const postMentorsData = async (data) => {
-        const response = await axiosPrivate.post("/api/mentor",data);
+    const postStaffData = async (data) => {
+        const response = await axiosPrivate.post("/api/staff",data);
         return response.data;
     };
 
-    const putMentorsData = async (mentorId, data) => {
+    const putStaffData = async (staffId, data) => {
 
-        const response = await axiosPrivate.put(`/mentor/${mentorId}`, data)
+        const response = await axiosPrivate.put(`/api/staff/${staffId}`, data)
         return response?.data?.data
     };
 
-    const deleteMentorsData = async (mentorId) => {
-        const response = await axiosPrivate.delete(`/api/mentor/${mentorId}`);
+    const deleteStaffData = async (staffId) => {
+        const response = await axiosPrivate.delete(`/api/staff/${staffId}`);
         return response?.data?.data
     };
 
@@ -231,17 +243,85 @@ const AdminService = () => {
         const response = await axiosPrivate.post("/api/weekly-schedules",data);
         return response.data;
     };
+    const putWeeklySchedulesData = async (scheduleId, data) => {
+        const response = await axiosPrivate.post(`/api/weekly-schedules/${scheduleId}/batch`, data);
+        return response.data;
+    };
     const deleteWeeklySchedulesData = async (scheduleId, data) => {
         const response = await axiosPrivate.delete(`/api/weekly-schedules/${scheduleId}/batch`, {data});
         return response.data;
     };
 
+    // ======================================== interns attendance management ========================================
+    const getInternsAttendanceData = async (params = {}) => {
+        const response = await axiosPrivate.get("/api/interns-attendance", { params });
+        return response;
+    };
+
+    const postInternsAttendanceData = async (data) => {
+        const response = await axiosPrivate.post("/api/interns-attendance", data);
+        return response;
+    };
+
+    const putInternsAttendanceData = async (attendanceId, data) => {
+        const response = await axiosPrivate.put(`/api/interns-attendance/${attendanceId}`, data);
+        return response;
+    };
+
+    const deleteInternsAttendanceData = async (attendanceId) => {
+        const response = await axiosPrivate.delete(`/api/interns-attendance/${attendanceId}`);
+        return response;
+    };
+
+    const getInternsAttendanceByDateRange = async (startDate, endDate, intern = null) => {
+        const params = { startDate, endDate };
+        if (intern) params.intern = intern;
+        const response = await axiosPrivate.get("/api/interns-attendance/date-range/range", { params });
+        return response;
+    };
+
+    const getInternsAttendanceSummary = async (params = {}) => {
+        const response = await axiosPrivate.get("/api/interns-attendance/summary/overview", { params });
+        return response;
+    };
+
+    // ======================================== automatic attendance system ========================================
+    const createDailyAttendanceForAllInterns = async () => {
+        const response = await axiosPrivate.post("/api/interns-attendance/create-daily");
+        return response;
+    };
+
+    const updateSingleInternAttendance = async (data) => {
+        const response = await axiosPrivate.put("/api/interns-attendance/update-single", data);
+        return response;
+    };
+
+    const getAttendanceSummaryReport = async (startDate, endDate) => {
+        const response = await axiosPrivate.get("/api/interns-attendance/summary-report", { 
+            params: { startDate, endDate } 
+        });
+        return response;
+    };
+
+    const getInternsByAttendanceDate = async (date, branchId = null) => {
+        const params = { date };
+        if (branchId) {
+            params.branchId = branchId;
+        }
+        const response = await axiosPrivate.get("/api/interns-attendance/interns-by-date", { 
+            params 
+        });
+        return response;
+    };
+
     return {
 
-        getMentorsData,
-        putMentorsData,
-        postMentorsData,
-        deleteMentorsData,
+        postRegister,
+        postLogin,
+        getStaffData,
+        putStaffData,
+        postStaffData,
+        deleteStaffData,
         getBranchesData,
         postBranchesData,
         putBranchesData,
@@ -280,8 +360,20 @@ const AdminService = () => {
         deleteTimingsData,
         getWeeklySchedulesData,
         postWeeklySchedulesData,
-        deleteWeeklySchedulesData
+        putWeeklySchedulesData,
+        deleteWeeklySchedulesData,
         
+        // ======================================== interns attendance management ========================================
+        getInternsAttendanceData,
+        postInternsAttendanceData,
+        putInternsAttendanceData,
+        deleteInternsAttendanceData,
+        getInternsAttendanceByDateRange,
+        getInternsAttendanceSummary,
+        createDailyAttendanceForAllInterns,
+        updateSingleInternAttendance,
+        getAttendanceSummaryReport,
+        getInternsByAttendanceDate
 
     };
 };
