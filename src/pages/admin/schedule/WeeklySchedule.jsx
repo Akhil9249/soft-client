@@ -209,6 +209,7 @@ console.log('loading=====', loading);
 
   // Remove batch from database
   const handleRemoveBatchFromDatabase = async (scheduleId, timeIndex, days, batchId) => {
+    
     try {
       // console.log('Removing batch from database:', { scheduleId, timeIndex, days, batchId });
 

@@ -287,7 +287,7 @@ export const Category = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Courses</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th>
+                      {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th> */}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -321,24 +321,35 @@ export const Category = () => {
                             {category.totalCourses || 0}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {category.courses?.length > 0 ? (
+                        {/* <td className="px-6 py-4 whitespace-nowrap">
+                          {loading ? (
+                            <div className="inline-flex items-center px-2 py-1 text-xs font-medium text-orange-600 bg-orange-100 rounded-full border border-orange-200">
+                              <svg className="animate-spin w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                              </svg>
+                              Loading...
+                            </div>
+                          ) : category.courses?.length > 0 ? (
                             <div className="max-w-xs">
-                              {category.courses.slice(0, 2).map((course, i) => (
-                                <div key={i} className="text-xs text-gray-600 truncate bg-gray-100 px-2 py-1 rounded mb-1">
-                                  {course.courseName}
-                                </div>
-                              ))}
-                              {category.courses.length > 2 && (
-                                <div className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">
-                                  +{category.courses.length - 2} more
-                                </div>
-                              )}
+                              <div className="flex flex-wrap gap-1">
+                                {category.courses.slice(0, 3).map((course, i) => (
+                                  <span key={i} className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full border border-blue-200">
+                                    {course.courseName}
+                                  </span>
+                                ))}
+                                {category.courses.length > 3 && (
+                                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full border border-gray-200">
+                                    +{category.courses.length - 3} more
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           ) : (
-                            <span className="text-gray-400 text-sm">No courses</span>
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full border border-gray-200">
+                              No courses
+                            </span>
                           )}
-                        </td>
+                        </td> */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
                         </td>
@@ -451,25 +462,47 @@ export const Category = () => {
 
               <h3 className="text-lg font-medium text-gray-900 mt-8">Added Courses</h3>
               <div className="rounded-lg border border-gray-300 p-4">
-                {courses.length === 0 ? (
-                  <p className="text-center text-gray-500 py-6">No courses have been added to this category yet.</p>
+                {loading ? (
+                  <div className="text-center py-6">
+                    <div className="inline-flex items-center px-3 py-2 text-sm font-medium text-orange-600 bg-orange-100 rounded-full border border-orange-200">
+                      <svg className="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                      </svg>
+                      Loading courses...
+                    </div>
+                  </div>
+                ) : courses.length === 0 ? (
+                  <div className="text-center py-6">
+                    <div className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-full border border-gray-200">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                      </svg>
+                      No courses added yet
+                    </div>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
-                    {courses.map((course, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                        <div>
-                          <div className="font-medium">{course.courseName}</div>
-                          {course.description && <div className="text-sm text-gray-600">{course.description}</div>}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {courses.map((course, index) => (
+                        <div key={index} className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-full border border-blue-200 hover:bg-blue-200 transition-colors">
+                          <span className="mr-2">{course.courseName}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeCourse(index)}
+                            className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeCourse(index)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          Remove
-                        </button>
+                      ))}
+                    </div>
+                    {/* {courses.length > 0 && (
+                      <div className="text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-md">
+                        Total: {courses.length} course{courses.length !== 1 ? 's' : ''} added
                       </div>
-                    ))}
+                    )} */}
                   </div>
                 )}
               </div>

@@ -4,6 +4,7 @@ import Login from "./pages/register-login/Login";
 import { Route, Routes } from "react-router-dom";
 // import Register from "./pages/register-login/Register";
 // import UserProtectedRoute from "./components/protected-route/UserProtectedRoute";
+import DefaultProtectedRoute from "./components/protected-route/DefaultProtectedRoute";
 import AdminProtectedRoute from "./components/protected-route/AdminProtectedRoute";
 
 // import Dashboard from "./pages/admin/dashboard";
@@ -23,10 +24,7 @@ import { Timings } from "./pages/admin/schedule/Timings";
 import { Notification } from "./pages/admin/settings/Notification";
 import { Branch } from "./pages/admin/settings/Branch";
 import { StudentAttendance } from "./pages/admin/attendance/studentAttendance";
-
-
-
-
+import SuperAdminProtectedRoute from "./components/protected-route/SuperAdminProtectedRoute";
 
 
 function App() {
@@ -35,34 +33,29 @@ function App() {
 
     <Routes>
 
-      
-      {/* <Route path="/register" element={<Register />} /> */}
-      <Route path="/login" element={<Login />} />
-
-      {/* <Route element={<DefaultProtectedRoute />}>
-        <Route path="/" element={<Home />} />
-      </Route> */}
-
-      {/* <Route element={<UserProtectedRoute />}> */}
-        {/* <Route path="/" element={<Home />} /> */}
-      {/* </Route> */}
+      <Route element={<DefaultProtectedRoute />}>
+        {/* <Route path="/register" element={<Register />} /> */}
+        <Route path="/login" element={<Login />} />
+      </Route>
 
       <Route element={<AdminProtectedRoute />}>
-        <Route path="/" element={<RoleManagement/>} />
-        <Route path="/staff-management" element={<StaffManagement/>} />
-        <Route path="/student-management" element={<StudentManagement/>} />
-        <Route path="/courses" element={<Courses/>} />
-        <Route path="/category" element={<Category/>} /> 
-        <Route path="/modules" element={<Modules/>} /> 
-        <Route path="/topics" element={<Topics/>} /> 
-        <Route path="/task-management" element={<TaskManagement/>} /> 
-        <Route path="/student-attendance" element={<StudentAttendance />} /> 
-        <Route path="/batches" element={<Batches/>} /> 
-        <Route path="/weekly-schedule" element={<WeeklySchedule/>} /> 
-        <Route path="/static-pages" element={<StaticPages/>} /> 
-        <Route path="/timings" element={<Timings/>} /> 
-        <Route path="/notification" element={<Notification/>} /> 
-        <Route path="/branch" element={<Branch/>} /> 
+        <Route element={<SuperAdminProtectedRoute />} >
+          <Route path="/" element={<RoleManagement />} />
+          <Route path="/staff-management" element={<StaffManagement />} />
+        </Route>
+        <Route path="/student-management" element={<StudentManagement />} />
+        <Route path="/courses" element={<Courses />} />
+        <Route path="/category" element={<Category />} />
+        <Route path="/modules" element={<Modules />} />
+        <Route path="/topics" element={<Topics />} />
+        <Route path="/task-management" element={<TaskManagement />} />
+        <Route path="/student-attendance" element={<StudentAttendance />} />
+        <Route path="/batches" element={<Batches />} />
+        <Route path="/weekly-schedule" element={<WeeklySchedule />} />
+        <Route path="/static-pages" element={<StaticPages />} />
+        <Route path="/timings" element={<Timings />} />
+        <Route path="/notification" element={<Notification />} />
+        <Route path="/branch" element={<Branch />} />
       </Route>
     </Routes>
 

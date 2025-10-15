@@ -49,7 +49,9 @@ export const Courses = () => {
   const [success, setSuccess] = useState('');
   const [editingCourse, setEditingCourse] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({
+    syllabusFile: null
+  });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCourse, setDeletingCourse] = useState(null);
 
@@ -120,6 +122,7 @@ export const Courses = () => {
       category: typeof course.category === 'object' ? course.category._id : course.category || "",
       courseType: course.courseType || "",
       courseFee: course.courseFee || "",
+      syllabusFile: course.syllabusFile || null,
     });
     setActiveTab('newCourse');
   };
@@ -127,7 +130,9 @@ export const Courses = () => {
   const handleCancelEdit = () => {
     setEditingCourse(null);
     setIsEditMode(false);
-    setFormData({});
+    setFormData({
+      syllabusFile: null
+    });
     setActiveTab('courses');
   };
 
@@ -668,6 +673,7 @@ export const Courses = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Syllabus</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -712,6 +718,28 @@ export const Courses = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     ₹{course.courseFee?.toLocaleString() || '0'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {course.syllabusFile ? (
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
+                        </svg>
+                        <span className="text-sm text-red-600 font-medium">PDF</span>
+                        <a 
+                          href={course.syllabusFile} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="ml-2 text-blue-600 hover:text-blue-800 text-xs"
+                        >
+                          View
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full border border-gray-200">
+                        No Syllabus
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : 'N/A'}
@@ -765,6 +793,7 @@ export const Courses = () => {
         category: category,
         courseType: courseType,
         courseFee: Number(courseFee),
+        syllabusFile: formData.syllabusFile || null,
       };
       try {
         setLoading(true);
@@ -785,7 +814,9 @@ export const Courses = () => {
         setActiveTab('courses');
         setEditingCourse(null);
         setIsEditMode(false);
-        setFormData({});
+        setFormData({
+          syllabusFile: null
+        });
         e.currentTarget.reset();
       } catch (err) {
         setError(err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} course`);
@@ -866,6 +897,65 @@ export const Courses = () => {
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
             required 
           />
+        </div>
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">Course Syllabus <span className="text-gray-400">(PDF only, Max 10MB)</span></label>
+          <div className="flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent">
+            <span className="text-gray-500 flex-1">
+              {formData.syllabusFile ? formData.syllabusFile.name : 'Upload PDF Syllabus'}
+            </span>
+            <input 
+              type="file" 
+              name="syllabusFile"
+              accept=".pdf"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  // Validate file type
+                  if (file.type !== 'application/pdf') {
+                    setError('Please upload only PDF files');
+                    return;
+                  }
+                  // Validate file size (10MB = 10 * 1024 * 1024 bytes)
+                  if (file.size > 10 * 1024 * 1024) {
+                    setError('File size must be less than 10MB');
+                    return;
+                  }
+                  setFormData(prev => ({...prev, syllabusFile: file}));
+                  setError(''); // Clear any previous errors
+                }
+              }}
+              className="sr-only" 
+              id="syllabus-upload" 
+            />
+            <label htmlFor="syllabus-upload" className="cursor-pointer text-gray-500 hover:text-orange-500 transition-colors">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm3-4a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2z" clipRule="evenodd"></path>
+              </svg>
+            </label>
+          </div>
+          {formData.syllabusFile && (
+            <div className="mt-2 flex items-center justify-between bg-green-50 border border-green-200 rounded-md px-3 py-2">
+              <div className="flex items-center">
+                <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
+                </svg>
+                <span className="text-sm text-green-800 font-medium">{formData.syllabusFile.name}</span>
+                <span className="text-xs text-green-600 ml-2">
+                  ({(formData.syllabusFile.size / (1024 * 1024)).toFixed(2)} MB)
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({...prev, syllabusFile: null}))}
+                className="text-red-500 hover:text-red-700 focus:outline-none"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <div className="flex justify-end mt-8 space-x-4">

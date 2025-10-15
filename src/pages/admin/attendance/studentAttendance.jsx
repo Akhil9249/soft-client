@@ -357,7 +357,6 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
     useEffect(() => {
         fetchBranches();
         fetchAttendanceForDate(selectedDate, selectedBranch);
-        createDailyAttendance()
     }, []);
 
     // Update currentDate when selectedDate changes
@@ -401,7 +400,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
 
 
     return (
-        <div className="p-6">
+        <div className="px-6">
             <ActionBar 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
@@ -412,7 +411,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
             />
 
             {/* Create Daily Attendance Button */}
-            {/* <div className="mb-6 flex justify-between items-center"> ======================================
+            <div className="mb-6 flex justify-end">
                 <div className="flex space-x-3">
                     <button 
                         onClick={createDailyAttendance}
@@ -422,7 +421,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                         {loading ? 'Creating...' : 'Create Daily Attendance'}
                     </button>
                 </div>
-            </div> */}
+            </div>
 
             {/* Loading State */}
             {loading && (
@@ -442,7 +441,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
             {!loading && (
                 <>
                     {/* Branch Filter Info */}
-                    <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    {/* <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                                 <span className="text-gray-600 font-medium">Showing:</span>
@@ -457,7 +456,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                                 {attendanceRecords.length} attendance records
                             </div>
                         </div>
-                    </div>
+                    </div> */}
 
             {/* Status Cards */}
             <div className="grid grid-cols-3 gap-4 mb-8">
@@ -475,7 +474,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                     )}
 
             {/* Attendance Table Section */}
-            <div className="bg-white p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-6 rounded-xl ">
                 <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
                     <h3 className="text-xl font-bold text-gray-900">Attendance</h3>
                     <div className="flex items-center text-gray-600 space-x-3 text-sm">

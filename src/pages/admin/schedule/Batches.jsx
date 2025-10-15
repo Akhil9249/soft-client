@@ -3,6 +3,7 @@ import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import { axiosPrivate } from '../../../axios';
 
 export const Batches = () => {
 
@@ -28,7 +29,7 @@ export const Batches = () => {
   const [formData, setFormData] = useState({});
   const [deletingBatch, setDeletingBatch] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const { getBranchesData, getCoursesData, getBatchesData, getInternsData, postBatchesData, putBatchesData, deleteBatchesData } = AdminService();
+  const { getBranchesData, getCoursesData, getBatchesData, getInternsData,getInternsDataSearch, postBatchesData, putBatchesData, deleteBatchesData } = AdminService();
 
   const tabOptions = [
     { value: "batches", label: "Batches" },
@@ -109,7 +110,9 @@ export const Batches = () => {
     try {
       setLoading(true);
       // const res = await axiosPrivate.get(`http://localhost:3000/api/intern/search?q=${encodeURIComponent(searchTerm)}`);
-      const res = await getInternsData(searchTerm);
+      const res = await getInternsDataSearch(searchTerm);
+      // const res = await getInternsData(searchTerm);
+      console.log("res======",res.data);
       setFilteredInterns(res.data || []);
     } catch (err) {
       console.error('Search error:', err);
@@ -164,7 +167,7 @@ export const Batches = () => {
     // Just populate the input fields, don't add to list yet
     setInternSearchTerm('');
     setInternAdmissionNumber(intern.admissionNumber || '');
-    setInternCourseName(intern.course || '');
+    setInternCourseName(intern.course?.courseName || '');
     setSelectedIntern(intern._id);
     
     console.log('Selected intern set to:', intern._id);
@@ -325,6 +328,8 @@ export const Batches = () => {
       setLoading(false);
     }
   };
+  console.log(filteredInterns,"filteredInterns");
+  
 
   // SVG icons, converted to React components for reusability.
   const DashboardIcon = () => (
@@ -530,7 +535,7 @@ export const Batches = () => {
                           {batch.interns && batch.interns.length > 0 && (
                             <div className="text-xs text-gray-500 mt-1">
                               {/* {batch.interns.slice(0, 2).map(intern => intern.fullName).join(', ')} */}
-                              {batch.interns.length > 2 && ` +${batch.interns.length - 2} more`}
+                              {batch.interns?.length > 2 && ` +${batch.interns?.length - 2} more`}
                             </div>
                           )}
                         </td>
@@ -679,7 +684,7 @@ export const Batches = () => {
                           <p className="text-gray-500">Searching interns...</p>
                         </div>
                       ) : filteredInterns
-                        .filter(intern => !addedInterns.find(ai => ai._id === intern._id))
+                        .filter(intern => !addedInterns?.find(ai => ai._id === intern?._id))
                         .length === 0 ? (
                         <div className="p-4 text-center text-gray-500">
                           No interns found matching your search.
@@ -687,13 +692,13 @@ export const Batches = () => {
                       ) : (
                         <div className="divide-y divide-gray-200">
                           {filteredInterns
-                            .filter(intern => !addedInterns.find(ai => ai._id === intern._id))
+                            .filter(intern => !addedInterns?.find(ai => ai._id === intern?._id))
                             .map(intern => (
                               <div key={intern._id} className="p-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between">
                                 <div className="flex-1">
-                                  <div className="font-medium text-gray-900">{intern.fullName}</div>
+                                  <div className="font-medium text-gray-900">{intern?.fullName}</div>
                                   {/* <div className="text-sm text-gray-500">{intern.email}</div> */}
-                                  <div className="text-sm text-gray-500">{intern.course}</div>
+                                  <div className="text-sm text-gray-500">{intern?.course?.courseName}</div>
                                 </div>
                                 <button
                                   type="button"

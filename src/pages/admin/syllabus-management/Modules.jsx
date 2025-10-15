@@ -7,7 +7,7 @@ import AdminService from '../../../services/admin-api-service/AdminService';
 export const Modules = () => {
 
   // const axiosPrivate = useAxiosPrivate();
-  const { getCoursesData, getModulesData, putModulesData, postModulesData, deleteModulesData } = AdminService();
+  const { getCoursesData, getModulesData, putModulesData, postModulesData, deleteModulesData, getTopicsData, removeTopicFromModuleData } = AdminService();
 
   // State to manage the active tab. 'modules-list' is the default.
   const [activeTab, setActiveTab] = useState('modules-list');
@@ -22,12 +22,17 @@ export const Modules = () => {
   const [formData, setFormData] = useState({});
   const [deletingModule, setDeletingModule] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [moduleTopics, setModuleTopics] = useState([]);
+  const [topicsLoading, setTopicsLoading] = useState(false);
+  const [deletingTopic, setDeletingTopic] = useState(null);
+  const [showDeleteTopicModal, setShowDeleteTopicModal] = useState(false);
  
 
   const tabOptions = [
     { value: "modules-list", label: "Modules List" },
-    { value: "new-module", label: "New Module" }
+    { value: "new-module", label: isEditMode ? "Edit Module" : "New Module" }
   ];
+
 
   const headData = "Modules Management"
 
@@ -59,6 +64,53 @@ export const Modules = () => {
     }
   };
 
+  const fetchModuleTopics = async (moduleId) => {
+    try {
+      setTopicsLoading(true);
+      const res = await getTopicsData();
+      // Filter topics that belong to the specific module
+      console.log("moduleId==", moduleId);
+      console.log("res.data==", res.data);
+      const filteredTopics = res.data?.filter(topic => topic.module._id === moduleId) || [];
+      setModuleTopics(filteredTopics);
+    } catch (err) {
+      console.error('Failed to load topics for module:', err);
+      setModuleTopics([]);
+    } finally {
+      setTopicsLoading(false);
+    }
+  };
+
+  const handleDeleteTopic = (topic) => {
+    setDeletingTopic(topic);
+    setShowDeleteTopicModal(true);
+  };
+
+  const handleConfirmDeleteTopic = async () => {
+    if (!deletingTopic || !editingModule) return;
+
+    try {
+      setLoading(true);
+      await removeTopicFromModuleData(editingModule._id, deletingTopic._id);
+      setSuccess(`Topic "${deletingTopic.topicName}" removed from module successfully.`);
+      
+      // Refresh the topics list for the current module
+      await fetchModuleTopics(editingModule._id);
+      
+      setShowDeleteTopicModal(false);
+      setDeletingTopic(null);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to remove topic from module');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelDeleteTopic = () => {
+    setShowDeleteTopicModal(false);
+    setDeletingTopic(null);
+  };
+
   useEffect(() => {
     fetchCourses();
     fetchModules();
@@ -85,6 +137,8 @@ export const Modules = () => {
       course: typeof module.course === 'object' ? module.course._id : module.course || "",
       moduleImage: module.moduleImage || "",
     });
+    // Fetch topics for this module
+    fetchModuleTopics(module._id);
     setActiveTab('new-module');
   };
 
@@ -92,6 +146,7 @@ export const Modules = () => {
     setEditingModule(null);
     setIsEditMode(false);
     setFormData({});
+    setModuleTopics([]);
     setActiveTab('modules-list');
   };
 
@@ -168,6 +223,7 @@ export const Modules = () => {
       setEditingModule(null);
       setIsEditMode(false);
       setFormData({});
+      setModuleTopics([]);
       e.currentTarget.reset();
     } catch (err) {
       setError(err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} module`);
@@ -392,6 +448,7 @@ export const Modules = () => {
                   <input 
                     type="number" 
                     placeholder="0" 
+                    value={isEditMode ? moduleTopics.length : 0}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500" 
                     disabled 
                   />
@@ -434,6 +491,96 @@ export const Modules = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Show topics for the module being edited */}
+              {isEditMode && editingModule && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Module Topics</h3>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {topicsLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mr-2"></div>
+                        <span className="text-gray-500">Loading topics...</span>
+                      </div>
+                    ) : moduleTopics.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-gray-700">
+                            {moduleTopics.length} topic{moduleTopics.length !== 1 ? 's' : ''} found
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {moduleTopics.map((topic, index) => (
+                            <div key={topic._id || index} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h4 className="text-sm font-medium text-gray-900 mb-1">
+                                    {topic.topicName || 'Untitled Topic'}
+                                  </h4>
+                                  <p className="text-xs text-gray-500 mb-2">
+                                    {topic.description || 'No description available'}
+                                  </p>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+                                      {topic.duration || '0'} min
+                                    </span>
+                                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+                                      {topic.difficulty || 'Beginner'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-1 ml-2">
+                                  <button
+                                    type="button"
+                                    className="text-gray-400 hover:text-gray-600 p-1"
+                                    title="View Topic"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="text-gray-400 hover:text-orange-600 p-1"
+                                    title="Edit Topic"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                  </button>
+                                  {/* <button
+                                    type="button"
+                                    onClick={() => handleDeleteTopic(topic)}
+                                    className="text-gray-400 hover:text-red-600 p-1"
+                                    title="Remove Topic from Module"
+                                    disabled={loading}
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                  </button> */}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <div className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-full border border-gray-200">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                          </svg>
+                          No topics found for this module
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">Add topics to this module to see them here</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end space-x-4 mt-8">
                 <button 
                   type="button" 
@@ -454,7 +601,7 @@ export const Modules = () => {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Module Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -487,6 +634,45 @@ export const Modules = () => {
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
                 {loading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Topic Confirmation Modal */}
+      {showDeleteTopicModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">Remove Topic from Module</h3>
+              </div>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-500">
+                Are you sure you want to remove the topic <strong>"{deletingTopic?.topicName}"</strong> from this module?
+                The topic will be removed from the module but will remain in the topics collection.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelDeleteTopic}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteTopic}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+              >
+                {loading ? 'Removing...' : 'Remove Topic'}
               </button>
             </div>
           </div>

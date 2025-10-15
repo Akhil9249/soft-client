@@ -69,6 +69,10 @@ const AdminService = () => {
         const response = await axiosPrivate.get("/api/intern");
         return response.data;
     };
+    const getInternsDataSearch = async (searchTerm) => {
+        const response = await axiosPrivate.get(`/api/intern/search?q=${encodeURIComponent(searchTerm)}`);
+        return response.data;
+    };
 
     const postInternsData = async (data) => {
         const response = await axiosPrivate.post("/api/intern",data);
@@ -169,6 +173,11 @@ const AdminService = () => {
         return response.data;
     };
 
+    const removeTopicFromModuleData = async (moduleId, topicId) => {
+        const response = await axiosPrivate.delete(`/api/module/${moduleId}/topics/${topicId}`);
+        return response.data;
+    };
+
     // ======================================== topic management ========================================
 
     const getTopicsData = async () => {
@@ -200,17 +209,17 @@ const AdminService = () => {
 
     const postTasksData = async (data) => {
         const response = await axiosPrivate.post("/api/tasks",data);
-        return response.data;
+        return response;
     };
     
     const putTasksData = async (taskId, data) => {
         const response = await axiosPrivate.put(`/api/tasks/${taskId}`, data);
-        return response.data;
+        return response;
     };
     
     const deleteTasksData = async (taskId) => {
         const response = await axiosPrivate.delete(`/api/tasks/${taskId}`);
-        return response.data;
+        return response;
     };
 
     // ======================================== timing management ========================================
@@ -327,6 +336,7 @@ const AdminService = () => {
         putBranchesData,
         deleteBranchesData,
         getInternsData,
+        getInternsDataSearch,
         putInternsData,
         postInternsData,
         deleteInternsData,
@@ -345,7 +355,8 @@ const AdminService = () => {
         getModulesData,
         postModulesData,
         putModulesData,
-        deleteModulesData, 
+        deleteModulesData,
+        removeTopicFromModuleData, 
         getTopicsData,
         postTopicsData,
         putTopicsData,
