@@ -22,6 +22,25 @@ export const Category = () => {
   const [formData, setFormData] = useState({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCategory, setDeletingCategory] = useState(null);
+  const [notification, setNotification] = useState({
+    show: false,
+    type: 'success', // 'success', 'error', 'info'
+    title: '',
+    message: ''
+  });
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+    limit: 5
+  });
+  const [filters, setFilters] = useState({
+    branch: ''
+  });
 
   const headData = "Category Management"
 
@@ -30,14 +49,46 @@ export const Category = () => {
     { value: "new-category", label: isEditMode ? "Edit Category" : "New Category" }
   ];
 
+  // Notification helper functions
+  const showNotification = (type, title, message) => {
+    setNotification({
+      show: true,
+      type,
+      title,
+      message
+    });
+  };
 
-  const fetchCategories = async () => {
+  const hideNotification = () => {
+    setNotification({
+      show: false,
+      type: 'success',
+      title: '',
+      message: ''
+    });
+  };
+
+  const fetchCategories = async (page = 1, search = '', branch = '') => {
     try {
       setLoading(true);
       setError('');
-      // const res = await axiosPrivate.get('http://localhost:3000/api/category');
-      const res = await getCategoriesData();
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString()
+      });
+      
+      if (search) queryParams.append('search', search);
+      if (branch) queryParams.append('branch', branch);
+      
+      const res = await getCategoriesData(queryParams.toString());
       setCategories(res?.data || []);
+      
+      // Update pagination state
+      if (res.pagination) {
+        setPagination(res.pagination);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load categories');
     } finally {
@@ -68,10 +119,38 @@ export const Category = () => {
     }
   };
 
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, currentPage: newPage }));
+      fetchCategories(newPage, searchTerm, filters.branch);
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
   useEffect(() => {
-    fetchCategories();
+    fetchCategories(pagination.currentPage, searchTerm, filters.branch);
     fetchBranches();
   }, []);
+
+  // Handle search and filter changes with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchCategories(1, searchTerm, filters.branch);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filters]);
 
   // Clear messages when switching tabs
   useEffect(() => {
@@ -79,14 +158,7 @@ export const Category = () => {
     setSuccess('');
   }, [activeTab]);
 
-  // Filter categories based on search term
-  const filteredCategories = categories.filter(category =>
-    category.categoryName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.branch?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (category.courses && category.courses.some(course => 
-      course.courseName?.toLowerCase().includes(searchTerm.toLowerCase())
-    ))
-  );
+  // No client-side filtering needed - server handles it
 
   // Debug: Log branches whenever they change
   useEffect(() => {
@@ -135,12 +207,12 @@ export const Category = () => {
       setLoading(true);
       setError('');
       const res = await deleteCategoriesData(deletingCategory._id);
-      setSuccess('Category deleted successfully.');
-      await fetchCategories();
+      showNotification('success', 'Success', 'Category deleted successfully.');
+      await fetchCategories(pagination.currentPage, searchTerm, filters.branch);
       setShowDeleteModal(false);
       setDeletingCategory(null);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to delete category');
+      showNotification('error', 'Error', err?.response?.data?.message || 'Failed to delete category');
     } finally {
       setLoading(false);
     }
@@ -167,26 +239,24 @@ export const Category = () => {
       let res;
       if (isEditMode && editingCategory) {
         // Update existing category
-        // res = await axiosPrivate.put(`http://localhost:3000/api/category/${editingCategory._id}`, payload);
         res = await putCategoriesData(editingCategory._id, payload);
-        setSuccess('Category updated successfully.');
+        showNotification('success', 'Success', 'Category updated successfully.');
       } else {
         // Create new category
-        // res = await axiosPrivate.post('http://localhost:3000/api/category', payload);
         res = await postCategoriesData(payload);
-        setSuccess('Category created successfully.');
+        showNotification('success', 'Success', 'Category created successfully.');
       }
       
       // refresh list and switch tab
-      await fetchCategories();
+      await fetchCategories(pagination.currentPage, searchTerm, filters.branch);
       setActiveTab('category-list');
       setEditingCategory(null);
       setIsEditMode(false);
       setFormData({});
       setCourses([]);
-      e.currentTarget.reset();
+      // e.currentTarget.reset();
     } catch (err) {
-      setError(err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} category`);
+      showNotification('error', 'Error', err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} category`);
     } finally {
       setLoading(false);
     }
@@ -197,6 +267,79 @@ export const Category = () => {
   );
 
   console.log(branches, "branches");
+
+  // Notification Modal Component
+  const NotificationModal = () => {
+    if (!notification.show) return null;
+
+    const getIcon = () => {
+      switch (notification.type) {
+        case 'success':
+          return (
+            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        case 'error':
+          return (
+            <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          );
+        case 'info':
+          return (
+            <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        default:
+          return null;
+      }
+    };
+
+    const getButtonColor = () => {
+      switch (notification.type) {
+        case 'success':
+          return 'bg-green-600 hover:bg-green-700 focus:ring-green-500';
+        case 'error':
+          return 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
+        case 'info':
+          return 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500';
+        default:
+          return 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500';
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                {getIcon()}
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">{notification.title}</h3>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-500">{notification.message}</p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={hideNotification}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonColor()}`}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -224,17 +367,6 @@ export const Category = () => {
         {/* Tab content */}
         {activeTab === 'category-list' ? (
           <div id="category-list-content" className="p-6">
-            {/* Error and Success Messages */}
-            {error && (
-              <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
-                {success}
-              </div>
-            )}
 
             <div className="flex justify-between items-center mb-6">
               <div className="flex-1 mr-4">
@@ -243,7 +375,7 @@ export const Category = () => {
                     type="text"
                     placeholder="Search Categories"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -254,8 +386,17 @@ export const Category = () => {
                 </div>
               </div>
               <div className="flex space-x-2">
-                <select className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                  <option>Filter</option>
+                <select 
+                  value={filters.branch}
+                  onChange={(e) => handleFilterChange('branch', e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="">All Branches</option>
+                  {branches.map(branch => (
+                    <option key={branch._id} value={branch.branchName}>
+                      {branch.branchName}
+                    </option>
+                  ))}
                 </select>
                 <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -272,10 +413,10 @@ export const Category = () => {
                   <p className="text-gray-500">Loading categories...</p>
                 </div>
               </div>
-            ) : filteredCategories.length === 0 ? (
+            ) : categories.length === 0 ? (
               <div className="flex items-center justify-center p-12">
                 <p className="text-gray-500 text-lg">
-                  {searchTerm ? 'No categories found matching your search.' : 'No categories available. Please add categories to view them here.'}
+                  {searchTerm || filters.branch ? 'No categories found matching your search.' : 'No categories available. Please add categories to view them here.'}
                 </p>
               </div>
             ) : (
@@ -293,7 +434,7 @@ export const Category = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCategories.map((category, idx) => (
+                    {categories.map((category, idx) => (
                       <tr key={category._id || idx} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -375,16 +516,62 @@ export const Category = () => {
                 </table>
               </div>
             )}
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                <div className="flex items-center text-sm text-gray-700">
+                  <span>
+                    Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  {/* Previous Button */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPrevPage || loading}
+                    className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                      pagination.hasPrevPage && !loading
+                        ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    {loading ? 'Loading...' : 'Previous'}
+                  </button>
+
+                  {/* Current Page Info */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      Page {pagination.currentPage} of {pagination.totalPages}
+                    </span>
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage || loading}
+                    className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                      pagination.hasNextPage && !loading
+                        ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                    }`}
+                  >
+                    {loading ? 'Loading...' : 'Next'}
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div id="new-category-content">
             <form onSubmit={handleCreateCategory} className="space-y-6 p-6">
-              {error && (
-                <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">{error}</div>
-              )}
-              {success && (
-                <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">{success}</div>
-              )}
               <h2 className="text-xl font-bold text-gray-800 mb-6">
                 {isEditMode ? `Edit Category - ${editingCategory?.categoryName}` : 'Create New Category'}
               </h2>
@@ -526,6 +713,9 @@ export const Category = () => {
           </div>
         )}
       </div>
+      
+      {/* Notification Modal */}
+      <NotificationModal />
       
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

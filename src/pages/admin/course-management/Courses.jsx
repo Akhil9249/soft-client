@@ -54,6 +54,26 @@ export const Courses = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingCourse, setDeletingCourse] = useState(null);
+  const [notification, setNotification] = useState({
+    show: false,
+    type: 'success', // 'success', 'error', 'info'
+    title: '',
+    message: ''
+  });
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+    limit: 5
+  });
+  const [filters, setFilters] = useState({
+    category: '',
+    courseType: ''
+  });
 
   const tabOptions = [
     { value: "courses", label: "Courses" },
@@ -61,6 +81,25 @@ export const Courses = () => {
   ];
 
   console.log("categories==", categories);
+
+  // Notification helper functions
+  const showNotification = (type, title, message) => {
+    setNotification({
+      show: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const hideNotification = () => {
+    setNotification({
+      show: false,
+      type: 'success',
+      title: '',
+      message: ''
+    });
+  };
 
   const fetchCategories = async () => {
     try {
@@ -79,13 +118,28 @@ export const Courses = () => {
     }
   };
 
-  const fetchCourses = async () => {
+  const fetchCourses = async (page = 1, search = '', category = '', courseType = '') => {
     try {
       setLoading(true);
       setError('');
-      // const res = await axiosPrivate.get('http://localhost:3000/api/course');
-      const res = await getCoursesData();
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString()
+      });
+      
+      if (search) queryParams.append('search', search);
+      if (category) queryParams.append('category', category);
+      if (courseType) queryParams.append('courseType', courseType);
+      
+      const res = await getCoursesData(queryParams.toString());
       setCourseList(res?.data || []);
+      
+      // Update pagination state
+      if (res.pagination) {
+        setPagination(res.pagination);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load courses');
     } finally {
@@ -93,10 +147,38 @@ export const Courses = () => {
     }
   };
 
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, currentPage: newPage }));
+      fetchCourses(newPage, searchTerm, filters.category, filters.courseType);
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
   useEffect(() => {
     fetchCategories();
-    fetchCourses();
+    fetchCourses(pagination.currentPage, searchTerm, filters.category, filters.courseType);
   }, []);
+
+  // Handle search and filter changes with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchCourses(1, searchTerm, filters.category, filters.courseType);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filters]);
 
   // Clear messages when switching tabs
   useEffect(() => {
@@ -104,14 +186,7 @@ export const Courses = () => {
     setSuccess('');
   }, [activeTab]);
 
-  // Filter courses based on search term
-  const filteredCourses = courseList.filter(course =>
-    course.courseName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.duration?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.courseType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (typeof course.category === 'object' && course.category?.categoryName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (typeof course.category === 'string' && course.category?.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // No client-side filtering needed - server handles it
 
   const handleEditCourse = (course) => {
     setEditingCourse(course);
@@ -148,12 +223,12 @@ export const Courses = () => {
       setLoading(true);
       setError('');
       const res = await deleteCoursesData(deletingCourse._id);
-      setSuccess('Course deleted successfully.');
-      await fetchCourses();
+      showNotification('success', 'Success', 'Course deleted successfully.');
+      await fetchCourses(pagination.currentPage, searchTerm, filters.category, filters.courseType);
       setShowDeleteModal(false);
       setDeletingCourse(null);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to delete course');
+      showNotification('error', 'Error', err?.response?.data?.message || 'Failed to delete course');
     } finally {
       setLoading(false);
     }
@@ -608,17 +683,6 @@ export const Courses = () => {
 
   const renderCoursesList = () => (
     <div className="bg-white p-6 rounded-lg shadow-md flex-grow">
-      {/* Error and Success Messages */}
-      {error && (
-        <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
-          {success}
-        </div>
-      )}
 
       <div className="flex justify-between items-center mb-6">
         <div className="flex-1 mr-4">
@@ -627,7 +691,7 @@ export const Courses = () => {
               type="text"
               placeholder="Search Courses"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -638,8 +702,27 @@ export const Courses = () => {
           </div>
         </div>
         <div className="flex space-x-2">
-          <select className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-            <option>Filter</option>
+          <select 
+            value={filters.category}
+            onChange={(e) => handleFilterChange('category', e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="">All Categories</option>
+            {categories.map(category => (
+              <option key={category._id} value={category._id}>
+                {category.categoryName}
+              </option>
+            ))}
+          </select>
+          <select 
+            value={filters.courseType}
+            onChange={(e) => handleFilterChange('courseType', e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          >
+            <option value="">All Types</option>
+            {courseTypes.map(type => (
+              <option key={type} value={type}>{type}</option>
+            ))}
           </select>
           <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -656,10 +739,10 @@ export const Courses = () => {
             <p className="text-gray-500">Loading courses...</p>
           </div>
         </div>
-      ) : filteredCourses.length === 0 ? (
+      ) : courseList.length === 0 ? (
         <div className="flex items-center justify-center p-12">
           <p className="text-gray-500 text-lg">
-            {searchTerm ? 'No courses found matching your search.' : 'No courses available. Please add courses to view them here.'}
+            {searchTerm || filters.category || filters.courseType ? 'No courses found matching your search.' : 'No courses available. Please add courses to view them here.'}
           </p>
         </div>
       ) : (
@@ -679,7 +762,7 @@ export const Courses = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCourses.map((course, idx) => (
+              {courseList.map((course, idx) => (
                 <tr key={course._id || idx} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -766,6 +849,58 @@ export const Courses = () => {
           </table>
         </div>
       )}
+
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
+          <div className="flex items-center text-sm text-gray-700">
+            <span>
+              Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
+            </span>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {/* Previous Button */}
+            <button
+              onClick={() => handlePageChange(pagination.currentPage - 1)}
+              disabled={!pagination.hasPrevPage || loading}
+              className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                pagination.hasPrevPage && !loading
+                  ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                  : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+              }`}
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              {loading ? 'Loading...' : 'Previous'}
+            </button>
+
+            {/* Current Page Info */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </span>
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => handlePageChange(pagination.currentPage + 1)}
+              disabled={!pagination.hasNextPage || loading}
+              className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                pagination.hasNextPage && !loading
+                  ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                  : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+              }`}
+            >
+              {loading ? 'Loading...' : 'Next'}
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -783,7 +918,7 @@ export const Courses = () => {
 
       // Validate required fields
       if (!courseName || !duration || !category || !courseType || !courseFee) {
-        setError('All fields are required');
+        showNotification('error', 'Validation Error', 'All fields are required');
         return;
       }
 
@@ -800,36 +935,28 @@ export const Courses = () => {
         let res;
         if (isEditMode && editingCourse) {
           // Update existing course
-          // res = await axiosPrivate.put(`http://localhost:3000/api/course/${editingCourse._id}`, payload);
           res = await putCoursesData(editingCourse._id, payload);
-          setSuccess('Course updated successfully.');
+          showNotification('success', 'Success', 'Course updated successfully.');
         } else {
           // Create new course
-          // res = await axiosPrivate.post('http://localhost:3000/api/course', payload);
           res = await postCoursesData(payload);
-          setSuccess('Course created successfully.');
+          showNotification('success', 'Success', 'Course created successfully.');
         }
         
-        await fetchCourses();
+        await fetchCourses(pagination.currentPage, searchTerm, filters.category, filters.courseType);
         setActiveTab('courses');
         setEditingCourse(null);
         setIsEditMode(false);
         setFormData({
           syllabusFile: null
         });
-        e.currentTarget.reset();
+        // e.currentTarget.reset();
       } catch (err) {
-        setError(err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} course`);
+        showNotification('error', 'Error', err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} course`);
       } finally {
         setLoading(false);
       }
     }} className="bg-white p-6 rounded-lg shadow-md flex-grow">
-      {error && (
-        <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">{error}</div>
-      )}
-      {success && (
-        <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">{success}</div>
-      )}
       <h2 className="text-xl font-bold text-gray-800 mb-6">
         {isEditMode ? `Edit Course - ${editingCourse?.courseName}` : 'Create New Course'}
       </h2>
@@ -913,12 +1040,12 @@ export const Courses = () => {
                 if (file) {
                   // Validate file type
                   if (file.type !== 'application/pdf') {
-                    setError('Please upload only PDF files');
+                    showNotification('error', 'Validation Error', 'Please upload only PDF files');
                     return;
                   }
                   // Validate file size (10MB = 10 * 1024 * 1024 bytes)
                   if (file.size > 10 * 1024 * 1024) {
-                    setError('File size must be less than 10MB');
+                    showNotification('error', 'Validation Error', 'File size must be less than 10MB');
                     return;
                   }
                   setFormData(prev => ({...prev, syllabusFile: file}));
@@ -975,6 +1102,79 @@ export const Courses = () => {
       </div>
     </form>
   );
+
+  // Notification Modal Component
+  const NotificationModal = () => {
+    if (!notification.show) return null;
+
+    const getIcon = () => {
+      switch (notification.type) {
+        case 'success':
+          return (
+            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        case 'error':
+          return (
+            <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          );
+        case 'info':
+          return (
+            <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        default:
+          return null;
+      }
+    };
+
+    const getButtonColor = () => {
+      switch (notification.type) {
+        case 'success':
+          return 'bg-green-600 hover:bg-green-700 focus:ring-green-500';
+        case 'error':
+          return 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
+        case 'info':
+          return 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500';
+        default:
+          return 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500';
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                {getIcon()}
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">{notification.title}</h3>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-500">{notification.message}</p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={hideNotification}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonColor()}`}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderContent = () => {
     if (activeSubModule === 'studentManagement') {
@@ -1085,6 +1285,9 @@ export const Courses = () => {
   return (
     <>
       {renderContent()}
+      
+      {/* Notification Modal */}
+      <NotificationModal />
       
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

@@ -16,9 +16,9 @@ const SuperAdminProtectedRoute = () => {
 
   
     return (
-      <AdminLayout>
+    
         <Outlet />
-      </AdminLayout>
+     
     );
 }
 

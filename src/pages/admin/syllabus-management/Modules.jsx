@@ -26,7 +26,25 @@ export const Modules = () => {
   const [topicsLoading, setTopicsLoading] = useState(false);
   const [deletingTopic, setDeletingTopic] = useState(null);
   const [showDeleteTopicModal, setShowDeleteTopicModal] = useState(false);
- 
+  const [notification, setNotification] = useState({
+    show: false,
+    type: 'success', // 'success', 'error', 'info'
+    title: '',
+    message: ''
+  });
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+    limit: 5
+  });
+  const [filters, setFilters] = useState({
+    course: ''
+  });
 
   const tabOptions = [
     { value: "modules-list", label: "Modules List" },
@@ -35,6 +53,25 @@ export const Modules = () => {
 
 
   const headData = "Modules Management"
+
+  // Notification helper functions
+  const showNotification = (type, title, message) => {
+    setNotification({
+      show: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const hideNotification = () => {
+    setNotification({
+      show: false,
+      type: 'success',
+      title: '',
+      message: ''
+    });
+  };
 
   const fetchCourses = async () => {
     try {
@@ -50,13 +87,27 @@ export const Modules = () => {
     }
   };
 
-  const fetchModules = async () => {
+  const fetchModules = async (page = 1, search = '', course = '') => {
     try {
       setLoading(true);
       setError('');
-      // const res = await axiosPrivate.get('http://localhost:3000/api/module');
-      const res = await getModulesData();
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString()
+      });
+      
+      if (search) queryParams.append('search', search);
+      if (course) queryParams.append('course', course);
+      
+      const res = await getModulesData(queryParams.toString());
       setModules(res.data || []);
+      
+      // Update pagination state
+      if (res.pagination) {
+        setPagination(res.pagination);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load modules');
     } finally {
@@ -92,7 +143,7 @@ export const Modules = () => {
     try {
       setLoading(true);
       await removeTopicFromModuleData(editingModule._id, deletingTopic._id);
-      setSuccess(`Topic "${deletingTopic.topicName}" removed from module successfully.`);
+      showNotification('success', 'Success', `Topic "${deletingTopic.topicName}" removed from module successfully.`);
       
       // Refresh the topics list for the current module
       await fetchModuleTopics(editingModule._id);
@@ -100,7 +151,7 @@ export const Modules = () => {
       setShowDeleteTopicModal(false);
       setDeletingTopic(null);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to remove topic from module');
+      showNotification('error', 'Error', err?.response?.data?.message || 'Failed to remove topic from module');
     } finally {
       setLoading(false);
     }
@@ -111,10 +162,38 @@ export const Modules = () => {
     setDeletingTopic(null);
   };
 
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, currentPage: newPage }));
+      fetchModules(newPage, searchTerm, filters.course);
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
   useEffect(() => {
     fetchCourses();
-    fetchModules();
+    fetchModules(pagination.currentPage, searchTerm, filters.course);
   }, []);
+
+  // Handle search and filter changes with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchModules(1, searchTerm, filters.course);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filters]);
 
   // Clear messages when switching tabs
   useEffect(() => {
@@ -122,12 +201,7 @@ export const Modules = () => {
     setSuccess('');
   }, [activeTab]);
 
-  // Filter modules based on search term
-  const filteredModules = modules.filter(module =>
-    module.moduleName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (typeof module.course === 'object' && module.course?.courseName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (typeof module.course === 'string' && module.course?.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // No client-side filtering needed - server handles it
 
   const handleEditModule = (module) => {
     setEditingModule(module);
@@ -161,14 +235,13 @@ export const Modules = () => {
 
     try {
       setLoading(true);
-      // await axiosPrivate.delete(`http://localhost:3000/api/module/${deletingModule._id}`);
       const res = await deleteModulesData(deletingModule._id);
-      setSuccess('Module deleted successfully.');
-      await fetchModules();
+      showNotification('success', 'Success', 'Module deleted successfully.');
+      await fetchModules(pagination.currentPage, searchTerm, filters.course);
       setShowDeleteModal(false);
       setDeletingModule(null);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to delete module');
+      showNotification('error', 'Error', err?.response?.data?.message || 'Failed to delete module');
     } finally {
       setLoading(false);
     }
@@ -192,7 +265,7 @@ export const Modules = () => {
 
     // Validate required fields
     if (!moduleName || !course) {
-      setError('Module name and course are required');
+      showNotification('error', 'Validation Error', 'Module name and course are required');
       return;
     }
 
@@ -208,25 +281,23 @@ export const Modules = () => {
       let res;
       if (isEditMode && editingModule) {
         // Update existing module
-        // res = await axiosPrivate.put(`http://localhost:3000/api/module/${editingModule._id}`, payload);
         const res = await putModulesData(editingModule._id, payload);
-        setSuccess('Module updated successfully.');
+        showNotification('success', 'Success', 'Module updated successfully.');
       } else {
         // Create new module
-        // res = await axiosPrivate.post('http://localhost:3000/api/module', payload);
         const res = await postModulesData(payload);
-        setSuccess('Module created successfully.');
+        showNotification('success', 'Success', 'Module created successfully.');
       }
       
-      await fetchModules();
+      await fetchModules(pagination.currentPage, searchTerm, filters.course);
       setActiveTab('modules-list');
       setEditingModule(null);
       setIsEditMode(false);
       setFormData({});
       setModuleTopics([]);
-      e.currentTarget.reset();
+      // e.currentTarget.reset();
     } catch (err) {
-      setError(err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} module`);
+      showNotification('error', 'Error', err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} module`);
     } finally {
       setLoading(false);
     }
@@ -274,9 +345,85 @@ export const Modules = () => {
   );
 
 
+  // Notification Modal Component
+  const NotificationModal = () => {
+    if (!notification.show) return null;
+
+    const getIcon = () => {
+      switch (notification.type) {
+        case 'success':
+          return (
+            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        case 'error':
+          return (
+            <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          );
+        case 'info':
+          return (
+            <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        default:
+          return null;
+      }
+    };
+
+    const getButtonColor = () => {
+      switch (notification.type) {
+        case 'success':
+          return 'bg-green-600 hover:bg-green-700 focus:ring-green-500';
+        case 'error':
+          return 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
+        case 'info':
+          return 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500';
+        default:
+          return 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500';
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                {getIcon()}
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">{notification.title}</h3>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-500">{notification.message}</p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={hideNotification}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonColor()}`}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <Navbar headData={headData} activeTab={activeTab} />
+      
+      {/* Notification Modal */}
+      <NotificationModal />
 
       <div className="flex justify-between items-center ">
       <div className="mb-6">
@@ -296,17 +443,6 @@ export const Modules = () => {
         {/* Tab content */}
         {activeTab === 'modules-list' ? (
           <div id="modules-list-content">
-            {/* Error and Success Messages */}
-            {error && (
-              <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
-                {success}
-              </div>
-            )}
 
             <div className="flex justify-between items-center mb-6">
               <div className="flex-1 mr-4">
@@ -315,7 +451,7 @@ export const Modules = () => {
                     type="text"
                     placeholder="Search Modules"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -326,8 +462,17 @@ export const Modules = () => {
                 </div>
               </div>
               <div className="flex space-x-2">
-                <select className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                  <option>Filter</option>
+                <select 
+                  value={filters.course}
+                  onChange={(e) => handleFilterChange('course', e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="">All Courses</option>
+                  {courses.map(course => (
+                    <option key={course._id} value={course._id}>
+                      {course.courseName}
+                    </option>
+                  ))}
                 </select>
                 <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -344,10 +489,10 @@ export const Modules = () => {
                   <p className="text-gray-500">Loading modules...</p>
                 </div>
               </div>
-            ) : filteredModules.length === 0 ? (
+            ) : modules.length === 0 ? (
               <div className="flex items-center justify-center p-12">
                 <p className="text-gray-500 text-lg">
-                  {searchTerm ? 'No modules found matching your search.' : 'No modules available. Please add modules to view them here.'}
+                  {searchTerm || filters.course ? 'No modules found matching your search.' : 'No modules available. Please add modules to view them here.'}
                 </p>
               </div>
             ) : (
@@ -364,7 +509,7 @@ export const Modules = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredModules.map((module, idx) => (
+                    {modules.map((module, idx) => (
                       <tr key={module._id || idx} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -417,16 +562,62 @@ export const Modules = () => {
                 </table>
               </div>
             )}
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                <div className="flex items-center text-sm text-gray-700">
+                  <span>
+                    Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  {/* Previous Button */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPrevPage || loading}
+                    className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                      pagination.hasPrevPage && !loading
+                        ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    {loading ? 'Loading...' : 'Previous'}
+                  </button>
+
+                  {/* Current Page Info */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      Page {pagination.currentPage} of {pagination.totalPages}
+                    </span>
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage || loading}
+                    className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                      pagination.hasNextPage && !loading
+                        ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                    }`}
+                  >
+                    {loading ? 'Loading...' : 'Next'}
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div id="new-module-content">
             <form onSubmit={handleCreateModule} className="space-y-6">
-              {error && (
-                <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">{error}</div>
-              )}
-              {success && (
-                <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">{success}</div>
-              )}
               <h3 className="text-lg font-medium text-gray-900">
                 {isEditMode ? `Edit Module - ${editingModule?.moduleName}` : 'Module Details'}
               </h3>

@@ -34,6 +34,27 @@ export const TaskManagement = () => {
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [notification, setNotification] = useState({
+    show: false,
+    type: 'success', // 'success', 'error', 'info'
+    title: '',
+    message: ''
+  });
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+    limit: 5
+  });
+  const [filters, setFilters] = useState({
+    taskType: '',
+    status: '',
+    audience: ''
+  });
 
   // const axiosPrivate = useAxiosPrivate();
 
@@ -43,6 +64,25 @@ export const TaskManagement = () => {
   ];
 
   const headData = "Task Management"
+
+  // Notification helper functions
+  const showNotification = (type, title, message) => {
+    setNotification({
+      show: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const hideNotification = () => {
+    setNotification({
+      show: false,
+      type: 'success',
+      title: '',
+      message: ''
+    });
+  };
 
   // SVG icons, converted to React components for reusability.
   const DashboardIcon = () => (
@@ -96,14 +136,25 @@ export const TaskManagement = () => {
   const { getBatchesData, getModulesData, getStaffData, getTasksData, putTasksData, postTasksData, getInternsData, getCoursesData, deleteTasksData } = AdminService();
 
   // API functions to fetch data
-  const fetchTasks = async () => {
+  const fetchTasks = async (page = 1, search = '', taskType = '', status = '', audience = '') => {
     try {
       setLoading(true);
       setError('');
-      // const res = await axiosPrivate.get('http://localhost:3000/api/tasks');
-      const res = await getTasksData();
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString()
+      });
+      
+      if (search) queryParams.append('search', search);
+      if (taskType) queryParams.append('taskType', taskType);
+      if (status) queryParams.append('status', status);
+      if (audience) queryParams.append('audience', audience);
+      
+      const res = await getTasksData(queryParams.toString());
       console.log("tasks data==", res.data);
-      const tasksData =  res?.data || [];
+      const tasksData = res?.data || [];
       if (Array.isArray(tasksData)) {
         // Log the first task to see its structure
         if (tasksData.length > 0) {
@@ -116,8 +167,13 @@ export const TaskManagement = () => {
       } else {
         setTasks([]);
       }
+      
+      // Update pagination state
+      if (res.pagination) {
+        setPagination(res.pagination);
+      }
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to load tasks');
+      showNotification('error', 'Error', err?.response?.data?.message || 'Failed to load tasks');
     } finally {
       setLoading(false);
     }
@@ -230,13 +286,41 @@ export const TaskManagement = () => {
     }
   };
 
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, currentPage: newPage }));
+      fetchTasks(newPage, searchTerm, filters.taskType, filters.status, filters.audience);
+    }
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
   // Load data when component mounts
   useEffect(() => {
-    fetchTasks();
+    fetchTasks(pagination.currentPage, searchTerm, filters.taskType, filters.status, filters.audience);
     fetchBatches();
     fetchModules();
     fetchMentors();
   }, []);
+
+  // Handle search and filter changes with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchTasks(1, searchTerm, filters.taskType, filters.status, filters.audience);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filters]);
 
   // Handle data population when editing task and data becomes available
   useEffect(() => {
@@ -289,14 +373,7 @@ export const TaskManagement = () => {
     setSuccess('');
   }, [activeTab]);
 
-  // Filter tasks based on search term
-  const filteredTasks = (tasks || []).filter(task =>
-    task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.taskType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.module?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.assignedMentor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.status?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // No client-side filtering needed - server handles it
 
   const handleEditTask = (task) => {
     setEditingTask(task);
@@ -416,10 +493,9 @@ export const TaskManagement = () => {
       console.log('Delete response:', res);
       
       if (res.status === 200 || res.status === 201) {
-        setSuccess('Task deleted successfully!');
-        setError('');
+        showNotification('success', 'Success', 'Task deleted successfully!');
         // Refresh the tasks list
-        await fetchTasks();
+        await fetchTasks(pagination.currentPage, searchTerm, filters.taskType, filters.status, filters.audience);
         // Close modal
         setShowDeleteModal(false);
         setTaskToDelete(null);
@@ -428,8 +504,7 @@ export const TaskManagement = () => {
       }
     } catch (err) {
       console.error('Error deleting task:', err);
-      setError(err?.response?.data?.message || err.message || 'Failed to delete task');
-      setSuccess('');
+      showNotification('error', 'Error', err?.response?.data?.message || err.message || 'Failed to delete task');
     } finally {
       setLoading(false);
     }
@@ -448,13 +523,11 @@ export const TaskManagement = () => {
     const isSelected = selectedInterns.find(selected => selected._id === intern._id);
     if (isSelected) {
       setSelectedInterns(selectedInterns.filter(selected => selected._id !== intern._id));
-      setSuccess(`Removed ${intern.fullName} from selection`);
+      showNotification('info', 'Selection Updated', `Removed ${intern.fullName} from selection`);
     } else {
       setSelectedInterns([...selectedInterns, intern]);
-      setSuccess(`Added ${intern.fullName} to selection`);
+      showNotification('info', 'Selection Updated', `Added ${intern.fullName} to selection`);
     }
-    // Clear success message after 2 seconds
-    setTimeout(() => setSuccess(''), 2000);
   };
 
   const handleBatchSearch = (searchTerm) => {
@@ -465,13 +538,11 @@ export const TaskManagement = () => {
     const isSelected = selectedBatches.find(selected => selected._id === batch._id);
     if (isSelected) {
       setSelectedBatches(selectedBatches.filter(selected => selected._id !== batch._id));
-      setSuccess(`Removed ${batch.batchName} from selection`);
+      showNotification('info', 'Selection Updated', `Removed ${batch.batchName} from selection`);
     } else {
       setSelectedBatches([...selectedBatches, batch]);
-      setSuccess(`Added ${batch.batchName} to selection`);
+      showNotification('info', 'Selection Updated', `Added ${batch.batchName} to selection`);
     }
-    // Clear success message after 2 seconds
-    setTimeout(() => setSuccess(''), 2000);
   };
 
   const handleCourseSearch = (searchTerm) => {
@@ -482,32 +553,27 @@ export const TaskManagement = () => {
     const isSelected = selectedCourses.find(selected => selected._id === course._id);
     if (isSelected) {
       setSelectedCourses(selectedCourses.filter(selected => selected._id !== course._id));
-      setSuccess(`Removed ${course.courseName} from selection`);
+      showNotification('info', 'Selection Updated', `Removed ${course.courseName} from selection`);
     } else {
       setSelectedCourses([...selectedCourses, course]);
-      setSuccess(`Added ${course.courseName} to selection`);
+      showNotification('info', 'Selection Updated', `Added ${course.courseName} to selection`);
     }
-    // Clear success message after 2 seconds
-    setTimeout(() => setSuccess(''), 2000);
   };
 
   // Clear all functions
   const handleClearAllInterns = () => {
     setSelectedInterns([]);
-    setSuccess('Cleared all selected interns');
-    setTimeout(() => setSuccess(''), 2000);
+    showNotification('info', 'Selection Cleared', 'Cleared all selected interns');
   };
 
   const handleClearAllBatches = () => {
     setSelectedBatches([]);
-    setSuccess('Cleared all selected batches');
-    setTimeout(() => setSuccess(''), 2000);
+    showNotification('info', 'Selection Cleared', 'Cleared all selected batches');
   };
 
   const handleClearAllCourses = () => {
     setSelectedCourses([]);
-    setSuccess('Cleared all selected courses');
-    setTimeout(() => setSuccess(''), 2000);
+    showNotification('info', 'Selection Cleared', 'Cleared all selected courses');
   };
 
   const filteredInterns = interns.filter(intern =>
@@ -565,7 +631,7 @@ export const TaskManagement = () => {
       const dueDateObj = new Date(dueDateValue);
       
       if (startDateObj >= dueDateObj) {
-        setError('Due date must be after start date');
+        showNotification('error', 'Validation Error', 'Due date must be after start date');
         setLoading(false);
         return;
       }
@@ -601,8 +667,7 @@ export const TaskManagement = () => {
         console.log('Update response:', res);
         
         if (res.status === 200 || res.status === 201) {
-          setSuccess('Task updated successfully!');
-          setError(''); // Clear any previous errors
+          showNotification('success', 'Success', 'Task updated successfully!');
         } else {
           throw new Error('Update request failed with status: ' + res.status);
         }
@@ -614,14 +679,13 @@ export const TaskManagement = () => {
         console.log('Create response:', res);
         
         if (res.status === 200 || res.status === 201) {
-          setSuccess('Task created successfully!');
-          setError(''); // Clear any previous errors
+          showNotification('success', 'Success', 'Task created successfully!');
         } else {
           throw new Error('Create request failed with status: ' + res.status);
         }
       }
       
-      await fetchTasks(); // Refresh the list
+      await fetchTasks(pagination.currentPage, searchTerm, filters.taskType, filters.status, filters.audience); // Refresh the list
       setActiveTab('tasks-list'); // Switch to tasks list tab
       setEditingTask(null);
       setIsEditMode(false);
@@ -639,19 +703,95 @@ export const TaskManagement = () => {
       
       // More specific error handling
       if (err.response?.data?.message) {
-        setError(err.response.data.message);
+        showNotification('error', 'Error', err.response.data.message);
       } else if (err.message) {
-        setError(err.message);
+        showNotification('error', 'Error', err.message);
       } else {
-        setError(`Failed to ${isEditMode ? 'update' : 'create'} task`);
+        showNotification('error', 'Error', `Failed to ${isEditMode ? 'update' : 'create'} task`);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // Notification Modal Component
+  const NotificationModal = () => {
+    if (!notification.show) return null;
+
+    const getIcon = () => {
+      switch (notification.type) {
+        case 'success':
+          return (
+            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        case 'error':
+          return (
+            <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          );
+        case 'info':
+          return (
+            <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
+        default:
+          return null;
+      }
+    };
+
+    const getButtonColor = () => {
+      switch (notification.type) {
+        case 'success':
+          return 'bg-green-600 hover:bg-green-700 focus:ring-green-500';
+        case 'error':
+          return 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
+        case 'info':
+          return 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500';
+        default:
+          return 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500';
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                {getIcon()}
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">{notification.title}</h3>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-500">{notification.message}</p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={hideNotification}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonColor()}`}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
+      {/* Notification Modal */}
+      <NotificationModal />
+      
       <Navbar headData={headData} activeTab={activeTab} />
       <div className="flex justify-between items-center ">
       <div className="mb-6">
@@ -671,17 +811,6 @@ export const TaskManagement = () => {
         {/* Tab content */}
         {activeTab === 'tasks-list' ? (
           <div id="tasks-list-content">
-            {/* Error and Success Messages */}
-            {error && (
-              <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
-                {success}
-              </div>
-            )}
 
             <div className="flex justify-between items-center mb-6">
               <div className="flex-1 mr-4">
@@ -690,7 +819,7 @@ export const TaskManagement = () => {
                     type="text"
                     placeholder="Search Tasks"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -701,8 +830,36 @@ export const TaskManagement = () => {
                 </div>
               </div>
               <div className="flex space-x-2">
-                <select className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                  <option>Filter</option>
+                <select 
+                  value={filters.taskType}
+                  onChange={(e) => handleFilterChange('taskType', e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="">All Types</option>
+                  <option value="Weekly Task">Weekly Task</option>
+                  <option value="Daily Task">Daily Task</option>
+                </select>
+                <select 
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="">All Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+                <select 
+                  value={filters.audience}
+                  onChange={(e) => handleFilterChange('audience', e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="">All Audience</option>
+                  <option value="All interns">All interns</option>
+                  <option value="By batches">By batches</option>
+                  <option value="By courses">By courses</option>
+                  <option value="Individual interns">Individual interns</option>
                 </select>
                 <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -719,10 +876,10 @@ export const TaskManagement = () => {
                   <p className="text-gray-500">Loading tasks...</p>
                 </div>
               </div>
-            ) : filteredTasks.length === 0 ? (
+            ) : tasks.length === 0 ? (
               <div className="flex items-center justify-center p-12">
                 <p className="text-gray-500 text-lg">
-                  {searchTerm ? 'No tasks found matching your search.' : 'No tasks available. Please add tasks to view them here.'}
+                  {searchTerm || filters.taskType || filters.status || filters.audience ? 'No tasks found matching your search.' : 'No tasks available. Please add tasks to view them here.'}
                 </p>
               </div>
             ) : (
@@ -741,7 +898,7 @@ export const TaskManagement = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredTasks.map((task, idx) => (
+                    {tasks.map((task, idx) => (
                       <tr key={task._id || idx} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -812,20 +969,61 @@ export const TaskManagement = () => {
                 </table>
               </div>
             )}
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                <div className="flex items-center text-sm text-gray-700">
+                  <span>
+                    Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  {/* Previous Button */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPrevPage || loading}
+                    className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                      pagination.hasPrevPage && !loading
+                        ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    {loading ? 'Loading...' : 'Previous'}
+                  </button>
+
+                  {/* Current Page Info */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      Page {pagination.currentPage} of {pagination.totalPages}
+                    </span>
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage || loading}
+                    className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                      pagination.hasNextPage && !loading
+                        ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                    }`}
+                  >
+                    {loading ? 'Loading...' : 'Next'}
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div id="new-task-content">
-            {/* Error and Success Messages */}
-            {error && (
-              <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
-                {error}
-              </div>
-            )}
-            {success && (
-              <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
-                {success}
-              </div>
-            )}
 
             <form onSubmit={handleCreateTask} className="space-y-6">
               <h3 className="text-lg font-medium text-gray-900">

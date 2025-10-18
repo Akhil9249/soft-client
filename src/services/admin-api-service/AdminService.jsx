@@ -20,8 +20,9 @@ const AdminService = () => {
 
     // ======================================== staff management ========================================
 
-    const getStaffData = async () => {
-        const response = await axiosPrivate.get("/api/staff");
+    const getStaffData = async (queryParams = '') => {
+        const url = queryParams ? `/api/staff?${queryParams}` : "/api/staff";
+        const response = await axiosPrivate.get(url);
         return response.data;
     };
 
@@ -65,8 +66,9 @@ const AdminService = () => {
 
     // ======================================== intern management ========================================
 
-    const getInternsData = async () => {
-        const response = await axiosPrivate.get("/api/intern");
+    const getInternsData = async (queryParams = '') => {
+        const url = queryParams ? `/api/intern?${queryParams}` : "/api/intern";
+        const response = await axiosPrivate.get(url);
         return response.data;
     };
     const getInternsDataSearch = async (searchTerm) => {
@@ -91,8 +93,9 @@ const AdminService = () => {
 
     // ======================================== batch management ========================================
 
-    const getBatchesData = async () => {
-        const response = await axiosPrivate.get("/api/batches");
+    const getBatchesData = async (queryParams = '') => {
+        const url = queryParams ? `/api/batches?${queryParams}` : "/api/batches";
+        const response = await axiosPrivate.get(url);
         return response.data;
     };
     const postBatchesData = async (data) => {
@@ -110,8 +113,9 @@ const AdminService = () => {
 
     // ======================================== course management ========================================
 
-    const getCoursesData = async () => {
-        const response = await axiosPrivate.get("/api/course");
+    const getCoursesData = async (queryParams = '') => {
+        const url = queryParams ? `/api/course?${queryParams}` : "/api/course";
+        const response = await axiosPrivate.get(url);
         return response.data;
     };
 
@@ -131,8 +135,9 @@ const AdminService = () => {
 
     // ======================================== category management ========================================
 
-    const getCategoriesData = async () => {
-        const response = await axiosPrivate.get("/api/category");
+    const getCategoriesData = async (queryParams = '') => {
+        const url = queryParams ? `/api/category?${queryParams}` : "/api/category";
+        const response = await axiosPrivate.get(url);
         return response.data;
     };
     
@@ -153,8 +158,9 @@ const AdminService = () => {
 
     // ======================================== module management ========================================
 
-    const getModulesData = async () => {
-        const response = await axiosPrivate.get("/api/module");
+    const getModulesData = async (queryParams = '') => {
+        const url = queryParams ? `/api/module?${queryParams}` : "/api/module";
+        const response = await axiosPrivate.get(url);
         return response.data;
     };
     
@@ -180,8 +186,9 @@ const AdminService = () => {
 
     // ======================================== topic management ========================================
 
-    const getTopicsData = async () => {
-        const response = await axiosPrivate.get("/api/topics");
+    const getTopicsData = async (queryParams = '') => {
+        const url = queryParams ? `/api/topics?${queryParams}` : "/api/topics";
+        const response = await axiosPrivate.get(url);
         return response.data;
     };
     
@@ -202,8 +209,9 @@ const AdminService = () => {
 
     // ======================================== task management ========================================
 
-    const getTasksData = async () => {
-        const response = await axiosPrivate.get("/api/tasks");
+    const getTasksData = async (queryParams = '') => {
+        const url = queryParams ? `/api/tasks?${queryParams}` : "/api/tasks";
+        const response = await axiosPrivate.get(url);
         return response.data;
     };
 
@@ -220,6 +228,49 @@ const AdminService = () => {
     const deleteTasksData = async (taskId) => {
         const response = await axiosPrivate.delete(`/api/tasks/${taskId}`);
         return response;
+    };
+
+    // ======================================== material management ========================================
+
+    const getMaterialsData = async (queryParams = '') => {
+        const url = queryParams ? `/api/materials?${queryParams}` : "/api/materials";
+        const response = await axiosPrivate.get(url);
+        return response.data;
+    };
+
+    const postMaterialsData = async (data) => {
+        const response = await axiosPrivate.post("/api/materials", data);
+        return response;
+    };
+    
+    const putMaterialsData = async (materialId, data) => {
+        const response = await axiosPrivate.put(`/api/materials/${materialId}`, data);
+        return response;
+    };
+    
+    const deleteMaterialsData = async (materialId) => {
+        const response = await axiosPrivate.delete(`/api/materials/${materialId}`);
+        return response;
+    };
+
+    const getMaterialsByMentor = async (mentorId) => {
+        const response = await axiosPrivate.get(`/api/materials/mentor/${mentorId}`);
+        return response.data;
+    };
+
+    const getMaterialsByBatch = async (batchId) => {
+        const response = await axiosPrivate.get(`/api/materials/batch/${batchId}`);
+        return response.data;
+    };
+
+    const getMaterialsByCourse = async (courseId) => {
+        const response = await axiosPrivate.get(`/api/materials/course/${courseId}`);
+        return response.data;
+    };
+
+    const getMaterialsByAudience = async (audience) => {
+        const response = await axiosPrivate.get(`/api/materials/audience/${audience}`);
+        return response.data;
     };
 
     // ======================================== timing management ========================================
@@ -365,6 +416,14 @@ const AdminService = () => {
         postTasksData,
         putTasksData,
         deleteTasksData,
+        getMaterialsData,
+        postMaterialsData,
+        putMaterialsData,
+        deleteMaterialsData,
+        getMaterialsByMentor,
+        getMaterialsByBatch,
+        getMaterialsByCourse,
+        getMaterialsByAudience,
         getTimingsData,
         postTimingsData,
         putTimingsData,

@@ -25,6 +25,8 @@ import { Notification } from "./pages/admin/settings/Notification";
 import { Branch } from "./pages/admin/settings/Branch";
 import { StudentAttendance } from "./pages/admin/attendance/studentAttendance";
 import SuperAdminProtectedRoute from "./components/protected-route/SuperAdminProtectedRoute";
+import Material from "./pages/admin/task-management/Material";
+import LeaveRequest from "./pages/admin/attendance/LeaveRequest";
 
 
 function App() {
@@ -49,7 +51,9 @@ function App() {
         <Route path="/modules" element={<Modules />} />
         <Route path="/topics" element={<Topics />} />
         <Route path="/task-management" element={<TaskManagement />} />
+        <Route path="/material" element={<Material />} />
         <Route path="/student-attendance" element={<StudentAttendance />} />
+        <Route path="/leave-request" element={<LeaveRequest />} />
         <Route path="/batches" element={<Batches />} />
         <Route path="/weekly-schedule" element={<WeeklySchedule />} />
         <Route path="/static-pages" element={<StaticPages />} />
