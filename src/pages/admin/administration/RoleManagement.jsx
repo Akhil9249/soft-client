@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
-import axios from '../../../axios';
+import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const RoleManagement = () => {
+  const { getRolesData, postRolesData, putRolesData, deleteRolesData } = AdminService();
+  
   const [activeTab, setActiveTab] = useState('roles');
-  const [privileges, setPrivileges] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editingPrivilege, setEditingPrivilege] = useState(null);
+  const [editingRole, setEditingRole] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [privilegeToDelete, setPrivilegeToDelete] = useState(null);
+  const [roleToDelete, setRoleToDelete] = useState(null);
   const [notification, setNotification] = useState({
     show: false,
     type: 'success', // 'success', 'error', 'info'
@@ -178,7 +180,7 @@ export const RoleManagement = () => {
   ];
 
   // API functions
-  const fetchPrivileges = async (page = 1, search = '', role = '') => {
+  const fetchRoles = async (page = 1, search = '', role = '') => {
     try {
       setLoading(true);
       
@@ -191,64 +193,64 @@ export const RoleManagement = () => {
       if (search) queryParams.append('search', search);
       if (role) queryParams.append('role', role);
       
-      const response = await axios.get(`/api/privileges?${queryParams.toString()}`);
-      setPrivileges(response.data.data);
+      const response = await getRolesData(queryParams.toString());
+      setRoles(response.data);
       
       // Update pagination state
-      if (response.data.pagination) {
-        setPagination(response.data.pagination);
+      if (response.pagination) {
+        setPagination(response.pagination);
       }
     } catch (error) {
-      console.error('Error fetching privileges:', error);
+      console.error('Error fetching roles:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const createPrivilege = async (data) => {
+  const createRole = async (data) => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/privileges', data);
-      await fetchPrivileges(pagination.currentPage, searchTerm, filters.role); // Refresh the list
-      showNotification('success', 'Success', 'Privilege created successfully!');
-      return response.data;
+      const response = await postRolesData(data);
+      await fetchRoles(pagination.currentPage, searchTerm, filters.role); // Refresh the list
+      showNotification('success', 'Success', 'Role created successfully!');
+      return response;
     } catch (error) {
-      console.error('Error creating privilege:', error);
-      showNotification('error', 'Error', error.response?.data?.message || 'Error creating privilege. Please try again.');
+      console.error('Error creating role:', error);
+      showNotification('error', 'Error', error.response?.data?.message || 'Error creating role. Please try again.');
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const updatePrivilege = async (id, data) => {
+  const updateRole = async (id, data) => {
     try {
       setLoading(true);
-      const response = await axios.put(`/api/privileges/${id}`, data);
-      await fetchPrivileges(pagination.currentPage, searchTerm, filters.role); // Refresh the list
-      showNotification('success', 'Success', 'Privilege updated successfully!');
-      return response.data;
+      const response = await putRolesData(id, data);
+      await fetchRoles(pagination.currentPage, searchTerm, filters.role); // Refresh the list
+      showNotification('success', 'Success', 'Role updated successfully!');
+      return response;
     } catch (error) {
-      console.error('Error updating privilege:', error);
-      showNotification('error', 'Error', error.response?.data?.message || 'Error updating privilege. Please try again.');
+      console.error('Error updating role:', error);
+      showNotification('error', 'Error', error.response?.data?.message || 'Error updating role. Please try again.');
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const deletePrivilege = async (id) => {
+  const deleteRole = async (id) => {
     try {
       setLoading(true);
-      const response = await axios.delete(`/api/privileges/${id}`);
-      await fetchPrivileges(pagination.currentPage, searchTerm, filters.role); // Refresh the list
+      const response = await deleteRolesData(id);
+      await fetchRoles(pagination.currentPage, searchTerm, filters.role); // Refresh the list
       setShowDeleteModal(false);
-      setPrivilegeToDelete(null);
-      showNotification('success', 'Success', 'Privilege deleted successfully!');
-      return response.data;
+      setRoleToDelete(null);
+      showNotification('success', 'Success', 'Role deleted successfully!');
+      return response;
     } catch (error) {
-      console.error('Error deleting privilege:', error);
-      showNotification('error', 'Error', error.response?.data?.message || 'Error deleting privilege. Please try again.');
+      console.error('Error deleting role:', error);
+      showNotification('error', 'Error', error.response?.data?.message || 'Error deleting role. Please try again.');
       throw error;
     } finally {
       setLoading(false);
@@ -256,38 +258,38 @@ export const RoleManagement = () => {
   };
 
   // Handle delete confirmation
-  const handleDeleteClick = (privilege) => {
-    setPrivilegeToDelete(privilege);
+  const handleDeleteClick = (role) => {
+    setRoleToDelete(role);
     setShowDeleteModal(true);
   };
 
   // Handle delete confirmation
   const confirmDelete = () => {
-    if (privilegeToDelete) {
-      deletePrivilege(privilegeToDelete._id);
+    if (roleToDelete) {
+      deleteRole(roleToDelete._id);
     }
   };
 
   // Handle delete cancellation
   const cancelDelete = () => {
     setShowDeleteModal(false);
-    setPrivilegeToDelete(null);
+    setRoleToDelete(null);
   };
 
-  // Edit privilege function
-  const editPrivilege = (privilege) => {
-    setEditingPrivilege(privilege);
+  // Edit role function
+  const editRole = (role) => {
+    setEditingRole(role);
     setFormData({
-      role: privilege.role,
-      description: privilege.description || '',
-      permissions: privilege.permissions || initializePermissions()
+      role: role.role,
+      description: role.description || '',
+      permissions: role.permissions || initializePermissions()
     });
     setActiveTab('newRole');
   };
 
   // Cancel edit mode
   const cancelEdit = () => {
-    setEditingPrivilege(null);
+    setEditingRole(null);
     setFormData({
       role: '',
       description: '',
@@ -356,12 +358,12 @@ export const RoleManagement = () => {
         permissions: formData.permissions
       };
       
-      if (editingPrivilege) {
-        // Update existing privilege
-        await updatePrivilege(editingPrivilege._id, dataToSubmit);
+      if (editingRole) {
+        // Update existing role
+        await updateRole(editingRole._id, dataToSubmit);
       } else {
-        // Create new privilege
-        await createPrivilege(dataToSubmit);
+        // Create new role
+        await createRole(dataToSubmit);
       }
       
       // Reset form and go back to roles tab
@@ -370,7 +372,7 @@ export const RoleManagement = () => {
         description: '',
         permissions: initializePermissions()
       });
-      setEditingPrivilege(null);
+      setEditingRole(null);
       setActiveTab('roles');
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -382,7 +384,7 @@ export const RoleManagement = () => {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       setPagination(prev => ({ ...prev, currentPage: newPage }));
-      fetchPrivileges(newPage, searchTerm, filters.role);
+      fetchRoles(newPage, searchTerm, filters.role);
     }
   };
 
@@ -397,9 +399,9 @@ export const RoleManagement = () => {
     }));
   };
 
-  // Load privileges on component mount
+  // Load roles on component mount
   useEffect(() => {
-    fetchPrivileges(pagination.currentPage, searchTerm, filters.role);
+    fetchRoles(pagination.currentPage, searchTerm, filters.role);
     setFormData(prev => ({
       ...prev,
       permissions: initializePermissions()
@@ -409,7 +411,7 @@ export const RoleManagement = () => {
   // Handle search and filter changes with debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      fetchPrivileges(1, searchTerm, filters.role);
+      fetchRoles(1, searchTerm, filters.role);
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
@@ -426,7 +428,7 @@ export const RoleManagement = () => {
               placeholder="Search Roles"
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-10 text-black pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -457,7 +459,7 @@ export const RoleManagement = () => {
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
         </div>
-      ) : privileges.length === 0 ? (
+      ) : roles.length === 0 ? (
         <div className="flex items-center justify-center p-12">
           <p className="text-gray-500 text-lg">
             {searchTerm || filters.role ? 'No roles found matching your search.' : 'No roles available. Please add roles to view them here.'}
@@ -476,35 +478,35 @@ export const RoleManagement = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {privileges.map((privilege, index) => (
-              <tr key={privilege._id}>
+            {roles.map((role, index) => (
+              <tr key={role._id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{privilege.role}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{privilege.description || 'No description'}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{role.role}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{role.description || 'No description'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    privilege.isActive 
+                    role.isActive 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {privilege.isActive ? 'Active' : 'Inactive'}
+                    {role.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(privilege.createdAt).toLocaleDateString()}
+                  {new Date(role.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button 
-                    onClick={() => editPrivilege(privilege)}
+                    onClick={() => editRole(role)}
                     className="text-orange-600 hover:text-orange-900 mr-2"
-                    title="Edit Privilege"
+                    title="Edit Role"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                   </button>
                   <button 
-                    onClick={() => handleDeleteClick(privilege)}
+                    onClick={() => handleDeleteClick(role)}
                     className="text-red-600 hover:text-red-900"
-                    title="Delete Privilege"
+                    title="Delete Role"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1H8a1 1 0 00-1 1v3m.75 0H18"></path></svg>
                   </button>
@@ -573,10 +575,10 @@ export const RoleManagement = () => {
     <div className="bg-white p-6 rounded-lg shadow-md">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-800">
-          {editingPrivilege ? 'Edit Privilege' : 'Create New Privilege'}
+          {editingRole ? 'Edit Role' : 'Create New Role'}
         </h2>
         <p className="text-gray-600 mt-1">
-          {editingPrivilege ? `Editing privileges for role: ${editingPrivilege.role}` : 'Set permissions for a specific role'}
+          {editingRole ? `Editing role: ${editingRole.role}` : 'Set permissions for a specific role'}
         </p>
       </div>
       
@@ -585,20 +587,17 @@ export const RoleManagement = () => {
           <div>
             <label className="block text-gray-700 font-medium mb-2">Role</label>
             <div className="relative">
-              <select 
+              <input 
+                type="text"
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                placeholder="Enter Role Name"
+                className="block w-full px-4 py-2 text-black bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 required
-                disabled={editingPrivilege} // Disable role change when editing
-              >
-                <option value="">Choose Role</option>
-                {roleOptions.map(role => (
-                  <option key={role} value={role}>{role}</option>
-                ))}
-              </select>
-              {editingPrivilege && (
+                disabled={editingRole} // Disable role change when editing
+              />
+              {editingRole && (
                 <p className="text-sm text-gray-500 mt-1">Role cannot be changed when editing</p>
               )}
             </div>
@@ -611,11 +610,11 @@ export const RoleManagement = () => {
               value={formData.description}
               onChange={handleInputChange}
               placeholder="Enter Description" 
-              className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+              className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
             />
           </div>
         </div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">All Privilege's</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">All Permissions</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {permissionCategories.map((category) => {
             const categoryPermissions = formData.permissions[category.key] || {};
@@ -658,10 +657,10 @@ export const RoleManagement = () => {
         <div className="flex justify-end mt-8 space-x-4">
           <button 
             type="button"
-            onClick={editingPrivilege ? cancelEdit : () => setActiveTab('roles')}
+            onClick={editingRole ? cancelEdit : () => setActiveTab('roles')}
             className="px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-200"
           >
-            {editingPrivilege ? 'Cancel Edit' : 'Cancel'}
+            {editingRole ? 'Cancel Edit' : 'Cancel'}
           </button>
           <button 
             type="submit"
@@ -669,8 +668,8 @@ export const RoleManagement = () => {
             className="px-6 py-2 bg-orange-500 text-white rounded-md font-medium shadow-md hover:bg-orange-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading 
-              ? (editingPrivilege ? 'Updating...' : 'Creating...') 
-              : (editingPrivilege ? 'Update Privilege' : 'Create Privilege')
+              ? (editingRole ? 'Updating...' : 'Creating...') 
+              : (editingRole ? 'Update Role' : 'Create Role')
             }
           </button>
         </div>
@@ -753,7 +752,7 @@ export const RoleManagement = () => {
 
   // Delete Confirmation Modal Component
   const DeleteConfirmationModal = () => {
-    if (!showDeleteModal || !privilegeToDelete) return null;
+    if (!showDeleteModal || !roleToDelete) return null;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -766,13 +765,13 @@ export const RoleManagement = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">Delete Privilege</h3>
+                <h3 className="text-lg font-medium text-gray-900">Delete Role</h3>
               </div>
             </div>
             
             <div className="mb-6">
               <p className="text-sm text-gray-500">
-                Are you sure you want to delete the privilege for role <span className="font-semibold text-gray-900">"{privilegeToDelete.role}"</span>?
+                Are you sure you want to delete the role <span className="font-semibold text-gray-900">"{roleToDelete.role}"</span>?
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 This action cannot be undone and will permanently remove all permissions associated with this role.
@@ -834,9 +833,9 @@ export const RoleManagement = () => {
 
     {activeTab === 'roles' && (
       <div className="flex space-x-2">
-        <button 
+        {/* <button 
           onClick={() => {
-            setEditingPrivilege(null);
+            setEditingRole(null);
             setFormData({
               role: '',
               description: '',
@@ -847,8 +846,8 @@ export const RoleManagement = () => {
           className="flex items-center px-4 py-2 bg-orange-500 text-white rounded-md font-medium shadow-md hover:bg-orange-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-          New Privilege
-        </button>
+          New Role
+        </button> */}
         <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
           Export

@@ -21,6 +21,8 @@ export const StaffManagement = () => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingStaff, setDeletingStaff] = useState(null);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [viewingStaff, setViewingStaff] = useState(null);
     const [notification, setNotification] = useState({
         show: false,
         type: 'success', // 'success', 'error', 'info'
@@ -291,6 +293,177 @@ export const StaffManagement = () => {
         setShowDeleteModal(true);
     };
 
+    const handleViewStaff = (staffMember) => {
+        setViewingStaff(staffMember);
+        setShowViewModal(true);
+    };
+
+    const closeViewModal = () => {
+        setShowViewModal(false);
+        setViewingStaff(null);
+    };
+
+    const handleExport = () => {
+        try {
+            // Create a new window for PDF generation
+            const printWindow = window.open('', '_blank');
+            
+            // Prepare table data
+            const tableHeaders = [
+                'Name',
+                'Email',
+                'Phone',
+                'WhatsApp',
+                'Department',
+                'Employee Type',
+                'Branch',
+                'Status',
+                'Date of Birth',
+                'Gender',
+                'Address',
+                'District',
+                'State',
+                'Years of Experience',
+                'Date of Joining',
+                'Resignation Date',
+                'Official Email',
+                'Created Date'
+            ];
+
+            const tableData = staff.map(staffMember => [
+                staffMember.fullName || 'N/A',
+                staffMember.email || 'N/A',
+                staffMember.staffPhoneNumber || 'N/A',
+                staffMember.staffWhatsAppNumber || 'N/A',
+                staffMember.department || 'N/A',
+                staffMember.typeOfEmployee || 'N/A',
+                staffMember.branch?.branchName || 'N/A',
+                staffMember.employmentStatus || 'N/A',
+                staffMember.dateOfBirth ? new Date(staffMember.dateOfBirth).toLocaleDateString() : 'N/A',
+                staffMember.gender || 'N/A',
+                staffMember.staffPermanentAddress || 'N/A',
+                staffMember.district || 'N/A',
+                staffMember.state || 'N/A',
+                staffMember.yearsOfExperience || 'N/A',
+                staffMember.dateOfJoining ? new Date(staffMember.dateOfJoining).toLocaleDateString() : 'N/A',
+                staffMember.resignationDate ? new Date(staffMember.resignationDate).toLocaleDateString() : 'N/A',
+                staffMember.officialEmail || 'N/A',
+                staffMember.createdAt ? new Date(staffMember.createdAt).toLocaleDateString() : 'N/A'
+            ]);
+
+            // Create HTML content for PDF
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Staff Export</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                            color: #333;
+                        }
+                        .header {
+                            text-align: center;
+                            margin-bottom: 30px;
+                            border-bottom: 2px solid #f7931e;
+                            padding-bottom: 10px;
+                        }
+                        .header h1 {
+                            color: #f7931e;
+                            margin: 0;
+                            font-size: 24px;
+                        }
+                        .header p {
+                            margin: 5px 0;
+                            color: #666;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                            font-size: 10px;
+                        }
+                        th, td {
+                            border: 1px solid #ddd;
+                            padding: 6px;
+                            text-align: left;
+                            vertical-align: top;
+                        }
+                        th {
+                            background-color: #f7931e;
+                            color: white;
+                            font-weight: bold;
+                            font-size: 9px;
+                        }
+                        tr:nth-child(even) {
+                            background-color: #f9f9f9;
+                        }
+                        tr:hover {
+                            background-color: #f5f5f5;
+                        }
+                        .footer {
+                            margin-top: 30px;
+                            text-align: center;
+                            font-size: 10px;
+                            color: #666;
+                            border-top: 1px solid #ddd;
+                            padding-top: 10px;
+                        }
+                        @media print {
+                            body { margin: 0; }
+                            .header { page-break-inside: avoid; }
+                            table { page-break-inside: auto; }
+                            tr { page-break-inside: avoid; page-break-after: auto; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Staff Management Report</h1>
+                        <p>Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+                        <p>Total Staff: ${staff.length}</p>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                ${tableHeaders.map(header => `<th>${header}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableData.map(row => 
+                                `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+                            ).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="footer">
+                        <p>This report was generated from the Staff Management System</p>
+                        <p>© ${new Date().getFullYear()} Learning Management System</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            // Write content to new window
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+            
+            // Wait for content to load, then print
+            printWindow.onload = function() {
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            };
+
+            showNotification('success', 'Export Successful', 'Staff data has been exported as PDF successfully.');
+        } catch (error) {
+            console.error('Export error:', error);
+            showNotification('error', 'Export Failed', 'Failed to export staff data. Please try again.');
+        }
+    };
+
     const confirmDeleteStaff = async () => {
         if (!deletingStaff) return;
         
@@ -466,7 +639,10 @@ export const StaffManagement = () => {
                         <option value="Active">Active</option>
                         <option value="Inactive">Inactive</option>
                     </select>
-                    <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
+                    <button 
+                        onClick={handleExport}
+                        className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                    >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Export
                     </button>
@@ -498,7 +674,7 @@ export const StaffManagement = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex justify-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -535,17 +711,26 @@ export const StaffManagement = () => {
                                             {staffMember.employmentStatus}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex justify-center">
                                         <div className="flex space-x-2">
+                                            <button 
+                                                onClick={() => handleViewStaff(staffMember)}
+                                                className="text-blue-600 hover:text-blue-900"
+                                                title="View Details"
+                                            >
+                                                View
+                                            </button>
                                             <button 
                                                 onClick={() => handleEditStaff(staffMember)}
                                                 className="text-orange-600 hover:text-orange-900"
+                                                title="Edit Staff"
                                             >
                                                 Edit
                                             </button>
                                             <button 
                                                 onClick={() => handleDeleteStaff(staffMember)}
                                                 className="text-red-600 hover:text-red-900"
+                                                title="Delete Staff"
                                             >
                                                 Delete
                                             </button>
@@ -910,6 +1095,123 @@ export const StaffManagement = () => {
                             >
                                 {loading ? 'Deleting...' : 'Delete'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* View Staff Details Modal */}
+            {showViewModal && viewingStaff && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+                        {/* Modal Header */}
+                        <div className="px-8 py-6 border-b border-gray-200">
+                            <div className="flex justify-between items-start">
+                                <h1 className="text-2xl font-semibold text-gray-900">{viewingStaff.fullName}</h1>
+                                <button 
+                                    onClick={closeViewModal}
+                                    className="flex items-center text-black gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print:hidden"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                    Back
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="px-8 py-6">
+                            <div className="flex flex-col md:flex-row gap-10">
+                                {/* Left Column - Details */}
+                                <div className="flex-1 space-y-6">
+                                    {/* Basic Details */}
+                                    <div>
+                                        <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                                            Basic Details
+                                        </h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Full Name:</span> <span className="text-gray-600">{viewingStaff.fullName || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Date of Birth:</span> <span className="text-gray-600">{viewingStaff.dateOfBirth ? new Date(viewingStaff.dateOfBirth).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Gender:</span> <span className="text-gray-600">{viewingStaff.gender || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Email Address:</span> <span className="text-gray-600">{viewingStaff.email || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Staff Phone Number:</span> <span className="text-gray-600">{viewingStaff.staffPhoneNumber || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Staff WhatsApp Number:</span> <span className="text-gray-600">{viewingStaff.staffWhatsAppNumber || 'N/A'}</span></p>
+                                            <p className="col-span-2 leading-6"><span className="font-semibold text-gray-900">Staff Permanent Address:</span> <span className="text-gray-600">{viewingStaff.staffPermanentAddress || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">District:</span> <span className="text-gray-600">{viewingStaff.district || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">State:</span> <span className="text-gray-600">{viewingStaff.state || 'N/A'}</span></p>
+                                        </div>
+                                    </div>
+
+                                    {/* Professional Details */}
+                                    <div>
+                                        <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                                            Professional Details
+                                        </h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">ID:</span> <span className="text-gray-600">{viewingStaff._id?.slice(-4) || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Department:</span> <span className="text-gray-600">{viewingStaff.department || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingStaff.branch?.branchName || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Employee Type:</span> <span className="text-gray-600">{viewingStaff.typeOfEmployee || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Years of Experience:</span> <span className="text-gray-600">{viewingStaff.yearsOfExperience || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Date of Joining:</span> <span className="text-gray-600">{viewingStaff.dateOfJoining ? new Date(viewingStaff.dateOfJoining).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                                            {viewingStaff.resignationDate && (
+                                                <p className="leading-6"><span className="font-semibold text-gray-900">Resignation Date (Only if Inactive):</span> <span className="text-gray-600">{new Date(viewingStaff.resignationDate).toLocaleDateString('en-GB').replace(/\//g, ' / ')}</span></p>
+                                            )}
+                                            <p className="leading-6">
+                                                <span className="font-semibold text-gray-900">Employment Status:</span>{" "}
+                                                <span className="text-blue-600 font-medium">{viewingStaff.employmentStatus || 'N/A'}</span>
+                                            </p>
+                                            {viewingStaff.remarks && (
+                                                <p className="col-span-2 leading-6">
+                                                    <span className="font-semibold text-gray-900">Remarks/Notes (Optional):</span>{" "}
+                                                    <span className="text-gray-600">{viewingStaff.remarks}</span>
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column - Profile Image */}
+                                <div className="flex flex-col items-center">
+                                    <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
+                                        {viewingStaff.photo ? (
+                                            <img
+                                                src={viewingStaff.photo}
+                                                alt={viewingStaff.fullName}
+                                                className="w-48 h-48 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-48 h-48 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <span className="text-gray-500 text-4xl font-medium">
+                                                    {viewingStaff.fullName?.charAt(0)?.toUpperCase() || 'S'}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="px-8 py-6 border-t border-gray-200 print:hidden">
+                            <div className="flex justify-end gap-4">
+                                <button 
+                                    onClick={() => {
+                                        closeViewModal();
+                                        handleEditStaff(viewingStaff);
+                                    }}
+                                    className="bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => window.print()}
+                                    className="bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                                >
+                                    Print
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -26,6 +26,8 @@ export const StudentManagement = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingStudent, setDeletingStudent] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingStudent, setViewingStudent] = useState(null);
   const [formData, setFormData] = useState({});
   
   // Pagination state
@@ -114,7 +116,7 @@ export const StudentManagement = () => {
       if (batch) queryParams.append('batch', batch);
       
       const res = await getInternsData(queryParams.toString());
-      console.log("interns==", res.data);
+      // console.log("interns==", res.data);
       
       setInterns(res?.data || []);
       
@@ -174,7 +176,7 @@ export const StudentManagement = () => {
       setCoursesLoading(true);
       // const res = await axiosPrivate.get('http://localhost:3000/api/course');
       const res = await getCoursesData();
-      console.log("courses==", res);
+      // console.log("courses==", res);
       setCourses(res?.data || []);
     } catch (err) {
       console.error('Failed to load courses:', err);
@@ -232,10 +234,10 @@ export const StudentManagement = () => {
   };
 
   const handleEditStudent = (student) => {
-    console.log('Editing student:', student);
-    console.log('Date of Birth:', student.dateOfBirth);
-    console.log('Course Started Date:', student.courseStartedDate);
-    console.log('Completion Date:', student.completionDate);
+    // console.log('Editing student:', student);
+    // console.log('Date of Birth:', student.dateOfBirth);
+    // console.log('Course Started Date:', student.courseStartedDate);
+    // console.log('Completion Date:', student.completionDate);
     
     setEditingStudent(student);
     setIsEditMode(true);
@@ -281,11 +283,11 @@ export const StudentManagement = () => {
       password: "",
     });
     
-    console.log('Form data set:', {
-      dateOfBirth: formatDateForInput(student.dateOfBirth),
-      courseStartedDate: formatDateForInput(student.courseStartedDate),
-      completionDate: formatDateForInput(student.completionDate)
-    });
+    // console.log('Form data set:', {
+    //   dateOfBirth: formatDateForInput(student.dateOfBirth),
+    //   courseStartedDate: formatDateForInput(student.courseStartedDate),
+    //   completionDate: formatDateForInput(student.completionDate)
+    // });
     
     setActiveTab('newStudent');
   };
@@ -300,6 +302,181 @@ export const StudentManagement = () => {
   const handleDeleteStudent = (student) => {
     setDeletingStudent(student);
     setShowDeleteModal(true);
+  };
+
+  const handleViewStudent = (student) => {
+    setViewingStudent(student);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingStudent(null);
+  };
+
+  const handleExport = () => {
+    try {
+      // Create a new window for PDF generation
+      const printWindow = window.open('', '_blank');
+      
+      // Prepare table data
+      const tableHeaders = [
+        'Name',
+        'Email',
+        'Phone',
+        'Course',
+        'Branch',
+        'Batch',
+        'Status',
+        'Date of Birth',
+        'Gender',
+        'Guardian Name',
+        'Address',
+        'District',
+        'State',
+        'Course Started',
+        'Completion Date',
+        'Syllabus Status',
+        'Placement Status',
+        'Company',
+        'Job Role',
+        'Created Date'
+      ];
+
+      const tableData = interns.map(student => [
+        student.fullName || 'N/A',
+        student.email || 'N/A',
+        student.internPhoneNumber || 'N/A',
+        student.course?.courseName || student.course || 'N/A',
+        student.branch?.branchName || 'N/A',
+        student.batch || 'N/A',
+        student.courseStatus || 'N/A',
+        student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'N/A',
+        student.gender || 'N/A',
+        student.guardianName || 'N/A',
+        student.internPermanentAddress || 'N/A',
+        student.district || 'N/A',
+        student.state || 'N/A',
+        student.courseStartedDate ? new Date(student.courseStartedDate).toLocaleDateString() : 'N/A',
+        student.completionDate ? new Date(student.completionDate).toLocaleDateString() : 'N/A',
+        student.internSyllabusStatus || 'N/A',
+        student.placementStatus || 'N/A',
+        student.companyName || 'N/A',
+        student.jobRole || 'N/A',
+        student.createdAt ? new Date(student.createdAt).toLocaleDateString() : 'N/A'
+      ]);
+
+      // Create HTML content for PDF
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Students Export</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 20px;
+              color: #333;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 2px solid #f7931e;
+              padding-bottom: 10px;
+            }
+            .header h1 {
+              color: #f7931e;
+              margin: 0;
+              font-size: 24px;
+            }
+            .header p {
+              margin: 5px 0;
+              color: #666;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+              font-size: 10px;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 6px;
+              text-align: left;
+              vertical-align: top;
+            }
+            th {
+              background-color: #f7931e;
+              color: white;
+              font-weight: bold;
+              font-size: 9px;
+            }
+            tr:nth-child(even) {
+              background-color: #f9f9f9;
+            }
+            tr:hover {
+              background-color: #f5f5f5;
+            }
+            .footer {
+              margin-top: 30px;
+              text-align: center;
+              font-size: 10px;
+              color: #666;
+              border-top: 1px solid #ddd;
+              padding-top: 10px;
+            }
+            @media print {
+              body { margin: 0; }
+              .header { page-break-inside: avoid; }
+              table { page-break-inside: auto; }
+              tr { page-break-inside: avoid; page-break-after: auto; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Students Management Report</h1>
+            <p>Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+            <p>Total Students: ${interns.length}</p>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                ${tableHeaders.map(header => `<th>${header}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${tableData.map(row => 
+                `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+              ).join('')}
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            <p>This report was generated from the Student Management System</p>
+            <p>© ${new Date().getFullYear()} Learning Management System</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Write content to new window
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      // Wait for content to load, then print
+      printWindow.onload = function() {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      };
+
+      showNotification('success', 'Export Successful', 'Student data has been exported as PDF successfully.');
+    } catch (error) {
+      console.error('Export error:', error);
+      showNotification('error', 'Export Failed', 'Failed to export student data. Please try again.');
+    }
   };
 
   const confirmDeleteStudent = async () => {
@@ -500,7 +677,7 @@ export const StudentManagement = () => {
               placeholder="Search Students"
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full text-black pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -520,7 +697,10 @@ export const StudentManagement = () => {
             <option value="Completed">Completed</option>
             <option value="Dropped">Dropped</option>
           </select>
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
+          <button 
+            onClick={handleExport}
+            className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200"
+          >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             Export
           </button>
@@ -546,7 +726,7 @@ export const StudentManagement = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
@@ -554,13 +734,13 @@ export const StudentManagement = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex justify-center">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {interns.map((intern, idx) => (
                 <tr key={intern._id || idx} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
@@ -601,6 +781,13 @@ export const StudentManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleViewStudent(intern)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="View Details"
+                      >
+                        View
+                      </button>
                       <button 
                         onClick={() => handleEditStudent(intern)}
                         className="text-orange-600 hover:text-orange-900"
@@ -685,14 +872,14 @@ export const StudentManagement = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <div>
           <label className="block text-gray-700 font-medium mb-2">Full Name</label>
-          <input 
-            name="fullName" 
-            type="text" 
-            placeholder="Enter full name" 
-            value={formData.fullName || ''}
-            onChange={(e) => setFormData(prev => ({...prev, fullName: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
-          />
+            <input 
+              name="fullName" 
+              type="text" 
+              placeholder="Enter full name" 
+              value={formData.fullName || ''}
+              onChange={(e) => setFormData(prev => ({...prev, fullName: e.target.value}))}
+              className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            />
         </div>
         <div>
           <label className="block text-gray-700 font-medium mb-2">Date of Birth</label>
@@ -701,7 +888,7 @@ export const StudentManagement = () => {
             type="date" 
             value={formData.dateOfBirth || ''}
             onChange={(e) => setFormData(prev => ({...prev, dateOfBirth: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -710,7 +897,7 @@ export const StudentManagement = () => {
             name="gender" 
             value={formData.gender || ''}
             onChange={(e) => setFormData(prev => ({...prev, gender: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             <option value="">Choose Gender</option>
             <option value="Male">Male</option>
@@ -726,7 +913,7 @@ export const StudentManagement = () => {
             placeholder="Enter Email Address" 
             value={formData.email || ''}
             onChange={(e) => setFormData(prev => ({...prev, email: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -737,7 +924,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student Phone Number" 
             value={formData.internPhoneNumber || ''}
             onChange={(e) => setFormData(prev => ({...prev, internPhoneNumber: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -748,7 +935,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student WhatsApp Number" 
             value={formData.internWhatsAppNumber || ''}
             onChange={(e) => setFormData(prev => ({...prev, internWhatsAppNumber: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -759,7 +946,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student Guardian's Name" 
             value={formData.guardianName || ''}
             onChange={(e) => setFormData(prev => ({...prev, guardianName: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -770,7 +957,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student Father's Name" 
             value={formData.fatherName || ''}
             onChange={(e) => setFormData(prev => ({...prev, fatherName: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -781,7 +968,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student Permanent Address" 
             value={formData.internPermanentAddress || ''}
             onChange={(e) => setFormData(prev => ({...prev, internPermanentAddress: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -792,7 +979,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student Mother's Name" 
             value={formData.motherName || ''}
             onChange={(e) => setFormData(prev => ({...prev, motherName: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -803,7 +990,7 @@ export const StudentManagement = () => {
             placeholder="Enter Guardians/Parent Phone Number" 
             value={formData.guardianParentPhone || ''}
             onChange={(e) => setFormData(prev => ({...prev, guardianParentPhone: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -814,7 +1001,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student District" 
             value={formData.district || ''}
             onChange={(e) => setFormData(prev => ({...prev, district: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -825,7 +1012,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student State" 
             value={formData.state || ''}
             onChange={(e) => setFormData(prev => ({...prev, state: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -850,7 +1037,7 @@ export const StudentManagement = () => {
             name="course" 
             value={formData.course || ''}
             onChange={(e) => setFormData(prev => ({...prev, course: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             disabled={coursesLoading}
           >
             <option value="">Choose Course</option>
@@ -871,7 +1058,7 @@ export const StudentManagement = () => {
             name="branch" 
             value={formData.branch || ''}
             onChange={(e) => setFormData(prev => ({...prev, branch: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             disabled={branchesLoading}
           >
             <option value="">Choose Branch</option>
@@ -893,7 +1080,7 @@ export const StudentManagement = () => {
             type="date" 
             value={formData.courseStartedDate || ''}
             onChange={(e) => setFormData(prev => ({...prev, courseStartedDate: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -903,7 +1090,7 @@ export const StudentManagement = () => {
             type="date" 
             value={formData.completionDate || ''}
             onChange={(e) => setFormData(prev => ({...prev, completionDate: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -912,7 +1099,7 @@ export const StudentManagement = () => {
             name="batch" 
             value={formData.batch || ''}
             onChange={(e) => setFormData(prev => ({...prev, batch: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             disabled={batchesLoading}
           >
             <option value="">Choose Batch</option>
@@ -933,7 +1120,7 @@ export const StudentManagement = () => {
             name="courseStatus" 
             value={formData.courseStatus || ''}
             onChange={(e) => setFormData(prev => ({...prev, courseStatus: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             {courseStatus.map(status => <option key={status} value={status === 'Choose Course Status' ? '' : status}>{status}</option>)}
           </select>
@@ -946,7 +1133,7 @@ export const StudentManagement = () => {
             placeholder="Enter Any Remarks or notes" 
             value={formData.remarks || ''}
             onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
       </div>
@@ -959,7 +1146,7 @@ export const StudentManagement = () => {
             name="internSyllabusStatus" 
             value={formData.internSyllabusStatus || ''}
             onChange={(e) => setFormData(prev => ({...prev, internSyllabusStatus: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             {syllabusStatus.map(status => <option key={status} value={status === 'Choose Syllabus Status' ? '' : status}>{status}</option>)}
           </select>
@@ -974,7 +1161,7 @@ export const StudentManagement = () => {
             name="placementStatus" 
             value={formData.placementStatus || ''}
             onChange={(e) => setFormData(prev => ({...prev, placementStatus: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             {placementStatus.map(status => <option key={status} value={status === 'Choose Placement Status' ? '' : status}>{status}</option>)}
           </select>
@@ -987,7 +1174,7 @@ export const StudentManagement = () => {
             placeholder="Enter LinkedIn Link" 
             value={formData.linkedin || ''}
             onChange={(e) => setFormData(prev => ({...prev, linkedin: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -998,7 +1185,7 @@ export const StudentManagement = () => {
             placeholder="Enter Portfolio Link" 
             value={formData.portfolio || ''}
             onChange={(e) => setFormData(prev => ({...prev, portfolio: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -1009,7 +1196,7 @@ export const StudentManagement = () => {
             placeholder="Enter Company Name" 
             value={formData.companyName || ''}
             onChange={(e) => setFormData(prev => ({...prev, companyName: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -1020,7 +1207,7 @@ export const StudentManagement = () => {
             placeholder="Enter Job Role" 
             value={formData.jobRole || ''}
             onChange={(e) => setFormData(prev => ({...prev, jobRole: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -1047,7 +1234,7 @@ export const StudentManagement = () => {
             placeholder="Enter Student Email Address" 
             value={formData.officialEmail || ''}
             onChange={(e) => setFormData(prev => ({...prev, officialEmail: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -1058,7 +1245,7 @@ export const StudentManagement = () => {
             placeholder="Create A Password" 
             value={formData.password || ''}
             onChange={(e) => setFormData(prev => ({...prev, password: e.target.value}))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
           />
         </div>
         <div>
@@ -1339,6 +1526,149 @@ export const StudentManagement = () => {
                 >
                   {loading ? 'Deleting...' : 'Delete'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Student Details Modal */}
+        {showViewModal && viewingStudent && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="px-8 py-6 border-b border-gray-200">
+                <div className="flex justify-between items-start">
+                  <h1 className="text-2xl font-semibold text-gray-900">{viewingStudent.fullName}</h1>
+                  <button 
+                    onClick={closeViewModal}
+                    className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print:hidden"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="px-8 py-6">
+                <div className="flex flex-col md:flex-row gap-10">
+                  {/* Left Column - Details */}
+                  <div className="flex-1 space-y-6">
+                    {/* Basic Details */}
+                    <div>
+                      <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                        Basic Details
+                      </h2>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Full Name:</span> <span className="text-gray-600">{viewingStudent.fullName || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Date of Birth:</span> <span className="text-gray-600">{viewingStudent.dateOfBirth ? new Date(viewingStudent.dateOfBirth).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Gender:</span> <span className="text-gray-600">{viewingStudent.gender || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Email Address:</span> <span className="text-gray-600">{viewingStudent.email || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Student Phone Number:</span> <span className="text-gray-600">{viewingStudent.internPhoneNumber || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Student WhatsApp Number:</span> <span className="text-gray-600">{viewingStudent.internWhatsAppNumber || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Guardian's Name:</span> <span className="text-gray-600">{viewingStudent.guardianName || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Father's Name:</span> <span className="text-gray-600">{viewingStudent.fatherName || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Mother's Name:</span> <span className="text-gray-600">{viewingStudent.motherName || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Guardian/Parent Phone:</span> <span className="text-gray-600">{viewingStudent.guardianParentPhone || 'N/A'}</span></p>
+                        <p className="col-span-2 leading-6"><span className="font-semibold text-gray-900">Student Permanent Address:</span> <span className="text-gray-600">{viewingStudent.internPermanentAddress || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">District:</span> <span className="text-gray-600">{viewingStudent.district || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">State:</span> <span className="text-gray-600">{viewingStudent.state || 'N/A'}</span></p>
+                      </div>
+                    </div>
+
+                    {/* Academic Details */}
+                    <div>
+                      <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                        Academic Details
+                      </h2>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Course:</span> <span className="text-gray-600">{viewingStudent.course?.courseName || viewingStudent.course || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingStudent.branch?.branchName || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Batch:</span> <span className="text-gray-600">{viewingStudent.batch || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Course Started Date:</span> <span className="text-gray-600">{viewingStudent.courseStartedDate ? new Date(viewingStudent.courseStartedDate).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Completion Date:</span> <span className="text-gray-600">{viewingStudent.completionDate ? new Date(viewingStudent.completionDate).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                        <p className="leading-6">
+                          <span className="font-semibold text-gray-900">Course Status:</span>{" "}
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            viewingStudent.courseStatus === 'Ongoing' 
+                              ? 'bg-green-100 text-green-800' 
+                              : viewingStudent.courseStatus === 'Completed'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {viewingStudent.courseStatus || 'N/A'}
+                          </span>
+                        </p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Syllabus Status:</span> <span className="text-gray-600">{viewingStudent.internSyllabusStatus || 'N/A'}</span></p>
+                        {viewingStudent.remarks && (
+                          <p className="col-span-2 leading-6">
+                            <span className="font-semibold text-gray-900">Remarks/Notes:</span>{" "}
+                            <span className="text-gray-600">{viewingStudent.remarks}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Placement Information */}
+                    {(viewingStudent.placementStatus || viewingStudent.linkedin || viewingStudent.portfolio || viewingStudent.companyName || viewingStudent.jobRole) && (
+                      <div>
+                        <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                          Placement Information
+                        </h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                          <p className="leading-6"><span className="font-semibold text-gray-900">Placement Status:</span> <span className="text-gray-600">{viewingStudent.placementStatus || 'N/A'}</span></p>
+                          <p className="leading-6"><span className="font-semibold text-gray-900">LinkedIn:</span> <span className="text-gray-600">{viewingStudent.linkedin || 'N/A'}</span></p>
+                          <p className="leading-6"><span className="font-semibold text-gray-900">Portfolio:</span> <span className="text-gray-600">{viewingStudent.portfolio || 'N/A'}</span></p>
+                          <p className="leading-6"><span className="font-semibold text-gray-900">Company Name:</span> <span className="text-gray-600">{viewingStudent.companyName || 'N/A'}</span></p>
+                          <p className="leading-6"><span className="font-semibold text-gray-900">Job Role:</span> <span className="text-gray-600">{viewingStudent.jobRole || 'N/A'}</span></p>
+                          <p className="leading-6"><span className="font-semibold text-gray-900">Official Email:</span> <span className="text-gray-600">{viewingStudent.officialEmail || 'N/A'}</span></p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column - Profile Image */}
+                  <div className="flex flex-col items-center print:hidden">
+                    <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
+                      {viewingStudent.photo ? (
+                        <img
+                          src={viewingStudent.photo}
+                          alt={viewingStudent.fullName}
+                          className="w-48 h-48 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-48 h-48 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-500 text-4xl font-medium">
+                            {viewingStudent.fullName?.charAt(0)?.toUpperCase() || 'S'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-8 py-6 border-t border-gray-200 print:hidden">
+                <div className="flex justify-end gap-4">
+                  <button 
+                    onClick={() => {
+                      closeViewModal();
+                      handleEditStudent(viewingStudent);
+                    }}
+                    className="bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                  >
+                    Print
+                  </button>
+                </div>
               </div>
             </div>
           </div>

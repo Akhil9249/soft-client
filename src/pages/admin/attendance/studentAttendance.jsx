@@ -154,7 +154,7 @@ const StatusCard = ({ label, value, colorClass }) => (
 );
 
 // Filter and Action Bar
-const ActionBar = ({ activeTab, setActiveTab, branches, selectedBranch, onBranchChange, branchesLoading }) => {
+const ActionBar = ({ activeTab, setActiveTab, branches, selectedBranch, onBranchChange, branchesLoading, selectedDays, onDaysChange, courses, selectedCourse, onCourseChange, coursesLoading, timings, selectedTiming, onTimingChange, timingsLoading }) => {
     const todayDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return (
         <div className="flex justify-between items-center mb-6">
@@ -162,13 +162,13 @@ const ActionBar = ({ activeTab, setActiveTab, branches, selectedBranch, onBranch
                 <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
             </div>
             
-            <div className="flex space-x-3">
+            <div className="flex space-x-2">
                 {/* Branch Dropdown */}
                 <select 
                     value={selectedBranch} 
                     onChange={onBranchChange}
                     disabled={branchesLoading}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 disabled:opacity-50"
+                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                     <option value="">
                         {branchesLoading ? 'Loading branches...' : 'All Branches'}
@@ -179,13 +179,50 @@ const ActionBar = ({ activeTab, setActiveTab, branches, selectedBranch, onBranch
                         </option>
                     ))}
                 </select>
-                <select className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500">
-                    <option>UI/UX Design...</option>
-                    <option>React Dev</option>
+                
+                {/* Days Filter Dropdown */}
+                <select 
+                    value={selectedDays} 
+                    onChange={onDaysChange}
+                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                    <option value="">All Days</option>
+                    <option value="MWF">MWF</option>
+                    <option value="TTS">TTS</option>
                 </select>
-                <select className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500">
-                    <option>UI/UX_JUN_RG...</option>
-                    <option>Full Stack_Batch1</option>
+                
+                {/* Courses Dropdown */}
+                <select 
+                    value={selectedCourse} 
+                    onChange={onCourseChange}
+                    disabled={coursesLoading}
+                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                    <option value="">
+                        {coursesLoading ? 'Loading courses...' : 'All Courses'}
+                    </option>
+                    {courses.map((course) => (
+                        <option key={course._id} value={course._id}>
+                            {course.courseName}
+                        </option>
+                    ))}
+                </select>
+                
+                {/* Timings Dropdown */}
+                <select 
+                    value={selectedTiming} 
+                    onChange={onTimingChange}
+                    disabled={timingsLoading}
+                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                    <option value="">
+                        {timingsLoading ? 'Loading timings...' : 'All Timings'}
+                    </option>
+                    {timings.map((timing) => (
+                        <option key={timing._id} value={timing._id}>
+                            {timing.timeSlot}
+                        </option>
+                    ))}
                 </select>
             </div>
         </div>
@@ -235,7 +272,9 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
         updateSingleInternAttendance,
         getInternsAttendanceData,
         getInternsByAttendanceDate,
-        getBranchesData
+        getBranchesData,
+        getCoursesData,
+        getTimingsData
     } = AdminService();
     
     // State for attendance data from backend
@@ -251,17 +290,36 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
     const [selectedBranch, setSelectedBranch] = useState(''); // Empty string means "All Branches"
     const [branchesLoading, setBranchesLoading] = useState(false);
     
+    // State for days filter
+    const [selectedDays, setSelectedDays] = useState(''); // Empty string means "All"
+    
+    // State for courses
+    const [courses, setCourses] = useState([]);
+    const [selectedCourse, setSelectedCourse] = useState(''); // Empty string means "All Courses"
+    const [coursesLoading, setCoursesLoading] = useState(false);
+    
+    // State for timings
+    const [timings, setTimings] = useState([]);
+    const [selectedTiming, setSelectedTiming] = useState(''); // Empty string means "All Timings"
+    const [timingsLoading, setTimingsLoading] = useState(false);
+    
+    // State for pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalRecords, setTotalRecords] = useState(0);
+    
     // Fetch branches from backend
     const fetchBranches = async () => {
         try {
             setBranchesLoading(true);
             const response = await getBranchesData();
-            console.log('Branches response:', response);
+            // console.log('Branches response:', response);
             
             if (response?.data) {
                 setBranches(response.data);
                 // Keep selectedBranch as empty string to show "All Branches" by default
-                console.log('Branches loaded:', response.data.length, 'branches available');
+                // console.log('Branches loaded:', response.data.length, 'branches available');
             }
         } catch (err) {
             console.error('Failed to load branches:', err);
@@ -271,11 +329,49 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
         }
     };
     
-    // Fetch attendance data for selected date and branch
-    const fetchAttendanceForDate = async (date, branchId = null) => {
+    // Fetch courses from backend
+    const fetchCourses = async () => {
         try {
-            const response = await getInternsByAttendanceDate(date, branchId);
-            console.log('Interns with attendance for date:', date, 'branch:', branchId, response);
+            setCoursesLoading(true);
+            const response = await getCoursesData();
+            console.log('Courses response:', response);
+            
+            if (response?.data) {
+                setCourses(response.data);
+                console.log('Courses loaded:', response.data.length, 'courses available');
+            }
+        } catch (err) {
+            console.error('Failed to load courses:', err);
+            setError('Failed to load courses');
+        } finally {
+            setCoursesLoading(false);
+        }
+    };
+    
+    // Fetch timings from backend
+    const fetchTimings = async () => {
+        try {
+            setTimingsLoading(true);
+            const response = await getTimingsData();
+            console.log('Timings response:', response);
+            
+            if (response?.data) {
+                setTimings(response.data);
+                console.log('Timings loaded:', response.data.length, 'timings available');
+            }
+        } catch (err) {
+            console.error('Failed to load timings:', err);
+            setError('Failed to load timings');
+        } finally {
+            setTimingsLoading(false);
+        }
+    };
+    
+    // Fetch attendance data for selected date and filters
+    const fetchAttendanceForDate = async (date, branchId = null, days = null, courseId = null, timingId = null, page = 1) => {
+        try {
+            const response = await getInternsByAttendanceDate(date, branchId, days, courseId, timingId);
+            console.log('Interns with attendance for date:', date, 'branch:', branchId, 'days:', days, 'course:', courseId, 'timing:', timingId, response);
             
             if (response?.data?.data && response.data.data.length > 0) {
                 // Transform the response data to match our expected format
@@ -294,27 +390,43 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                     remarks: record.remarks
                 }));
                 
-                setAttendanceRecords(transformedInterns);
+                // Calculate pagination
+                const totalRecords = transformedInterns.length;
+                const totalPages = Math.ceil(totalRecords / itemsPerPage);
+                const startIndex = (page - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const paginatedRecords = transformedInterns.slice(startIndex, endIndex);
+                
+                setAttendanceRecords(paginatedRecords);
+                setTotalRecords(totalRecords);
+                setTotalPages(totalPages);
+                setCurrentPage(page);
                 
                 // Update attendance state with the selected date's data
                 const attendanceMap = {};
-                response.data.data.forEach(record => {
-                    attendanceMap[record._id] = record.attendanceStatus;
+                paginatedRecords.forEach(record => {
+                    attendanceMap[record.id] = record.attendanceStatus;
                 });
                 setAttendance(attendanceMap);
                 
-                console.log('Filtered interns for display:', transformedInterns);
+                // console.log('Filtered interns for display:', paginatedRecords);
             } else {
                 // If no attendance data for the selected date, show empty list
                 console.log('No attendance data found for date:', date, 'branch:', branchId);
                 setAttendanceRecords([]);
                 setAttendance({});
+                setTotalRecords(0);
+                setTotalPages(1);
+                setCurrentPage(1);
             }
         } catch (err) {
             console.error('Failed to load attendance for date:', err);
             // On error, show empty list
             setAttendanceRecords([]);
             setAttendance({});
+            setTotalRecords(0);
+            setTotalPages(1);
+            setCurrentPage(1);
         }
     };
     
@@ -324,7 +436,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
             setLoading(true);
             await createDailyAttendanceForAllInterns();
             console.log('Daily attendance created successfully');
-            await fetchAttendanceForDate(selectedDate, selectedBranch); // Refresh attendance for selected date and branch
+            await fetchAttendanceForDate(selectedDate, selectedBranch || null, selectedDays || null, selectedCourse || null, selectedTiming || null, 1); // Refresh attendance for selected date and branch
         } catch (err) {
             console.error('Failed to create daily attendance:', err);
             setError('Failed to create daily attendance');
@@ -347,7 +459,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                 remarks: `Updated via UI - ${status ? 'Present' : 'Absent'}`
             });
             
-            console.log(`Attendance updated for intern ${internId}: ${status}`);
+            // console.log(`Attendance updated for intern ${internId}: ${status}`);
         } catch (err) {
             console.error('Failed to update attendance:', err);
         }
@@ -356,7 +468,9 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
     // Load data when component mounts
     useEffect(() => {
         fetchBranches();
-        fetchAttendanceForDate(selectedDate, selectedBranch);
+        fetchCourses();
+        fetchTimings();
+        fetchAttendanceForDate(selectedDate, selectedBranch || null, selectedDays || null, selectedCourse || null, selectedTiming || null, 1);
     }, []);
 
     // Update currentDate when selectedDate changes
@@ -385,11 +499,58 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
     const handleBranchChange = async (e) => {
         const branchId = e.target.value;
         setSelectedBranch(branchId);
-        console.log('Selected branch:', branchId || 'All Branches');
+        setCurrentPage(1); // Reset to first page when filter changes
+        // console.log('Selected branch:', branchId || 'All Branches');
         
-        // Fetch attendance records for the selected branch and date
-        // If branchId is empty, it will fetch all branches
-        await fetchAttendanceForDate(selectedDate, branchId || null);
+        // Fetch attendance records for the selected filters
+        await fetchAttendanceForDate(selectedDate, branchId || null, selectedDays || null, selectedCourse || null, selectedTiming || null, 1);
+    };
+
+    // Handle days filter selection
+    const handleDaysChange = async (e) => {
+        const days = e.target.value;
+        setSelectedDays(days);
+        setCurrentPage(1); // Reset to first page when filter changes
+        // console.log('Selected days:', days || 'All');
+        
+        // Fetch attendance records for the selected filters
+        await fetchAttendanceForDate(selectedDate, selectedBranch || null, days || null, selectedCourse || null, selectedTiming || null, 1);
+    };
+
+    // Handle course selection
+    const handleCourseChange = async (e) => {
+        const courseId = e.target.value;
+        setSelectedCourse(courseId);
+        setCurrentPage(1); // Reset to first page when filter changes
+        // console.log('Selected course:', courseId || 'All Courses');
+        
+        // Fetch attendance records for the selected filters
+        await fetchAttendanceForDate(selectedDate, selectedBranch || null, selectedDays || null, courseId || null, selectedTiming || null, 1);
+    };
+
+    // Handle timing selection
+    const handleTimingChange = async (e) => {
+        const timingId = e.target.value;
+        setSelectedTiming(timingId);
+        setCurrentPage(1); // Reset to first page when filter changes
+        // console.log('Selected timing:', timingId || 'All Timings');
+        
+        // Fetch attendance records for the selected filters
+        await fetchAttendanceForDate(selectedDate, selectedBranch || null, selectedDays || null, selectedCourse || null, timingId || null, 1);
+    };
+
+    // Pagination handlers
+    const handlePageChange = async (page) => {
+        setCurrentPage(page);
+        await fetchAttendanceForDate(selectedDate, selectedBranch || null, selectedDays || null, selectedCourse || null, selectedTiming || null, page);
+    };
+
+    const handleItemsPerPageChange = (e) => {
+        const newItemsPerPage = parseInt(e.target.value);
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1); // Reset to first page when changing items per page
+        // Re-fetch with new pagination settings
+        fetchAttendanceForDate(selectedDate, selectedBranch || null, selectedDays || null, selectedCourse || null, selectedTiming || null, 1);
     };
 
     // Calculate totals based on current attendance state
@@ -408,6 +569,16 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                 selectedBranch={selectedBranch}
                 onBranchChange={handleBranchChange}
                 branchesLoading={branchesLoading}
+                selectedDays={selectedDays}
+                onDaysChange={handleDaysChange}
+                courses={courses}
+                selectedCourse={selectedCourse}
+                onCourseChange={handleCourseChange}
+                coursesLoading={coursesLoading}
+                timings={timings}
+                selectedTiming={selectedTiming}
+                onTimingChange={handleTimingChange}
+                timingsLoading={timingsLoading}
             />
 
             {/* Create Daily Attendance Button */}
@@ -496,8 +667,8 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                                 });
                                 setCurrentDate(formattedDate);
                                 
-                                // Fetch attendance for the new date with selected branch
-                                fetchAttendanceForDate(newDate, selectedBranch);
+                                // Fetch attendance for the new date with all selected filters
+                                fetchAttendanceForDate(newDate, selectedBranch || null, selectedDays || null, selectedCourse || null, selectedTiming || null, 1);
                             }}
                             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm"
                         />
@@ -527,6 +698,79 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                     ))}
                     
                 </div>
+
+                {/* Pagination Controls */}
+                {totalRecords > 0 && (
+                    <div className="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+                        <div className="flex items-center space-x-4">
+                            {/* <div className="flex items-center space-x-2">
+                                <label htmlFor="itemsPerPage" className="text-sm text-gray-600">Show:</label>
+                                <select
+                                    id="itemsPerPage"
+                                    value={itemsPerPage}
+                                    onChange={handleItemsPerPageChange}
+                                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-amber-500 focus:border-amber-500"
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                </select>
+                                <span className="text-sm text-gray-600">per page</span>
+                            </div> */}
+                            <div className="text-sm text-gray-600">
+                                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalRecords)} of {totalRecords} records
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                            <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Previous
+                            </button>
+                            
+                            <div className="flex space-x-1">
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let pageNum;
+                                    if (totalPages <= 5) {
+                                        pageNum = i + 1;
+                                    } else if (currentPage <= 3) {
+                                        pageNum = i + 1;
+                                    } else if (currentPage >= totalPages - 2) {
+                                        pageNum = totalPages - 4 + i;
+                                    } else {
+                                        pageNum = currentPage - 2 + i;
+                                    }
+                                    
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => handlePageChange(pageNum)}
+                                            className={`px-3 py-1 text-sm border rounded ${
+                                                currentPage === pageNum
+                                                    ? 'bg-amber-500 text-white border-amber-500'
+                                                    : 'border-gray-300 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Save Button */}
                 <div className="mt-8 flex justify-end">

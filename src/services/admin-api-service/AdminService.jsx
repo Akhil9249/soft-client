@@ -363,10 +363,19 @@ const AdminService = () => {
         return response;
     };
 
-    const getInternsByAttendanceDate = async (date, branchId = null) => {
+    const getInternsByAttendanceDate = async (date, branchId = null, days = null, courseId = null, timingId = null) => {
         const params = { date };
         if (branchId) {
             params.branchId = branchId;
+        }
+        if (days) {
+            params.days = days;
+        }
+        if (courseId) {
+            params.courseId = courseId;
+        }
+        if (timingId) {
+            params.timingId = timingId;
         }
         const response = await axiosPrivate.get("/api/interns-attendance/interns-by-date", { 
             params 
@@ -374,6 +383,47 @@ const AdminService = () => {
         return response;
     };
 
+    // ======================================== role management ========================================
+    const getRolesData = async (queryParams = '') => {
+        const url = queryParams ? `/api/roles?${queryParams}` : "/api/roles";
+        const response = await axiosPrivate.get(url);
+        return response.data;
+    };
+    
+    const postRolesData = async (data) => {
+        const response = await axiosPrivate.post("/api/roles", data);
+        return response.data;
+    };
+    
+    const putRolesData = async (roleId, data) => {
+        const response = await axiosPrivate.put(`/api/roles/${roleId}`, data);
+        return response.data;
+    };
+    
+    const deleteRolesData = async (roleId) => {
+        const response = await axiosPrivate.delete(`/api/roles/${roleId}`);
+        return response.data;
+    };
+    
+    const getRoleByRoleName = async (roleName) => {
+        const response = await axiosPrivate.get(`/api/roles/role/${roleName}`);
+        return response.data;
+    };
+    
+    const getRolePermissions = async (roleName) => {
+        const response = await axiosPrivate.get(`/api/roles/role/${roleName}/permissions`);
+        return response.data;
+    };
+    
+    const getRoleById = async (roleId) => {
+        const response = await axiosPrivate.get(`/api/roles/${roleId}`);
+        return response.data;
+    };
+    
+    const updateRole = async (roleId, data) => {
+        const response = await axiosPrivate.put(`/api/roles/${roleId}`, data);
+        return response.data;
+    };
     return {
 
         postRegister,
@@ -443,7 +493,15 @@ const AdminService = () => {
         createDailyAttendanceForAllInterns,
         updateSingleInternAttendance,
         getAttendanceSummaryReport,
-        getInternsByAttendanceDate
+        getInternsByAttendanceDate,
+        getRolesData,
+        postRolesData,
+        putRolesData,
+        deleteRolesData,
+        getRoleByRoleName,
+        getRolePermissions,
+        getRoleById,
+        updateRole
 
     };
 };

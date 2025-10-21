@@ -1,6 +1,9 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { RxPerson } from "react-icons/rx";
+import useAuth from "../../hooks/useAuth";
+import { useAppDispatch } from "../../redux/hooks";
+import { logoutUser, clearCredentials } from "../../redux/slices/authSlice";
 
 import {
   BellRing,
@@ -28,6 +31,14 @@ const Icon = ({ path, className, viewBox = "0 0 24 24" }) => (
 );
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { setAuth } = useAuth();
+  const { auth } = useAuth();
+  // console.log("Auth object:", auth);
+  // console.log("User role:", auth?.role);
+  const dispatch = useAppDispatch();
+  
   // const [isOpen, setIsOpen] = useState(false);
   // const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [openSections, setOpenSections] = useState({
@@ -40,11 +51,53 @@ const Sidebar = () => {
     settings: false,
   });
 
+  // Track active navigation item
+  const [activeNavItem, setActiveNavItem] = useState('');
+
   const toggleSection = (section) => {
     setOpenSections(prevState => ({
       ...prevState,
       [section]: !prevState[section],
     }));
+  };
+
+  // Handle navigation item click
+  const handleNavItemClick = (itemPath) => {
+    setActiveNavItem(itemPath);
+  };
+
+  // Automatically set active navigation item based on current URL
+  useEffect(() => {
+    setActiveNavItem(location.pathname);
+  }, [location.pathname]);
+
+  const handleLogout = async () => {
+    try {
+      // Clear localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("role");
+      localStorage.removeItem("profileImage");
+      localStorage.removeItem("name");
+      
+      // Clear Context API auth state
+      setAuth({});
+      
+      // Clear Redux auth state
+      dispatch(clearCredentials());
+      
+      // Navigate to login page
+      navigate("/login");
+      
+      // Optional: Show success message
+      console.log("Logged out successfully");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if there's an error, still clear local data and redirect
+      localStorage.clear();
+      setAuth({});
+      dispatch(clearCredentials());
+      navigate("/login");
+    }
   };
 
   return (
@@ -81,9 +134,52 @@ const Sidebar = () => {
             </div>
             {openSections.administration && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
-                <li> <Link to="/" className="block py-1 text-orange-500 font-semibold">Role Management</Link></li>
-                <li><Link to="/staff-management" className="block py-1 hover:text-orange-500">Staff Management</Link></li>
-                <li><Link to="/student-management" className="block py-1 hover:text-orange-500">Intern Management</Link></li>
+                {/* Role Management and Staff Management - Only for Super Admin and Admin */}
+                {(auth.role === "Super Admin" || auth.role === "Admin") && (
+                  <>
+                    <li>
+                      <Link 
+                        to="/" 
+                        onClick={() => handleNavItemClick('/')}
+                        className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                          activeNavItem === '/' 
+                            ? 'bg-orange-100 text-orange-600 font-semibold' 
+                            : ' font-semibold hover:bg-orange-50 hover:text-orange-600'
+                        }`}
+                      >
+                        Role Management
+                      </Link>
+                    </li>
+                    <li>
+                      <Link 
+                        to="/staff-management" 
+                        onClick={() => handleNavItemClick('/staff-management')}
+                        className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                          activeNavItem === '/staff-management' 
+                            ? 'bg-orange-100 text-orange-600 font-semibold' 
+                            : 'hover:text-orange-500 hover:bg-orange-50'
+                        }`}
+                      >
+                        Staff Management
+                      </Link>
+                    </li>
+                  </>
+                )}
+                
+                {/* Intern Management - Available for all roles */}
+                <li>
+                  <Link 
+                    to="/student-management" 
+                    onClick={() => handleNavItemClick('/student-management')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/student-management' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Intern Management
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
@@ -99,8 +195,32 @@ const Sidebar = () => {
             </div>
             {openSections.course && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
-                <li><Link to="/category" className="block py-1 hover:text-orange-500">Categories</Link></li>
-                <li><Link to="/courses" className="block py-1 hover:text-orange-500">Courses</Link></li>
+                <li>
+                  <Link 
+                    to="/category" 
+                    onClick={() => handleNavItemClick('/category')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/category' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Categories
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/courses" 
+                    onClick={() => handleNavItemClick('/courses')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/courses' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Courses
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
@@ -117,8 +237,32 @@ const Sidebar = () => {
             </div>
             {openSections.syllabus && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
-                <li><Link to="/modules" className="block py-1 hover:text-orange-500">Modules</Link></li>
-                <li><Link to="/topics" className="block py-1 hover:text-orange-500">Topics</Link></li>
+                <li>
+                  <Link 
+                    to="/modules" 
+                    onClick={() => handleNavItemClick('/modules')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/modules' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Modules
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/topics" 
+                    onClick={() => handleNavItemClick('/topics')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/topics' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Topics
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
@@ -133,8 +277,32 @@ const Sidebar = () => {
             </div>
             {openSections.task && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
-                <li><Link to="/task-management" className="block py-1 hover:text-orange-500">Task</Link></li>
-                <li><Link to="/material" className="block py-1 hover:text-orange-500">Material</Link></li>
+                <li>
+                  <Link 
+                    to="/task-management" 
+                    onClick={() => handleNavItemClick('/task-management')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/task-management' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Task
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/material" 
+                    onClick={() => handleNavItemClick('/material')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/material' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Material
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
@@ -151,10 +319,45 @@ const Sidebar = () => {
             </div>
             {openSections.schedule && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
-                <li><Link to="/batches" className="block py-1 hover:text-orange-500">Batches</Link></li>
-                <li><Link to="/timings" className="block py-1 hover:text-orange-500">Timings</Link></li>
-                {/* <li><a href="#" onClick={() => setActiveTab('timings')} className={`block py-1 ${activeTab === 'timings' ? 'text-orange-500 font-semibold' : 'hover:text-orange-500'}`}>Timings</a></li> */}
-                <li><Link to="/weekly-schedule" className="block py-1 hover:text-orange-500">Weekly Schedule</Link></li>
+                <li>
+                  <Link 
+                    to="/batches" 
+                    onClick={() => handleNavItemClick('/batches')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/batches' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Batches
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/timings" 
+                    onClick={() => handleNavItemClick('/timings')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/timings' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Timings
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/weekly-schedule" 
+                    onClick={() => handleNavItemClick('/weekly-schedule')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/weekly-schedule' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Weekly Schedule
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
@@ -169,8 +372,32 @@ const Sidebar = () => {
             </div>
             {openSections.attendance && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
-                <li><Link to="/student-attendance" className="block py-1 hover:text-orange-500">Student Attendance</Link></li>
-                <li><Link to="/leave-request" className="block py-1 hover:text-orange-500">Leave Request</Link></li>
+                <li>
+                  <Link 
+                    to="/student-attendance" 
+                    onClick={() => handleNavItemClick('/student-attendance')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/student-attendance' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Student Attendance
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/leave-request" 
+                    onClick={() => handleNavItemClick('/leave-request')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/leave-request' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Leave Request
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
@@ -187,8 +414,32 @@ const Sidebar = () => {
             </div>
             {openSections.settings && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
-                <li><Link to="/static-pages" className="block py-1 hover:text-orange-500">Static Page</Link></li>
-                <li><Link to="/notification" className="block py-1 hover:text-orange-500">Notification</Link></li>
+                <li>
+                  <Link 
+                    to="/static-pages" 
+                    onClick={() => handleNavItemClick('/static-pages')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/static-pages' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Static Page
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/notification" 
+                    onClick={() => handleNavItemClick('/notification')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/notification' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Notification
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
@@ -196,10 +447,13 @@ const Sidebar = () => {
         </nav>
 
         <div className="mt-8">
-        <a href="#" className="flex items-center text-red-500 font-medium p-2 rounded-lg transition-colors duration-200">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center text-red-500 font-medium p-2 rounded-lg transition-colors duration-200 hover:bg-red-50 hover:text-red-600 w-full text-left"
+        >
           <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
           Log Out
-        </a>
+        </button>
       </div>
       </div>
       
@@ -210,6 +464,42 @@ const Sidebar = () => {
 export default Sidebar;
 
 const Navbar = ({headData , activeTab}) => {
+  const navigate = useNavigate();
+  const { setAuth } = useAuth();
+  const dispatch = useAppDispatch();
+  
+  // Get user data from localStorage
+  const userName = localStorage.getItem("name") || "User";
+  const userRole = localStorage.getItem("role") || "Admin";
+  const userImage = localStorage.getItem("profileImage");
+
+  const handleLogout = async () => {
+    try {
+      // Clear localStorage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("role");
+      localStorage.removeItem("profileImage");
+      localStorage.removeItem("name");
+      
+      // Clear Context API auth state
+      setAuth({});
+      
+      // Clear Redux auth state
+      dispatch(clearCredentials());
+      
+      // Navigate to login page
+      navigate("/login");
+      
+      console.log("Logged out successfully");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if there's an error, still clear local data and redirect
+      localStorage.clear();
+      setAuth({});
+      dispatch(clearCredentials());
+      navigate("/login");
+    }
+  };
 
   return (
     <header className="flex justify-between items-center mb-6 ">
@@ -217,14 +507,23 @@ const Navbar = ({headData , activeTab}) => {
         <h1 className="text-2xl font-semibold text-gray-800">{headData}</h1>
         <p className="text-sm text-gray-500">{headData} &gt; {activeTab}</p>
       </div>
-      <div className="flex items-center space-x-4 border border-[50px] rounded-lg p-2 border-red-500">
-        {/* <div className="flex flex-col items-end"> */}
-        <div className="w-10 h-10 rounded-full bg-gray-300  flex items-center justify-center">
-          <RxPerson />
-        </div>
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-800">Priyesh</span>
-          <span className="text-sm text-gray-500">Super Admin</span>
+      <div className="flex items-center space-x-4 border border-gray-600 rounded-md p-2">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+            {userImage ? (
+              <img 
+                src={userImage} 
+                alt="Profile" 
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <RxPerson />
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-800">{userName}</span>
+            <span className="text-sm text-gray-500">{userRole}</span>
+          </div>
         </div>
         
       </div>

@@ -6,7 +6,7 @@ import useAuth from "../../hooks/useAuth";
 const SuperAdminProtectedRoute = () => {
     const { auth } = useAuth();
     const token = localStorage.getItem("accessToken");
-    console.log("auth", auth);
+    // console.log("auth", auth);
   
 
     if (token && auth.role !== "Super Admin") {

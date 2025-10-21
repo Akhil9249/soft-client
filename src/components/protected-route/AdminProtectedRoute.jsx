@@ -5,7 +5,7 @@ import useAuth from "../../hooks/useAuth";
 const AdminProtectedRoute = () => {
   const { auth } = useAuth();
   const token = localStorage.getItem("accessToken");
-  console.log("auth", auth);
+  // console.log("auth", auth);
 
   // if (!token && auth.role !== "admin") {
   //     return <Navigate to="/login" />;
