@@ -7,7 +7,7 @@ import { Navbar } from "../../../components/admin/AdminNavBar";
 import AdminService from "../../../services/admin-api-service/AdminService";
 
 export const StaffManagement = () => {
-    const { getStaffData,putStaffData,postStaffData,getBranchesData,deleteStaffData } = AdminService();
+    const { getStaffData,putStaffData,postStaffData,getBranchesData,deleteStaffData,getRolesData } = AdminService();
 
 
     const [activeTab, setActiveTab] = useState('staffList');
@@ -16,6 +16,8 @@ export const StaffManagement = () => {
     const [success, setSuccess] = useState("");
     const [staff, setStaff] = useState([]);
     const [branches, setBranches] = useState([]);
+    const [roles, setRoles] = useState([]);
+    const [rolesLoading, setRolesLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [editingStaff, setEditingStaff] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -41,8 +43,7 @@ export const StaffManagement = () => {
     });
     const [filters, setFilters] = useState({
         department: '',
-        employmentStatus: '',
-        typeOfEmployee: ''
+        employmentStatus: ''
     });
     const [formData, setFormData] = useState({
         // Basic Details
@@ -59,8 +60,8 @@ export const StaffManagement = () => {
 
         // Professional Details
         department: "",
-        typeOfEmployee: "",
         branch: "",
+        role: "",
         yearsOfExperience: "",
         dateOfJoining: "",
         employmentStatus: "",
@@ -111,7 +112,7 @@ export const StaffManagement = () => {
     };
 
     // Fetch staff from backend
-    const fetchStaff = async (page = 1, search = '', department = '', employmentStatus = '', typeOfEmployee = '') => {
+    const fetchStaff = async (page = 1, search = '', department = '', employmentStatus = '') => {
         try {
             setLoading(true);
             setError('');
@@ -125,7 +126,6 @@ export const StaffManagement = () => {
             if (search) queryParams.append('search', search);
             if (department) queryParams.append('department', department);
             if (employmentStatus) queryParams.append('employmentStatus', employmentStatus);
-            if (typeOfEmployee) queryParams.append('typeOfEmployee', typeOfEmployee);
             
             const res = await getStaffData(queryParams.toString());
             // Handle different response structures
@@ -159,11 +159,28 @@ export const StaffManagement = () => {
         }
     };
 
+    // Fetch roles from backend
+    const fetchRoles = async () => {
+        try {
+            setRolesLoading(true);
+            const res = await getRolesData('all');
+            // Handle different response structures
+            const rolesData = res.data?.data || res.data || [];
+            setRoles(Array.isArray(rolesData) ? rolesData : []);
+            
+        } catch (err) {
+            console.error('Failed to load roles:', err);
+            setRoles([]);
+        } finally {
+            setRolesLoading(false);
+        }
+    };
+
     // Pagination handlers
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
             setPagination(prev => ({ ...prev, currentPage: newPage }));
-            fetchStaff(newPage, searchTerm, filters.department, filters.employmentStatus, filters.typeOfEmployee);
+            fetchStaff(newPage, searchTerm, filters.department, filters.employmentStatus);
         }
     };
 
@@ -180,14 +197,15 @@ export const StaffManagement = () => {
 
     // Load staff and branches when component mounts
     useEffect(() => {
-        fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus, filters.typeOfEmployee);
+            fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus);
         fetchBranches();
+        fetchRoles();
     }, []);
 
     // Handle search and filter changes with debounce
     useEffect(() => {
         const timeoutId = setTimeout(() => {
-            fetchStaff(1, searchTerm, filters.department, filters.employmentStatus, filters.typeOfEmployee);
+            fetchStaff(1, searchTerm, filters.department, filters.employmentStatus);
         }, 500); // 500ms debounce
 
         return () => clearTimeout(timeoutId);
@@ -207,7 +225,6 @@ export const StaffManagement = () => {
     ];
 
     const departments = ['Choose Department', 'UI/UX', 'Sales', 'Front office','Mern','Flutter','Python','Accounting','Digital Marketing'];
-    const typeOfEmployee = ['Choose Type of Employee', 'Mentor', 'Carrer advisor', 'Placement coordinator', 'Front office'];
     const employmentStatus = ['Choose Employment Status', 'Active', 'Inactive'];
 
     const handleInputChange = (e) => {
@@ -243,8 +260,8 @@ export const StaffManagement = () => {
             state: staffMember.state || "",
             photo: staffMember.photo || "",
             department: staffMember.department || "",
-            typeOfEmployee: staffMember.typeOfEmployee || "",
             branch: staffMember.branch?._id || staffMember.branch || "",
+            role: staffMember.role?._id || staffMember.role || "",
             yearsOfExperience: staffMember.yearsOfExperience || "",
             dateOfJoining: formatDateForInput(staffMember.dateOfJoining),
             employmentStatus: staffMember.employmentStatus || "",
@@ -273,8 +290,8 @@ export const StaffManagement = () => {
             state: "",
             photo: "",
             department: "",
-            typeOfEmployee: "",
             branch: "",
+            role: "",
             yearsOfExperience: "",
             dateOfJoining: "",
             employmentStatus: "",
@@ -315,8 +332,8 @@ export const StaffManagement = () => {
                 'Phone',
                 'WhatsApp',
                 'Department',
-                'Employee Type',
                 'Branch',
+                'Role',
                 'Status',
                 'Date of Birth',
                 'Gender',
@@ -336,8 +353,8 @@ export const StaffManagement = () => {
                 staffMember.staffPhoneNumber || 'N/A',
                 staffMember.staffWhatsAppNumber || 'N/A',
                 staffMember.department || 'N/A',
-                staffMember.typeOfEmployee || 'N/A',
                 staffMember.branch?.branchName || 'N/A',
+                staffMember.role?.role || 'N/A',
                 staffMember.employmentStatus || 'N/A',
                 staffMember.dateOfBirth ? new Date(staffMember.dateOfBirth).toLocaleDateString() : 'N/A',
                 staffMember.gender || 'N/A',
@@ -472,7 +489,7 @@ export const StaffManagement = () => {
             setError('');
             const res = await deleteStaffData(deletingStaff._id);
             showNotification('success', 'Success', 'Staff deleted successfully.');
-            await fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus, filters.typeOfEmployee);
+            await fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus);
             setShowDeleteModal(false);
             setDeletingStaff(null);
         } catch (err) {
@@ -501,12 +518,12 @@ export const StaffManagement = () => {
         const requiredFields = isEditMode 
             ? [
                 'fullName', 'dateOfBirth', 'gender', 'email', 'staffPhoneNumber',
-                'department', 'typeOfEmployee', 'branch', 'dateOfJoining', 'employmentStatus',
+                'department', 'branch', 'dateOfJoining', 'employmentStatus',
                 'officialEmail'
               ]
             : [
                 'fullName', 'dateOfBirth', 'gender', 'email', 'staffPhoneNumber',
-                'department', 'typeOfEmployee', 'branch', 'dateOfJoining', 'employmentStatus',
+                'department', 'branch', 'dateOfJoining', 'employmentStatus',
                 'officialEmail', 'password'
               ];
 
@@ -529,8 +546,8 @@ export const StaffManagement = () => {
             state: formData.state || "",
             photo: formData.photo || "",
             department: formData.department,
-            typeOfEmployee: formData.typeOfEmployee,
             branch: formData.branch,
+            role: formData.role,
             yearsOfExperience: formData.yearsOfExperience ? Number(formData.yearsOfExperience) : 0,
             dateOfJoining: formData.dateOfJoining || null,
             employmentStatus: formData.employmentStatus,
@@ -559,7 +576,7 @@ export const StaffManagement = () => {
             }
             
             // Refresh staff list
-            await fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus, filters.typeOfEmployee);
+            await fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus);
             // Switch tab and reset form
             setActiveTab('staffList');
             setEditingStaff(null);
@@ -576,8 +593,8 @@ export const StaffManagement = () => {
                 state: "",
                 photo: "",
                 department: "",
-                typeOfEmployee: "",
                 branch: "",
+                role: "",
                 yearsOfExperience: "",
                 dateOfJoining: "",
                 employmentStatus: "",
@@ -671,7 +688,7 @@ export const StaffManagement = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex justify-center">Actions</th>
@@ -700,7 +717,7 @@ export const StaffManagement = () => {
                                         <div className="text-sm text-gray-500">{staffMember.officialEmail}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{staffMember.department}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{staffMember.typeOfEmployee || 'N/A'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{staffMember.role?.role || 'N/A'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{staffMember.branch?.branchName || 'N/A'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -869,8 +886,17 @@ export const StaffManagement = () => {
                 </div>
                 <div>
                     <label className="block text-gray-700 font-medium mb-2">Type of Employee</label>
-                    <select name="typeOfEmployee" value={formData.typeOfEmployee} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                        {typeOfEmployee.map((type) => <option key={type} value={type === 'Choose Type of Employee' ? '' : type}>{type}</option>)}
+                    <select name="role" value={formData.role} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" disabled={rolesLoading}>
+                        <option value="">Choose Role</option>
+                        {rolesLoading ? (
+                            <option>Loading roles...</option>
+                        ) : (
+                            roles.map((role) => (
+                                <option key={role._id} value={role._id}>
+                                    {role.role}
+                                </option>
+                            ))
+                        )}
                     </select>
                 </div>
                 <div>
@@ -1152,7 +1178,7 @@ export const StaffManagement = () => {
                                             <p className="leading-6"><span className="font-semibold text-gray-900">ID:</span> <span className="text-gray-600">{viewingStaff._id?.slice(-4) || 'N/A'}</span></p>
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Department:</span> <span className="text-gray-600">{viewingStaff.department || 'N/A'}</span></p>
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingStaff.branch?.branchName || 'N/A'}</span></p>
-                                            <p className="leading-6"><span className="font-semibold text-gray-900">Employee Type:</span> <span className="text-gray-600">{viewingStaff.typeOfEmployee || 'N/A'}</span></p>
+                                            <p className="leading-6"><span className="font-semibold text-gray-900">Role:</span> <span className="text-gray-600">{viewingStaff.role?.role || 'N/A'}</span></p>
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Years of Experience:</span> <span className="text-gray-600">{viewingStaff.yearsOfExperience || 'N/A'}</span></p>
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Date of Joining:</span> <span className="text-gray-600">{viewingStaff.dateOfJoining ? new Date(viewingStaff.dateOfJoining).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
                                             {viewingStaff.resignationDate && (

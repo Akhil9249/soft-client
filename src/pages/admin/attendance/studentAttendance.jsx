@@ -309,6 +309,11 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState(0);
     
+    // State for full dataset counts (not paginated)
+    const [allAttendanceRecords, setAllAttendanceRecords] = useState([]); // Full dataset
+    const [totalPresent, setTotalPresent] = useState(0); // Total present from full dataset
+    const [totalAbsent, setTotalAbsent] = useState(0); // Total absent from full dataset
+    
     // Fetch branches from backend
     const fetchBranches = async () => {
         try {
@@ -390,6 +395,15 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                     remarks: record.remarks
                 }));
                 
+                // Store full dataset for total counts
+                setAllAttendanceRecords(transformedInterns);
+                
+                // Calculate total present and absent from full dataset
+                const totalPresentCount = transformedInterns.filter(record => record.attendanceStatus === true).length;
+                const totalAbsentCount = transformedInterns.filter(record => record.attendanceStatus === false).length;
+                setTotalPresent(totalPresentCount);
+                setTotalAbsent(totalAbsentCount);
+                
                 // Calculate pagination
                 const totalRecords = transformedInterns.length;
                 const totalPages = Math.ceil(totalRecords / itemsPerPage);
@@ -414,19 +428,25 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                 // If no attendance data for the selected date, show empty list
                 console.log('No attendance data found for date:', date, 'branch:', branchId);
                 setAttendanceRecords([]);
+                setAllAttendanceRecords([]);
                 setAttendance({});
                 setTotalRecords(0);
                 setTotalPages(1);
                 setCurrentPage(1);
+                setTotalPresent(0);
+                setTotalAbsent(0);
             }
         } catch (err) {
             console.error('Failed to load attendance for date:', err);
             // On error, show empty list
             setAttendanceRecords([]);
+            setAllAttendanceRecords([]);
             setAttendance({});
             setTotalRecords(0);
             setTotalPages(1);
             setCurrentPage(1);
+            setTotalPresent(0);
+            setTotalAbsent(0);
         }
     };
     
@@ -451,7 +471,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
             // You'll need to get the current user ID (markedBy) from your auth context
             const markedBy = "current_user_id"; // Replace with actual user ID
             
-            await updateSingleInternAttendance({
+            const response = await updateSingleInternAttendance({
                 internId,
                 date: selectedDate,
                 status,
@@ -459,9 +479,50 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                 remarks: `Updated via UI - ${status ? 'Present' : 'Absent'}`
             });
             
-            // console.log(`Attendance updated for intern ${internId}: ${status}`);
+            // Update local state after successful backend update
+            if (response?.data) {
+                // Update the attendance state for the specific intern
+                setAttendance(prev => ({
+                    ...prev,
+                    [internId]: status
+                }));
+                
+                // Update the full dataset with the new status
+                setAllAttendanceRecords(prev => 
+                    prev.map(record => 
+                        record.id === internId 
+                            ? { ...record, attendanceStatus: status }
+                            : record
+                    )
+                );
+                
+                // Recalculate total present and absent counts
+                const updatedRecords = allAttendanceRecords.map(record => 
+                    record.id === internId 
+                        ? { ...record, attendanceStatus: status }
+                        : record
+                );
+                
+                const newTotalPresent = updatedRecords.filter(record => record.attendanceStatus === true).length;
+                const newTotalAbsent = updatedRecords.filter(record => record.attendanceStatus === false).length;
+                
+                setTotalPresent(newTotalPresent);
+                setTotalAbsent(newTotalAbsent);
+                
+                // Update the paginated records if the updated record is on the current page
+                setAttendanceRecords(prev => 
+                    prev.map(record => 
+                        record.id === internId 
+                            ? { ...record, attendanceStatus: status }
+                            : record
+                    )
+                );
+                
+                console.log(`Attendance updated for intern ${internId}: ${status ? 'Present' : 'Absent'}`);
+            }
         } catch (err) {
             console.error('Failed to update attendance:', err);
+            setError('Failed to update attendance');
         }
     };
     
@@ -553,9 +614,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
         fetchAttendanceForDate(selectedDate, selectedBranch || null, selectedDays || null, selectedCourse || null, selectedTiming || null, 1);
     };
 
-    // Calculate totals based on current attendance state
-    const totalPresent = useMemo(() => Object.values(attendance).filter(p => p).length, [attendance]);
-    const totalAbsent = attendanceRecords.length - totalPresent;
+    // Total present and absent are now calculated from full dataset in fetchAttendanceForDate
 
     const todayDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -631,7 +690,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
 
             {/* Status Cards */}
             <div className="grid grid-cols-3 gap-4 mb-8">
-                        <StatusCard label="Total Records" value={attendanceRecords.length < 10 ? `0${attendanceRecords.length}` : attendanceRecords.length} colorClass="#000" />
+                        <StatusCard label="Total Records" value={totalRecords < 10 ? `0${totalRecords}` : totalRecords} colorClass="#000" />
                 <StatusCard label="Total Present" value={totalPresent < 10 ? `0${totalPresent}` : totalPresent} colorClass="#10B981" /> {/* Emerald-500 */}
                 <StatusCard label="Total Absent" value={totalAbsent < 10 ? `0${totalAbsent}` : totalAbsent} colorClass="#EF4444" /> {/* Red-500 */}
             </div>
@@ -773,11 +832,11 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                 )}
 
                 {/* Save Button */}
-                <div className="mt-8 flex justify-end">
+                {/* <div className="mt-8 flex justify-end">
                     <button className={`px-8 py-3 text-white font-semibold rounded-lg ${customOrange} ${customOrangeHover} shadow-md`}>
                         Save
                     </button>
-                </div>
+                </div> */}
             </div>
                 </>
             )}

@@ -6,7 +6,7 @@ import AdminService from '../../../services/admin-api-service/AdminService';
 
 export const StudentManagement = () => {
 
-    const { getInternsData, getBatchesData,putInternsData,postInternsData,getBranchesData,getCoursesData,deleteInternsData } = AdminService();
+    const { getInternsData, getBatchesData,putInternsData,postInternsData,getBranchesData,getCoursesData,deleteInternsData,getStaffData } = AdminService();
 
   const [activeTab, setActiveTab] = useState('studentsList');
   const [activeSubModule, setActiveSubModule] = useState('studentManagement');
@@ -15,10 +15,12 @@ export const StudentManagement = () => {
   const [branches, setBranches] = useState([]);
   const [batches, setBatches] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(false);
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [batchesLoading, setBatchesLoading] = useState(false);
   const [coursesLoading, setCoursesLoading] = useState(false);
+  const [staffLoading, setStaffLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
@@ -41,6 +43,7 @@ export const StudentManagement = () => {
   });
   const [filters, setFilters] = useState({
     courseStatus: '',
+    course: '',
     branch: '',
     batch: ''
   });
@@ -94,12 +97,12 @@ export const StudentManagement = () => {
 
   const departments = ['Choose Department', 'Computer Science', 'Electrical Engineering', 'Mechanical Engineering'];
   const employmentStatus = ['Choose Employment Status', 'Full-time', 'Part-time', 'Contract'];
-  const courseStatus = ['Choose Course Status', 'Active', 'Inactive', 'Completed'];
-  const syllabusStatus = ['Choose Syllabus Status', 'Pending', 'In Progress', 'Completed'];
+  const courseStatus = ['Choose Course Status','Active', 'Inactive','Dropped', 'Completed','Long leave'];
+  const syllabusStatus = ['Choose Syllabus Status', 'Not Started', 'Learning', 'mini Project', 'Main Project'];
   const placementStatus = ['Choose Placement Status', 'Placed', 'Not Placed'];
-  const roles = ['Choose Role', 'Super Admin', 'Admin', 'Mentor', 'Student'];
+  const roles = ['Choose Role', 'super admin', 'admin', 'mentor', 'intern'];
 
-  const fetchInterns = async (page = 1, search = '', courseStatus = '', branch = '', batch = '') => {
+  const fetchInterns = async (page = 1, search = '', courseStatus = '', course = '', branch = '', batch = '') => {
     try {
       setLoading(true);
       setError('');
@@ -112,6 +115,7 @@ export const StudentManagement = () => {
       
       if (search) queryParams.append('search', search);
       if (courseStatus) queryParams.append('courseStatus', courseStatus);
+      if (course) queryParams.append('course', course);
       if (branch) queryParams.append('branch', branch);
       if (batch) queryParams.append('batch', batch);
       
@@ -192,17 +196,42 @@ export const StudentManagement = () => {
     }
   };
 
+  const fetchStaff = async () => {
+    try {
+      setStaffLoading(true);
+      const res = await getStaffData();
+      setStaff(res?.data || []);
+    } catch (err) {
+      console.error('Failed to load staff:', err);
+      // Set default staff if API fails
+      setStaff([
+        { _id: '1', fullName: 'Choose Career Advisor' },
+        { _id: '2', fullName: 'John Smith' },
+        { _id: '3', fullName: 'Sarah Johnson' },
+        { _id: '4', fullName: 'Michael Brown' },
+        { _id: '5', fullName: 'Emily Davis' },
+        { _id: '6', fullName: 'David Wilson' },
+        { _id: '7', fullName: 'Lisa Anderson' },
+        { _id: '8', fullName: 'Robert Taylor' },
+        { _id: '9', fullName: 'Jennifer Martinez' }
+      ]);
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchInterns(pagination.currentPage, searchTerm, filters.courseStatus, filters.branch, filters.batch);
+    fetchInterns(pagination.currentPage, searchTerm, filters.courseStatus, filters.course, filters.branch, filters.batch);
     fetchBranches();
     fetchBatches();
     fetchCourses();
+    fetchStaff();
   }, []);
 
   // Handle search and filter changes with debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      fetchInterns(1, searchTerm, filters.courseStatus, filters.branch, filters.batch);
+      fetchInterns(1, searchTerm, filters.courseStatus, filters.course, filters.branch, filters.batch);
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timeoutId);
@@ -218,7 +247,7 @@ export const StudentManagement = () => {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       setPagination(prev => ({ ...prev, currentPage: newPage }));
-      fetchInterns(newPage, searchTerm, filters.courseStatus, filters.branch, filters.batch);
+      fetchInterns(newPage, searchTerm, filters.courseStatus, filters.course, filters.branch, filters.batch);
     }
   };
 
@@ -271,9 +300,9 @@ export const StudentManagement = () => {
       batch: student.batch || "",
       courseStatus: student.courseStatus === 'Ongoing' ? 'Active' : 
                    student.courseStatus === 'Completed' ? 'Completed' : 'Inactive',
+      careerAdvisor: student.careerAdvisor?._id || student.careerAdvisor || "",
       remarks: student.remarks || "",
-      internSyllabusStatus: student.internSyllabusStatus === 'Not Started' ? 'Pending' :
-                           student.internSyllabusStatus === 'In Progress' ? 'In Progress' : 'Completed',
+      internSyllabusStatus: student.internSyllabusStatus || 'Not Started',
       placementStatus: student.placementStatus || "",
       linkedin: student.linkedin || "",
       portfolio: student.portfolio || "",
@@ -337,6 +366,7 @@ export const StudentManagement = () => {
         'Course Started',
         'Completion Date',
         'Syllabus Status',
+        'Career Advisor',
         'Placement Status',
         'Company',
         'Job Role',
@@ -360,6 +390,7 @@ export const StudentManagement = () => {
         student.courseStartedDate ? new Date(student.courseStartedDate).toLocaleDateString() : 'N/A',
         student.completionDate ? new Date(student.completionDate).toLocaleDateString() : 'N/A',
         student.internSyllabusStatus || 'N/A',
+        student.careerAdvisor?.fullName || student.careerAdvisor || 'N/A',
         student.placementStatus || 'N/A',
         student.companyName || 'N/A',
         student.jobRole || 'N/A',
@@ -487,7 +518,7 @@ export const StudentManagement = () => {
       setError('');
       const res = await deleteInternsData(deletingStudent._id);
       showNotification('success', 'Success', 'Student deleted successfully.');
-      await fetchInterns();
+      await fetchInterns(pagination.currentPage, searchTerm, filters.courseStatus, filters.course, filters.branch, filters.batch);
       setShowDeleteModal(false);
       setDeletingStudent(null);
     } catch (err) {
@@ -513,7 +544,12 @@ export const StudentManagement = () => {
     const courseStatus = courseStatusMap[uiCourseStatus] || undefined;
 
     const uiSyllabusStatus = formDataObj.get('internSyllabusStatus');
-    const syllabusMap = { 'Pending': 'Not Started', 'In Progress': 'In Progress', 'Completed': 'Completed' };
+    const syllabusMap = { 
+      'Not Started': 'Not Started', 
+      'Learning': 'Learning', 
+      'mini Project': 'mini Project', 
+      'Main Project': 'Main Project' 
+    };
     const internSyllabusStatus = syllabusMap[uiSyllabusStatus] || undefined;
 
     const payload = {
@@ -537,6 +573,7 @@ export const StudentManagement = () => {
       completionDate: formDataObj.get('completionDate') || undefined,
       batch: formDataObj.get('batch') || undefined,
       courseStatus,
+      careerAdvisor: formDataObj.get('careerAdvisor') || undefined,
       remarks: formDataObj.get('remarks') || undefined,
 
       internSyllabusStatus,
@@ -565,7 +602,7 @@ export const StudentManagement = () => {
       }
       
       // refresh list and switch tab
-      await fetchInterns();
+      await fetchInterns(pagination.currentPage, searchTerm, filters.courseStatus, filters.course, filters.branch, filters.batch);
       setActiveTab('studentsList');
       setEditingStudent(null);
       setIsEditMode(false);
@@ -697,6 +734,61 @@ export const StudentManagement = () => {
             <option value="Completed">Completed</option>
             <option value="Dropped">Dropped</option>
           </select>
+          
+          <select 
+            value={filters.course}
+            onChange={(e) => handleFilterChange('course', e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            disabled={coursesLoading}
+          >
+            <option value="">All Courses</option>
+            {coursesLoading ? (
+              <option>Loading courses...</option>
+            ) : (
+              courses.map(course => (
+                <option key={course._id} value={course._id}>
+                  {course.courseName}
+                </option>
+              ))
+            )}
+          </select>
+          
+          <select 
+            value={filters.branch}
+            onChange={(e) => handleFilterChange('branch', e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            disabled={branchesLoading}
+          >
+            <option value="">All Branches</option>
+            {branchesLoading ? (
+              <option>Loading branches...</option>
+            ) : (
+              branches.map(branch => (
+                <option key={branch._id} value={branch._id}>
+                  {branch.branchName}
+                </option>
+              ))
+            )}
+          </select>
+          
+          <select 
+            value={filters.batch}
+            onChange={(e) => handleFilterChange('batch', e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            disabled={batchesLoading}
+          >
+            <option value="">All Batches</option>
+            {batchesLoading ? (
+              <option>Loading batches...</option>
+            ) : (
+              batches.map(batch => (
+                <option key={batch._id} value={batch.batchName}>
+                  {batch.batchName}
+                </option>
+              ))
+            )}
+          </select>
+          
           <button 
             onClick={handleExport}
             className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200"
@@ -1123,6 +1215,27 @@ export const StudentManagement = () => {
             className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             {courseStatus.map(status => <option key={status} value={status === 'Choose Course Status' ? '' : status}>{status}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-gray-700 font-medium mb-2">Career Advisor</label>
+          <select 
+            name="careerAdvisor" 
+            value={formData.careerAdvisor || ''}
+            onChange={(e) => setFormData(prev => ({...prev, careerAdvisor: e.target.value}))}
+            className="w-full px-4 py-2 text-black border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            disabled={staffLoading}
+          >
+            <option value="">Choose Career Advisor</option>
+            {staffLoading ? (
+              <option>Loading career advisors...</option>
+            ) : (
+              staff.map(advisor => (
+                <option key={advisor._id} value={advisor._id}>
+                  {advisor.fullName}
+                </option>
+              ))
+            )}
           </select>
         </div>
         <div className="lg:col-span-2">
@@ -1602,6 +1715,7 @@ export const StudentManagement = () => {
                           </span>
                         </p>
                         <p className="leading-6"><span className="font-semibold text-gray-900">Syllabus Status:</span> <span className="text-gray-600">{viewingStudent.internSyllabusStatus || 'N/A'}</span></p>
+                        <p className="leading-6"><span className="font-semibold text-gray-900">Career Advisor:</span> <span className="text-gray-600">{viewingStudent.careerAdvisor?.fullName || viewingStudent.careerAdvisor || 'N/A'}</span></p>
                         {viewingStudent.remarks && (
                           <p className="col-span-2 leading-6">
                             <span className="font-semibold text-gray-900">Remarks/Notes:</span>{" "}

@@ -7,20 +7,63 @@ export const WeeklySchedule = () => {
 
   const [activeTab, setActiveTab] = useState('weekly-schedule');
   const [batches, setBatches] = useState([]);
+  const [allBatches, setAllBatches] = useState([]); // Store all batches for search
   const [loading, setLoading] = useState(false);
   // const [loading, setLoading] = useState(flse);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // State for the items currently on the canvas
   const [canvasItems, setCanvasItems] = useState([]);
   const [draggingItem, setDraggingItem] = useState(null);
   const [warning, setWarning] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalType, setModalType] = useState('info'); // 'info', 'success', 'error', 'warning'
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
 
   // State for weekly schedule data from backend
   const [weeklySchedules, setWeeklySchedules] = useState([]);
   const [mentors, setMentors] = useState([]);
 
-  const { getBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, putWeeklySchedulesData, deleteWeeklySchedulesData, getStaffData } = AdminService();
+  const { getBatchesData, getAllBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, putWeeklySchedulesData, deleteWeeklySchedulesData, getStaffData } = AdminService();
+
+  // Function to show modal message
+  const showModalMessage = (message, type = 'info') => {
+    setModalMessage(message);
+    setModalType(type);
+    setShowModal(true);
+  };
+
+  // Function to close modal
+  const closeModal = () => {
+    setShowModal(false);
+    setModalMessage('');
+    setModalType('info');
+  };
+
+  // Function to show toast notification
+  const showToastMessage = (message, type = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+    
+    // Auto-hide toast after 3 seconds
+    setTimeout(() => {
+      setShowToast(false);
+      setToastMessage('');
+      setToastType('success');
+    }, 3000);
+  };
+
+  // Function to close toast manually
+  const closeToast = () => {
+    setShowToast(false);
+    setToastMessage('');
+    setToastType('success');
+  };
 
   const headData = "Batch Management";
 
@@ -30,12 +73,14 @@ export const WeeklySchedule = () => {
       setLoading(true);
       setError('');
       // const res = await axiosPrivate.get('http://localhost:3000/api/batches');
-      const res = await getBatchesData();
+      const res = await getAllBatchesData();
       // console.log('Batches response:', res.data);
-      setBatches(res.data || []);
+      setAllBatches(res.data || []); // Store all batches
+      setBatches(res.data || []); // Display all batches initially
     } catch (err) {
       console.error('Failed to load batches:', err);
       setError('Failed to load batches');
+      showModalMessage('Failed to load batches. Please try again.', 'error');
       // Set default batches if API fails
       // setBatches([
       //   { _id: '1', batchName: 'B11' },
@@ -48,6 +93,33 @@ export const WeeklySchedule = () => {
       setLoading(false);
     }
   };
+
+  // Search batches function
+  const searchBatches = (searchValue) => {
+    setSearchTerm(searchValue);
+    
+    if (!searchValue.trim()) {
+      // If search is empty, show all batches
+      setBatches(allBatches);
+    } else {
+      // Filter batches based on search term
+      const filteredBatches = allBatches.filter(batch => 
+        batch.batchName.toLowerCase().includes(searchValue.toLowerCase())
+      );
+      setBatches(filteredBatches);
+    }
+  };
+
+  // Check if a batch is already assigned to a schedule
+  const isBatchAssigned = (batchId) => {
+    return weeklySchedules.some(schedule => 
+      schedule.schedule.some(timeSlot => 
+        timeSlot.sub_details.some(subDetail => 
+          subDetail.batch.some(batch => batch._id === batchId)
+        )
+      )
+    );
+  };
 console.log('loading=====', loading);
   // Fetch mentors (staff) from backend
   const fetchMentors = async () => {
@@ -56,10 +128,13 @@ console.log('loading=====', loading);
       setLoading(true);
       setError('');
       const res = await getStaffData();
-      // console.log('Staff response:', res);
+      console.log("res==", res.data);
+      
       
       // Filter staff with role "Mentor" and transform to the expected format
-      const mentorStaff = res.data?.filter(staff => staff.role === 'Mentor') || [];
+      const mentorStaff = res.data?.filter(staff => staff.role?.role === 'mentor') || [];
+
+      console.log("mentorStaff==", mentorStaff);
       
       const transformedMentors = mentorStaff.map(staff => ({
         name: staff.fullName,
@@ -74,6 +149,7 @@ console.log('loading=====', loading);
     } catch (err) {
       console.error('Failed to load mentors:', err);
       setError('Failed to load mentors');
+      showModalMessage('Failed to load mentors. Please try again.', 'error');
       // Set default mentors if API fails
       // setMentors([
       //   {
@@ -119,6 +195,7 @@ console.log('loading=====', loading);
     } catch (err) {
       console.error('Failed to load weekly schedules:', err);
       setError('Failed to load weekly schedules');
+      showModalMessage('Failed to load weekly schedules. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -203,6 +280,7 @@ console.log('loading=====', loading);
     } catch (error) {
       console.error('Error saving weekly schedule:', error);
       setError('Failed to save weekly schedule');
+      showModalMessage('Failed to save weekly schedule. Please try again.', 'error');
       throw error;
     }
   };
@@ -233,14 +311,19 @@ console.log('loading=====', loading);
       });
 
       // console.log('Batch removed from database:', response.data);
+      showToastMessage('Batch successfully removed from schedule!', 'success');
 
       // Refresh the data
       await fetchWeeklySchedules();
     } catch (error) {
       console.error('Error removing batch from database:', error);
       setError('Failed to remove batch');
+      showModalMessage('Failed to remove batch from schedule. Please try again.', 'error');
     }
   };
+
+  console.log(batches,'batches==');
+  
 
   const handleDrop = async (e) => {
     e.preventDefault();
@@ -258,7 +341,7 @@ console.log('loading=====', loading);
         // Get mentor and slot indices from the row's data attribute (most reliable method)
         const rowData = row.getAttribute('data-mentor-slot');
         if (!rowData) {
-          setWarning('Unable to identify mentor and slot!');
+          showModalMessage('Unable to identify mentor and slot!', 'warning');
           setDraggingItem(null);
           return;
         }
@@ -283,7 +366,7 @@ console.log('loading=====', loading);
         // });
 
         if (!isMWF && !isTTS) {
-          setWarning('Invalid drop zone! Only MWF and TTS columns are drop zones.');
+          showModalMessage('Invalid drop zone! Only MWF and TTS columns are drop zones.', 'warning');
           setDraggingItem(null);
           return;
         }
@@ -312,7 +395,7 @@ console.log('loading=====', loading);
         console.log("mentorSchedule",mentorSchedule);
 
         if (!mentorSchedule) {
-          setWarning('Mentor schedule not found!');
+          showModalMessage('Mentor schedule not found!', 'warning');
           setDraggingItem(null);
           return;
         }
@@ -325,7 +408,7 @@ console.log('loading=====', loading);
           );
 
           if (targetDetail?.batch?.some(batch => batch._id === draggingItem.id)) {
-            setWarning('This batch is already assigned to this slot!');
+            showModalMessage('This batch is already assigned to this slot!', 'warning');
             setDraggingItem(null);
             return;
           }
@@ -350,7 +433,7 @@ console.log('loading=====', loading);
         });
 
         if (batchConflict) {
-          setWarning(`This batch is already assigned to another mentor at the same time on ${targetDays} days!`);
+          showModalMessage(`This batch is already assigned to another mentor at the same time on ${targetDays} days!`, 'warning');
           setDraggingItem(null);
           return;
         }
@@ -359,7 +442,7 @@ console.log('loading=====', loading);
         const subDetailIndex = timeSlot.sub_details?.findIndex(detail => detail.days === targetDays);
 
         if (subDetailIndex === -1) {
-          setWarning(`No ${targetDays} sub-detail found for this time slot!`);
+          showModalMessage(`No ${targetDays} sub-detail found for this time slot!`, 'warning');
           setDraggingItem(null);
           return;
         }
@@ -373,6 +456,7 @@ console.log('loading=====', loading);
         });
 
         // console.log('Batch added to database:', response.data);
+        showToastMessage('Batch successfully added to schedule!', 'success');
 
         // Refresh the data
         await fetchWeeklySchedules();
@@ -380,6 +464,7 @@ console.log('loading=====', loading);
       } catch (error) {
         console.error('Error adding batch to database:', error);
         setError('Failed to add batch to schedule');
+        showModalMessage('Failed to add batch to schedule. Please try again.', 'error');
       }
 
       // Reset the dragging item state after the drop
@@ -405,6 +490,162 @@ console.log('loading=====', loading);
       <path d="M12 4.5C7.94 4.5 4.14 7.22 2.5 12c1.64 4.78 5.44 7.5 9.5 7.5s7.86-2.72 9.5-7.5c-1.64-4.78-5.44-7.5-9.5-7.5zM12 17a5 5 010-10 5 5 010 10zM12 14.5a2.5 2.5 010-5 2.5 2.5 010 5z" />
     </svg>
   );
+
+  // Toast Component
+  const Toast = () => {
+    if (!showToast) return null;
+
+    const getToastIcon = () => {
+      switch (toastType) {
+        case 'success':
+          return (
+            <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 1 1 18 0z" />
+            </svg>
+          );
+        case 'error':
+          return (
+            <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          );
+        case 'warning':
+          return (
+            <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          );
+        case 'info':
+        default:
+          return (
+            <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 1 1 18 0z" />
+            </svg>
+          );
+      }
+    };
+
+    const getToastBgColor = () => {
+      switch (toastType) {
+        case 'success':
+          return 'bg-green-50 border-green-200';
+        case 'error':
+          return 'bg-red-50 border-red-200';
+        case 'warning':
+          return 'bg-yellow-50 border-yellow-200';
+        case 'info':
+        default:
+          return 'bg-blue-50 border-blue-200';
+      }
+    };
+
+    return (
+      <div className="fixed top-4 right-4 z-50 transform transition-all duration-300 ease-in-out animate-pulse">
+        <div className={`max-w-sm w-full ${getToastBgColor()} border rounded-lg  p-4 flex items-center space-x-3`}>
+          <div className="flex-shrink-0">
+            {getToastIcon()}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-900">{toastMessage}</p>
+          </div>
+          <div className="flex-shrink-0">
+            <button
+              onClick={closeToast}
+              className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal Component
+  const Modal = () => {
+    if (!showModal) return null;
+
+    const getIcon = () => {
+      switch (modalType) {
+        case 'success':
+          return (
+            <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 1 1 18 0z" />
+            </svg>
+          );
+        case 'error':
+          return (
+            <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          );
+        case 'warning':
+          return (
+            <svg className="h-8 w-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          );
+        case 'info':
+        default:
+          return (
+            <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 1 1 18 0z" />
+            </svg>
+          );
+      }
+    };
+
+    const getButtonColor = () => {
+      switch (modalType) {
+        case 'success':
+          return 'bg-green-600 hover:bg-green-700 focus:ring-green-500';
+        case 'error':
+          return 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
+        case 'warning':
+          return 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500';
+        case 'info':
+        default:
+          return 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500';
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                {getIcon()}
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {modalType === 'success' && 'Success'}
+                  {modalType === 'error' && 'Error'}
+                  {modalType === 'warning' && 'Warning'}
+                  {modalType === 'info' && 'Information'}
+                </h3>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-500">{modalMessage}</p>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={closeModal}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonColor()}`}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const Sidebar = () => (
     <div className="w-64 bg-white shadow-xl min-h-screen p-6 flex flex-col justify-between">
@@ -472,18 +713,37 @@ console.log('loading=====', loading);
 
   const renderContent = () => {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen font-sans flex-1">
+      <div className="h-screen bg-gray-100 font-sans flex flex-col overflow-hidden">
         <Navbar headData={headData} activeTab={activeTab} />
-        <div className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
-          <div className="lg:w-1/6 bg-white p-6 rounded-xl shadow-lg">
+        <div className="flex-1 flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6  overflow-y-auto">
+          <div className="lg:w-1/6 bg-white p-6 rounded-xl hadow-lg flex flex-col h-full">
             <h3 className="text-xl font-bold mb-4">Batch's</h3>
             <p className="text-sm text-gray-500 mb-4">Drag batches to the weekly live schedule (classes.)</p>
             <div className="relative mb-4">
-              <input type="text" placeholder="Search Batch" className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500" />
+              <input 
+                type="text" 
+                placeholder="Search Batch" 
+                value={searchTerm}
+                onChange={(e) => searchBatches(e.target.value)}
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500" 
+              />
               <Icon path="M21 21l-6-6m2-5a7 7 01-14 0 7 7 0114 0z" className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              {searchTerm && (
+                <button
+                  onClick={() => searchBatches('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <Icon path="M6 18L18 6M6 6l12 12" className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            {/* <div className="space-y-2 max-h-96 overflow-y-auto"> */}
-            <div className="space-y-2 overflow-y-auto">
+            <div 
+              className="space-y-2 overflow-y-auto flex-1 batches-container"
+              style={{
+                scrollbarWidth: 'none', /* Firefox */
+                msOverflowStyle: 'none', /* Internet Explorer 10+ */
+              }}
+            >
               {loading ? (
                 <p className="text-center text-gray-500 py-4">Loading batches...</p>
               ) : error ? (
@@ -491,29 +751,31 @@ console.log('loading=====', loading);
               ) : batches.length === 0 ? (
                 <p className="text-center text-gray-500 py-4">No batches available</p>
               ) : (
-                batches.map((batch, index) => (
-                  <div
-                    key={batch._id || index}
-                    draggable
-                    onDragStart={() => handleDragStart(batch)}
-                    className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200 cursor-grab hover:bg-gray-100 transition-colors"
-                  >
-                    <span>{batch.batchName || batch}</span>
-                    {/* <EyeIcon className="w-5 h-5 text-gray-500" /> */}
-                    <IoEyeOutline />
-                  </div>
-                ))
+                batches.map((batch, index) => {
+                  const isAssigned = isBatchAssigned(batch._id);
+                  return (
+                    <div
+                      key={batch._id || index}
+                      draggable
+                      onDragStart={() => handleDragStart(batch)}
+                      className={`flex justify-between items-center p-3 rounded-lg border cursor-grab hover:bg-gray-100 transition-colors ${
+                        isAssigned 
+                          ? 'bg-green-100 border-green-200' 
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      <span className={isAssigned ? 'text-green-700' : 'text-gray-700'}>
+                        {batch.batchName || batch}
+                      </span>
+                      <IoEyeOutline className={isAssigned ? 'text-green-500' : 'text-gray-500'} />
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
 
-          <div className="lg:flex-1 bg-white p-6 rounded-xl shadow-lg">
-            {/* Warning Message */}
-            {warning && (
-              <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg">
-                {warning}
-              </div>
-            )}
+          <div className="lg:flex-1 bg-white p-6 rounded-xl  flex flex-col h-full">
 
             <div className="flex flex-wrap items-center justify-between mb-6 space-y-4 sm:space-y-0">
               <div className="flex-1 min-w-[200px] mb-4 sm:mb-0">
@@ -535,7 +797,7 @@ console.log('loading=====', loading);
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <div className="overflow-auto rounded-lg border border-gray-200 flex-1">
               <table className="min-w-full">
                 <thead className="bg-orange-500 text-white">
                   <tr>
@@ -705,6 +967,15 @@ console.log('loading=====', loading);
 
   return (
     <>
+      <style>
+        {`
+          .batches-container::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
+      <Toast />
+      <Modal />
       {renderContent()}
     </>
   )

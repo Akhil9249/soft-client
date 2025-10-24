@@ -9,7 +9,7 @@ const SuperAdminProtectedRoute = () => {
     // console.log("auth", auth);
   
 
-    if (token && auth.role !== "Super Admin") {
+    if (token && auth.role !== "super admin") {
         return <Navigate to="/student-management" />;
     }
   

@@ -109,6 +109,11 @@ const AdminService = () => {
     const deleteBatchesData = async (batchId) => {
         const response = await axiosPrivate.delete(`/api/batches/${batchId}`);
         return response.data;
+    };
+    const getAllBatchesData = async (queryParams = '') => {
+        const url = queryParams ? `/api/batches/all?${queryParams}` : "/api/batches/all";
+        const response = await axiosPrivate.get(url);
+        return response.data;
     };  
 
     // ======================================== course management ========================================
@@ -385,7 +390,12 @@ const AdminService = () => {
 
     // ======================================== role management ========================================
     const getRolesData = async (queryParams = '') => {
-        const url = queryParams ? `/api/roles?${queryParams}` : "/api/roles";
+        let url;
+        if (queryParams === 'all') {
+            url = "/api/roles/all";
+        } else {
+            url = queryParams ? `/api/roles?${queryParams}` : "/api/roles";
+        }
         const response = await axiosPrivate.get(url);
         return response.data;
     };
@@ -442,6 +452,7 @@ const AdminService = () => {
         postInternsData,
         deleteInternsData,
         getBatchesData,
+        getAllBatchesData,
         postBatchesData,
         putBatchesData,
         deleteBatchesData,

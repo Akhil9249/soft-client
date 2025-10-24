@@ -38,9 +38,9 @@ export const Courses = () => {
   const courseStatus = ['Choose Course Status', 'Active', 'Inactive', 'Completed'];
   const syllabusStatus = ['Choose Syllabus Status', 'Pending', 'In Progress', 'Completed'];
   const placementStatus = ['Choose Placement Status', 'Placed', 'Not Placed'];
-  const roles = ['Choose Role', 'Super Admin', 'Admin', 'Mentor', 'Student'];
+  const roles = ['Choose Role', 'super admin', 'admin', 'mentor', 'intern'];
   const durations = ['3 Months', '6 Months', '1 Year'];
-  const courseTypes = ['Regular', 'Fast Track', 'Online'];
+  const courseTypes = ['Regular', 'Offer', 'Online'];
   const [categories, setCategories] = useState([]);
   const [courseList, setCourseList] = useState([]);
   const [loading, setLoading] = useState(false);

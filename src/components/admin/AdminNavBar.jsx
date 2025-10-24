@@ -38,6 +38,8 @@ const Sidebar = () => {
   // console.log("Auth object:", auth);
   // console.log("User role:", auth?.role);
   const dispatch = useAppDispatch();
+
+  console.log("Auth object:", auth);
   
   // const [isOpen, setIsOpen] = useState(false);
   // const [isCatalogOpen, setIsCatalogOpen] = useState(false);
@@ -135,7 +137,7 @@ const Sidebar = () => {
             {openSections.administration && (
               <ul className="pl-8 mt-2 space-y-2 text-sm text-gray-500">
                 {/* Role Management and Staff Management - Only for Super Admin and Admin */}
-                {(auth.role === "Super Admin" || auth.role === "Admin") && (
+                {(auth.role === "super admin" || auth.role === "admin") && (
                   <>
                     <li>
                       <Link 
