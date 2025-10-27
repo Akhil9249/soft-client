@@ -299,23 +299,6 @@ const AdminService = () => {
         const response = await axiosPrivate.delete(`/api/timings/${timingId}`);
         return response.data;
     };
-    // ======================================== weekly schedule management ========================================
-    const getWeeklySchedulesData = async () => {
-        const response = await axiosPrivate.get("/api/weekly-schedules");
-        return response.data;
-    };
-    const postWeeklySchedulesData = async (data) => {
-        const response = await axiosPrivate.post("/api/weekly-schedules",data);
-        return response.data;
-    };
-    const putWeeklySchedulesData = async (scheduleId, data) => {
-        const response = await axiosPrivate.post(`/api/weekly-schedules/${scheduleId}/batch`, data);
-        return response.data;
-    };
-    const deleteWeeklySchedulesData = async (scheduleId, data) => {
-        const response = await axiosPrivate.delete(`/api/weekly-schedules/${scheduleId}/batch`, {data});
-        return response.data;
-    };
 
     // ======================================== interns attendance management ========================================
     const getInternsAttendanceData = async (params = {}) => {
@@ -388,6 +371,26 @@ const AdminService = () => {
         return response;
     };
 
+    const getInternsAttendanceByMonth = async (month, year, branchId = null, courseId = null, days = null, timingId = null) => {
+        const params = { month, year };
+        if (branchId) {
+            params.branchId = branchId;
+        }
+        if (courseId) {
+            params.courseId = courseId;
+        }
+        if (days) {
+            params.days = days;
+        }
+        if (timingId) {
+            params.timingId = timingId;
+        }
+        const response = await axiosPrivate.get("/api/interns-attendance/month", { 
+            params 
+        });
+        return response;
+    };
+
     // ======================================== role management ========================================
     const getRolesData = async (queryParams = '') => {
         let url;
@@ -434,23 +437,126 @@ const AdminService = () => {
         const response = await axiosPrivate.put(`/api/roles/${roleId}`, data);
         return response.data;
     };
-    return {
 
+    // ======================================== notification management ========================================
+    
+    const getNotificationsData = async (page = 1, limit = 5) => {
+        const url = `/api/notifications?page=${page}&limit=${limit}`;
+        const response = await axiosPrivate.get(url);
+        return response.data;
+    };
+    
+    const createNotification = async (data) => {
+        const response = await axiosPrivate.post("/api/notifications", data);
+        return response;
+    };
+    
+    const getNotificationById = async (notificationId) => {
+        const response = await axiosPrivate.get(`/api/notifications/${notificationId}`);
+        return response.data;
+    };
+    
+    const updateNotification = async (notificationId, data) => {
+        const response = await axiosPrivate.put(`/api/notifications/${notificationId}`, data);
+        return response.data;
+    };
+    
+    const deleteNotification = async (notificationId) => {
+        const response = await axiosPrivate.delete(`/api/notifications/${notificationId}`);
+        return response;
+    };
+    // ======================================== weekly schedule management ========================================
+
+    // const getWeeklySchedulesData = async () => {
+    //     const response = await axiosPrivate.get("/api/weekly-schedule");
+    //     return response.data;
+    // };
+    
+
+    const getAllMentorsWithBatches = async () => {
+        const response = await axiosPrivate.get("/api/weekly-schedules/mentors-batches");
+        return response.data;
+    };
+
+    const createWeeklySchedule = async (data) => {
+        const response = await axiosPrivate.post("/api/weekly-schedules", data);
+        return response.data;
+    };
+
+    const getWeeklyScheduleById = async (scheduleId) => {
+        const response = await axiosPrivate.get(`/api/weekly-schedules/${scheduleId}`);
+        return response.data;
+    };
+
+    const updateWeeklySchedule = async (scheduleId, data) => {
+        const response = await axiosPrivate.put(`/api/weekly-schedules/${scheduleId}`, data);
+        return response.data;
+    };
+
+    const addTimeToSchedule = async (scheduleId, data) => {
+        const response = await axiosPrivate.post(`/api/weekly-schedules/${scheduleId}/time`, data);
+        return response.data;
+    };
+
+    const addSubDetailsToTime = async (scheduleId, data) => {
+        const response = await axiosPrivate.post(`/api/weekly-schedules/${scheduleId}/sub-details`, data);
+        return response.data;
+    };
+
+    const addBatchToSubDetails = async (scheduleId, data) => {
+        const response = await axiosPrivate.post(`/api/weekly-schedules/${scheduleId}/batch`, data);
+        return response.data;
+    };
+
+    const removeBatchFromSubDetails = async (scheduleId, data) => {
+        const response = await axiosPrivate.delete(`/api/weekly-schedules/${scheduleId}/batch`, { data });
+        return response.data;
+    };
+
+
+
+    const getWeeklySchedulesData = async () => {
+        const response = await axiosPrivate.get("/api/weekly-schedules");
+        return response.data;
+    };
+    const postWeeklySchedulesData = async (data) => {
+        const response = await axiosPrivate.post("/api/weekly-schedules",data);
+        return response.data;
+    };
+    const putWeeklySchedulesData = async (scheduleId, data) => {
+        const response = await axiosPrivate.post(`/api/weekly-schedules/${scheduleId}/batch`, data);
+        return response.data;
+    };
+    const deleteWeeklySchedulesData = async (scheduleId, data) => {
+        const response = await axiosPrivate.delete(`/api/weekly-schedules/${scheduleId}/batch`, {data});
+        return response.data;
+    };
+    const updateWeeklyScheduleSubject = async (scheduleId, data) => {
+        const response = await axiosPrivate.put(`/api/weekly-schedules/${scheduleId}/subject`, data);
+        return response.data;
+    };
+
+    return {
+        // ======== register and login
         postRegister,
         postLogin,
+        // =========== staff
         getStaffData,
         putStaffData,
         postStaffData,
         deleteStaffData,
+        //========== branch
         getBranchesData,
         postBranchesData,
         putBranchesData,
         deleteBranchesData,
+        //======== intern
         getInternsData,
         getInternsDataSearch,
         putInternsData,
         postInternsData,
         deleteInternsData,
+        //======= batch
         getBatchesData,
         getAllBatchesData,
         postBatchesData,
@@ -489,10 +595,6 @@ const AdminService = () => {
         postTimingsData,
         putTimingsData,
         deleteTimingsData,
-        getWeeklySchedulesData,
-        postWeeklySchedulesData,
-        putWeeklySchedulesData,
-        deleteWeeklySchedulesData,
         
         // ======================================== interns attendance management ========================================
         getInternsAttendanceData,
@@ -505,6 +607,7 @@ const AdminService = () => {
         updateSingleInternAttendance,
         getAttendanceSummaryReport,
         getInternsByAttendanceDate,
+        getInternsAttendanceByMonth,
         getRolesData,
         postRolesData,
         putRolesData,
@@ -512,7 +615,27 @@ const AdminService = () => {
         getRoleByRoleName,
         getRolePermissions,
         getRoleById,
-        updateRole
+        updateRole,
+        
+        // ======================================== notification management ========================================
+        getNotificationsData,
+        createNotification,
+        getNotificationById,
+        updateNotification,
+        deleteNotification,
+        getWeeklySchedulesData,
+        getAllMentorsWithBatches,
+        createWeeklySchedule,
+        getWeeklyScheduleById,
+        updateWeeklySchedule,
+        addTimeToSchedule,
+        addSubDetailsToTime,
+        addBatchToSubDetails,
+        removeBatchFromSubDetails,
+        putWeeklySchedulesData,
+        postWeeklySchedulesData,
+        deleteWeeklySchedulesData,
+        updateWeeklyScheduleSubject
 
     };
 };

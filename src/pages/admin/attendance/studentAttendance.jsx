@@ -2,8 +2,9 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import Tabs from '../../../components/button/Tabs';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import Report from './Report';
 
-const headData = "Staff Management"
+const headData = "Attendance"
 const tabOptions = [
  { value: "Student Attendance", label: "Student Attendance" },
  { value: "Report", label: "Report" },
@@ -857,13 +858,7 @@ export const StudentAttendance = () => {
             <Navbar headData={headData} activeTab={activeTab} />
             
                 <main className="flex-1 overflow-y-auto">
-                    {activeMenu === 'Attendance:Student Attendance' && <AttendanceContent activeTab={activeTab} setActiveTab={setActiveTab} />}
-                    {/* Placeholder for other content */}
-                    {activeMenu !== 'Attendance:Student Attendance' && (
-                        <div className="p-6 text-gray-500">
-                            Content for "{activeMenu}" goes here...
-                        </div>
-                    )}
+                    {activeTab === 'Student Attendance' ? <AttendanceContent activeTab={activeTab} setActiveTab={setActiveTab} /> : <Report activeTab={activeTab} setActiveTab={setActiveTab} />}
                 </main>
             {/* </div> */}
         </div>

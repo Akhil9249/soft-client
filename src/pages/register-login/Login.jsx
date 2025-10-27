@@ -103,10 +103,10 @@ const Login = () => {
       // Navigate after a short delay to show the success message
       setTimeout(() => {
         switch(role){
-          case 'Admin':
+          case 'admin':
               navigate("/dashboard")
               break
-          case 'Mentor':
+          case 'mentor':
               navigate("/")
               break
         }

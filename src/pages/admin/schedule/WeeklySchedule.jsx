@@ -27,8 +27,10 @@ export const WeeklySchedule = () => {
   // State for weekly schedule data from backend
   const [weeklySchedules, setWeeklySchedules] = useState([]);
   const [mentors, setMentors] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [topics, setTopics] = useState([]);
 
-  const { getBatchesData, getAllBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, putWeeklySchedulesData, deleteWeeklySchedulesData, getStaffData } = AdminService();
+  const { getBatchesData, getAllBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, putWeeklySchedulesData, deleteWeeklySchedulesData, getStaffData, getModulesData, getTopicsData, updateWeeklyScheduleSubject } = AdminService();
 
   // Function to show modal message
   const showModalMessage = (message, type = 'info') => {
@@ -201,6 +203,26 @@ console.log('loading=====', loading);
     }
   };
 
+  // Fetch modules from backend
+  const fetchModules = async () => {
+    try {
+      const res = await getModulesData();
+      setModules(res.data || []);
+    } catch (err) {
+      console.error('Failed to load modules:', err);
+    }
+  };
+
+  // Fetch topics from backend
+  const fetchTopics = async () => {
+    try {
+      const res = await getTopicsData();
+      setTopics(res.data || []);
+    } catch (err) {
+      console.error('Failed to load topics:', err);
+    }
+  };
+
   // Transform weekly schedule data to match the expected format
   const transformWeeklyScheduleData = (schedules) => {
     if (!schedules || schedules.length === 0) {
@@ -242,6 +264,8 @@ console.log('loading=====', loading);
     fetchBatches();
     fetchMentors();
     fetchWeeklySchedules();
+    fetchModules();
+    fetchTopics();
   }, []);
 
   // Debug: Log canvas items whenever they change
@@ -319,6 +343,37 @@ console.log('loading=====', loading);
       console.error('Error removing batch from database:', error);
       setError('Failed to remove batch');
       showModalMessage('Failed to remove batch from schedule. Please try again.', 'error');
+    }
+  };
+
+  // Handle subject change
+  const handleSubjectChange = async (scheduleId, timeIndex, days, newSubject) => {
+    try {
+      // Find the sub-detail index for the specific days
+      const schedule = weeklySchedules.find(ws => ws._id === scheduleId);
+      if (!schedule) return;
+
+      const timeSlot = schedule.schedule[timeIndex];
+      if (!timeSlot) return;
+
+      const subDetailIndex = timeSlot.sub_details.findIndex(detail => detail.days === days);
+      if (subDetailIndex === -1) return;
+
+      // Update the subject in the backend
+      const response = await updateWeeklyScheduleSubject(scheduleId, {
+        timeIndex,
+        subDetailIndex,
+        subject: newSubject
+      });
+
+      showToastMessage('Subject updated successfully!', 'success');
+
+      // Refresh the data
+      await fetchWeeklySchedules();
+    } catch (error) {
+      console.error('Error updating subject:', error);
+      setError('Failed to update subject');
+      showModalMessage('Failed to update subject. Please try again.', 'error');
     }
   };
 
@@ -884,9 +939,48 @@ console.log('loading=====', loading);
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <select className="p-1 border border-gray-300 rounded-md shadow-sm text-xs">
-                              <option>Choose</option>
-                            </select>
+                            {/* MWF Subject */}
+                            {(() => {
+                              const mentorSchedule = weeklySchedules.find(ws =>
+                                ws.mentor?.fullName === mentor.name
+                              );
+
+                              if (!mentorSchedule) {
+                                return <span className="text-gray-400">No class assigned</span>;
+                              }
+
+                              const timeSlot = mentorSchedule.schedule[slotIndex];
+                              if (!timeSlot) {
+                                return <span className="text-gray-400">No class assigned</span>;
+                              }
+
+                              const mwfDetail = timeSlot.sub_details?.find(detail => detail.days === 'MWF');
+                              const mwfBatches = mwfDetail?.batch || [];
+                              const mwfSubject = mwfDetail?.subject;
+
+                              if (mwfBatches.length === 0) {
+                                return <span className="text-gray-400">No class assigned</span>;
+                              }
+
+                              return (
+                                <select 
+                                  className="p-1 border border-gray-300 rounded-md shadow-sm text-xs w-full"
+                                  value={mwfSubject || ''}
+                                  onChange={(e) => handleSubjectChange(mentorSchedule._id, slotIndex, 'MWF', e.target.value)}
+                                >
+                                  <option value="">Choose Subject</option>
+                                  {modules.map(module => (
+                                    <optgroup key={module._id} label={module.moduleName}>
+                                      {topics.filter(topic => topic.module._id === module._id).map(topic => (
+                                        <option key={topic._id} value={topic.topicName}>
+                                          {topic.topicName}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  ))}
+                                </select>
+                              );
+                            })()}
                           </td>
                           <td
                             className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 relative group drop-zone min-h-[60px] border-2 border-dashed border-gray-200 hover:border-orange-300 transition-colors"
@@ -948,9 +1042,48 @@ console.log('loading=====', loading);
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <select className="p-1 border border-gray-300 rounded-md shadow-sm text-xs">
-                              <option>Choose</option>
-                            </select>
+                            {/* TTS Subject */}
+                            {(() => {
+                              const mentorSchedule = weeklySchedules.find(ws =>
+                                ws.mentor?.fullName === mentor.name
+                              );
+
+                              if (!mentorSchedule) {
+                                return <span className="text-gray-400">No class assigned</span>;
+                              }
+
+                              const timeSlot = mentorSchedule.schedule[slotIndex];
+                              if (!timeSlot) {
+                                return <span className="text-gray-400">No class assigned</span>;
+                              }
+
+                              const ttsDetail = timeSlot.sub_details?.find(detail => detail.days === 'TTS');
+                              const ttsBatches = ttsDetail?.batch || [];
+                              const ttsSubject = ttsDetail?.subject;
+
+                              if (ttsBatches.length === 0) {
+                                return <span className="text-gray-400">No class assigned</span>;
+                              }
+
+                              return (
+                                <select 
+                                  className="p-1 border border-gray-300 rounded-md shadow-sm text-xs w-full"
+                                  value={ttsSubject || ''}
+                                  onChange={(e) => handleSubjectChange(mentorSchedule._id, slotIndex, 'TTS', e.target.value)}
+                                >
+                                  <option value="">Choose Subject</option>
+                                  {modules.map(module => (
+                                    <optgroup key={module._id} label={module.moduleName}>
+                                      {topics.filter(topic => topic.module._id === module._id).map(topic => (
+                                        <option key={topic._id} value={topic.topicName}>
+                                          {topic.topicName}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  ))}
+                                </select>
+                              );
+                            })()}
                           </td>
                         </tr>
                       ))}

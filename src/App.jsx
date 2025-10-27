@@ -19,6 +19,7 @@ import { Topics } from "./pages/admin/syllabus-management/Topics";
 import { TaskManagement } from "./pages/admin/task-management/TaskManagement";
 import { Batches } from "./pages/admin/schedule/Batches";
 import { WeeklySchedule } from "./pages/admin/schedule/WeeklySchedule";
+import { MentorBatches } from "./pages/admin/schedule/MentorBatches";
 import { StaticPages } from "./pages/admin/settings/StaticPages";
 import { Timings } from "./pages/admin/schedule/Timings";
 import { Notification } from "./pages/admin/settings/Notification";
@@ -27,6 +28,7 @@ import { StudentAttendance } from "./pages/admin/attendance/studentAttendance";
 import SuperAdminProtectedRoute from "./components/protected-route/SuperAdminProtectedRoute";
 import Material from "./pages/admin/task-management/Material";
 import LeaveRequest from "./pages/admin/attendance/LeaveRequest";
+import AppTemp from "./pages/admin/attendance/Report";
 
 
 
@@ -54,9 +56,11 @@ function App() {
         <Route path="/task-management" element={<TaskManagement />} />
         <Route path="/material" element={<Material />} />
         <Route path="/student-attendance" element={<StudentAttendance />} />
+        <Route path="/temp" element={<AppTemp />} />
         <Route path="/leave-request" element={<LeaveRequest />} />
         <Route path="/batches" element={<Batches />} />
         <Route path="/weekly-schedule" element={<WeeklySchedule />} />
+        <Route path="/mentor-batches" element={<MentorBatches />} />
         <Route path="/static-pages" element={<StaticPages />} />
         <Route path="/timings" element={<Timings />} />
         <Route path="/notification" element={<Notification />} />

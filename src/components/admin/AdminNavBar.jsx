@@ -360,6 +360,19 @@ const Sidebar = () => {
                     Weekly Schedule
                   </Link>
                 </li>
+                <li>
+                  <Link 
+                    to="/mentor-batches" 
+                    onClick={() => handleNavItemClick('/mentor-batches')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/mentor-batches' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Mentor Batches
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
