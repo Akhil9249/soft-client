@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, memo, useRef } from 'react'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import {
     BellRing
   } from 'lucide-react';
@@ -44,12 +46,12 @@ const NotificationForm = memo(({
     filteredCourses,
     filteredInterns
 }) => (
-    <div className="p-8 bg-white rounded-3xl h-full shadow-lg">
+    <div className="p-8 bg-white rounded-lg h-full shadow-lg">
         <div className="mb-6">
             <h3 className="text-lg font-medium text-gray-900">
                 {isEditMode ? `Edit Notification - ${editingNotification?.title}` : 'Create New Notification'}
             </h3>
-        </div>
+            </div>
             <div className="space-y-6">
                 {/* Notification Title Input */}
                 <div className="flex flex-col">
@@ -631,6 +633,16 @@ export const Notification = () => {
 
     // State for expandable rows
     const [expandedRows, setExpandedRows] = useState(new Set());
+    const [exporting, setExporting] = useState(false);
+
+    // Filters
+    const [filterType, setFilterType] = useState('');
+    const [filterAudience, setFilterAudience] = useState('');
+    const [filterBranch, setFilterBranch] = useState('');
+
+    // View modal
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [viewingNotification, setViewingNotification] = useState(null);
 
     // Fetch branches from backend
     const fetchBranches = async () => {
@@ -711,7 +723,11 @@ export const Notification = () => {
         try {
             setNotificationsLoading(true);
             setNotificationsError('');
-            const res = await getNotificationsData(page, 5);
+            const res = await getNotificationsData(page, 5, {
+                type: filterType || '',
+                audience: filterAudience || '',
+                branch: filterBranch || ''
+            });
             
             if (res?.data && res?.pagination) {
                 setNotifications(res.data);
@@ -736,6 +752,12 @@ export const Notification = () => {
         fetchBranches();
         fetchNotifications();
     }, []);
+
+    // Refetch when filters change (backend-driven)
+    useEffect(() => {
+        fetchNotifications(1);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterType, filterAudience, filterBranch]);
 
     
     const tabOptions = [
@@ -1065,6 +1087,16 @@ export const Notification = () => {
         setNotificationToDelete(null);
     }, []);
 
+    const handleViewNotification = useCallback((notification) => {
+        setViewingNotification(notification);
+        setShowViewModal(true);
+    }, []);
+
+    const closeViewModal = useCallback(() => {
+        setShowViewModal(false);
+        setViewingNotification(null);
+    }, []);
+
     // Toggle row expansion
     const toggleRowExpansion = useCallback((notificationId) => {
         setExpandedRows(prev => {
@@ -1118,7 +1150,7 @@ export const Notification = () => {
     const NotificationsView = () => {
         if (notificationsLoading) {
             return (
-                <div className="flex items-center justify-center p-12 bg-white rounded-3xl h-full shadow-lg">
+                <div className="flex items-center justify-center p-12 bg-white rounded-lg h-full shadow-lg">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F9A825] mx-auto mb-4"></div>
                         <p className="text-gray-500">Loading notifications...</p>
@@ -1147,7 +1179,7 @@ export const Notification = () => {
 
         if (notifications.length === 0) {
             return (
-                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl h-full shadow-lg">
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg h-full shadow-lg">
                     <div className="text-center text-gray-400">
                         <BellRing className="w-16 h-16 mx-auto mb-4" />
                         <h2 className="text-2xl font-bold mb-2 text-gray-800">No notifications available.</h2>
@@ -1158,25 +1190,79 @@ export const Notification = () => {
         }
 
         return (
-            <div className="bg-white rounded-3xl shadow-lg p-6">
-                <div className="flex items-center justify-between mb-6">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
                         {paginationInfo && (
                             <p className="text-sm text-gray-500 mt-1">
-                                Showing {paginationInfo.displayInfo.showing} of {paginationInfo.displayInfo.total} notifications
+                                {paginationInfo.displayInfo?.showing} of {paginationInfo.displayInfo?.total} notifications
                             </p>
                         )}
                     </div>
-                    <button
-                        onClick={() => fetchNotifications(currentPage)}
-                        className="px-4 py-2 bg-[#F9A825] text-white rounded-lg hover:bg-[#F9A825]/90 transition-colors flex items-center"
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => fetchNotifications(currentPage)}
+                            className="px-4 py-2 bg-[#F9A825] text-white rounded-lg hover:bg-[#F9A825]/90 transition-colors flex items-center"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                        <button
+                            onClick={() => handleExport()}
+                            disabled={notificationsLoading || exporting || notifications.length === 0}
+                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            {exporting ? 'Exporting...' : 'Export PDF'}
+                        </button>
+                    </div>
+                </div>
+                {/* Filters Row */}
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
                     >
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        Refresh
-                    </button>
+                        <option value="">All Types</option>
+                        <option value="Task Notification">Task Notification</option>
+                        <option value="Weekly Schedule">Weekly Schedule</option>
+                        <option value="Common Notification">Common Notification</option>
+                        <option value="Announcement">Announcement</option>
+                        <option value="Reminder">Reminder</option>
+                    </select>
+                    <select
+                        value={filterAudience}
+                        onChange={(e) => setFilterAudience(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
+                    >
+                        <option value="">All Audience</option>
+                        <option value="All interns">All interns</option>
+                        <option value="By batches">By batches</option>
+                        <option value="By courses">By courses</option>
+                        <option value="Individual interns">Individual interns</option>
+                    </select>
+                    <select
+                        value={filterBranch}
+                        onChange={(e) => setFilterBranch(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
+                    >
+                        <option value="">All Branches</option>
+                        {branches.map(b => (
+                            <option key={b._id} value={b._id}>{b.branchName}</option>
+                        ))}
+                    </select>
+                    <div className="flex items-center">
+                        <button
+                            onClick={() => { setFilterType(''); setFilterAudience(''); setFilterBranch(''); fetchNotifications(1); }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:bg-gray-50"
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
                 </div>
 
                 {/* Notifications Table */}
@@ -1285,6 +1371,13 @@ export const Notification = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div className="flex space-x-2">
+                                                    <button
+                                                        onClick={() => handleViewNotification(notification)}
+                                                        className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs font-medium transition-colors"
+                                                        title="View notification"
+                                                    >
+                                                        View
+                                                    </button>
                                                     <button
                                                         onClick={() => handleEditNotification(notification)}
                                                         className="text-[#F9A825] hover:text-[#F9A825]/80 bg-[#F9A825]/10 hover:bg-[#F9A825]/20 px-2 py-1 rounded text-xs font-medium transition-colors"
@@ -1411,6 +1504,92 @@ export const Notification = () => {
         );
     };
 
+    const handleExport = useCallback(async () => {
+        setExporting(true);
+        try {
+            // Fetch all notifications (bypass pagination)
+            let all = [];
+            try {
+                const res = await getNotificationsData(1, 10000, {
+                    type: filterType || '',
+                    audience: filterAudience || '',
+                    branch: filterBranch || ''
+                });
+                if (Array.isArray(res?.data)) {
+                    all = res.data;
+                }
+            } catch (e) {
+                // fallback to current page if bulk fetch fails
+                all = notifications || [];
+            }
+            if (!all.length) {
+                setExporting(false);
+                return;
+            }
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+
+            // Title
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(247, 147, 30);
+            const title = 'Notifications Report';
+            doc.text(title, (pageWidth - doc.getTextWidth(title)) / 2, 15);
+
+            // Meta
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const exportedOn = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+            const totalText = `Total Notifications: ${all.length}`;
+            doc.text(exportedOn, (pageWidth - doc.getTextWidth(exportedOn)) / 2, 22);
+            doc.text(totalText, (pageWidth - doc.getTextWidth(totalText)) / 2, 27);
+
+            const tableData = all.map(n => [
+                n.title || 'N/A',
+                n.type || 'N/A',
+                n.audience || 'N/A',
+                (n.branch?.branchName || (typeof n.branch === 'string' ? n.branch : '-') || '-'),
+                n.pushNotification ? 'Yes' : 'No',
+                (n.createdAt ? new Date(n.createdAt).toLocaleDateString('en-GB') : 'N/A')
+            ]);
+
+            autoTable(doc, {
+                startY: 35,
+                head: [['Title', 'Type', 'Audience', 'Branch', 'Push Notification', 'Created']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+                columnStyles: {
+                    0: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+                    1: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+                    2: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+                    3: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+                    4: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+                    5: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+                },
+                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1 },
+                margin: { left: 10, right: 10 },
+                tableWidth: 'auto'
+            });
+
+            // Page numbers
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(128, 128, 128);
+                const text = `Page ${i} of ${pageCount}`;
+                doc.text(text, (pageWidth - doc.getTextWidth(text)) / 2, doc.internal.pageSize.getHeight() - 8);
+            }
+
+            doc.save(`notifications_export_${new Date().toISOString().split('T')[0]}.pdf`);
+        } finally {
+            setExporting(false);
+        }
+    }, [getNotificationsData, notifications]);
+
     return (
         <>
         <Navbar headData={headData} activeTab={activeTab} />
@@ -1526,6 +1705,89 @@ export const Notification = () => {
                     </div>
                 </div>
         </div>
+        )}
+
+        {/* View Notification Details Modal */}
+        {showViewModal && viewingNotification && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+                    <div className="px-6 py-4 border-b border-gray-200">
+                        <div className="flex justify-between items-start">
+                            <h1 className="text-xl font-semibold text-gray-900">{viewingNotification.title}</h1>
+                            <button 
+                                onClick={closeViewModal}
+                                className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                    <div className="px-6 py-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Type:</span> <span className="text-gray-600">{viewingNotification.type || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Audience:</span> <span className="text-gray-600">{viewingNotification.audience || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingNotification.branch?.branchName || (typeof viewingNotification.branch === 'string' ? viewingNotification.branch : 'N/A')}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Push Notification:</span> <span className="text-gray-600">{viewingNotification.pushNotification ? 'Yes' : 'No'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Created:</span> <span className="text-gray-600">{viewingNotification.createdAt ? new Date(viewingNotification.createdAt).toLocaleString() : 'N/A'}</span></p>
+                            {viewingNotification._id && (
+                                <p className="leading-6"><span className="font-semibold text-gray-900">ID:</span> <span className="text-gray-600">{viewingNotification._id.slice(-6)}</span></p>
+                            )}
+                        </div>
+
+                        {viewingNotification.content && (
+                            <div className="mt-4">
+                                <h2 className="text-[#F9A825] font-semibold mb-2 text-base italic">Content</h2>
+                                <p className="text-sm text-gray-700 whitespace-pre-line">{viewingNotification.content}</p>
+                            </div>
+                        )}
+
+                        {(viewingNotification.batches?.length || viewingNotification.courses?.length || viewingNotification.individualInterns?.length) ? (
+                            <div className="mt-5">
+                                <h2 className="text-[#F9A825] font-semibold mb-3 text-base italic">Target Audience Details</h2>
+                                <div className="flex flex-wrap gap-2">
+                                    {Array.isArray(viewingNotification.batches) && viewingNotification.batches.map((b, i) => (
+                                        <span key={`b-${i}`} className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full border border-green-200">
+                                            {typeof b === 'object' ? b.batchName : b}
+                                        </span>
+                                    ))}
+                                    {Array.isArray(viewingNotification.courses) && viewingNotification.courses.map((c, i) => (
+                                        <span key={`c-${i}`} className="inline-flex items-center px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-full border border-purple-200">
+                                            {typeof c === 'object' ? c.courseName : c}
+                                        </span>
+                                    ))}
+                                    {Array.isArray(viewingNotification.individualInterns) && viewingNotification.individualInterns.map((s, i) => (
+                                        <span key={`i-${i}`} className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full border border-blue-200">
+                                            {typeof s === 'object' ? (s.fullName || s.email || s._id?.slice(-4)) : s}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                    <div className="px-6 py-4 border-top border-gray-200">
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                onClick={closeViewModal}
+                                className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                                Close
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    closeViewModal();
+                                    handleEditNotification(viewingNotification);
+                                }}
+                                className="bg-[#F9A825] text-white px-4 py-2 rounded-lg hover:bg-[#d89100] transition-colors"
+                            >
+                                Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         )}
         </>
     )

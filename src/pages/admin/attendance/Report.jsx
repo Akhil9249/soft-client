@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Check, X, ChevronDown, CalendarDays } from 'lucide-react';
 import AdminService from '../../../services/admin-api-service/AdminService';
 import Tabs from '../../../components/button/Tabs';
@@ -127,6 +129,7 @@ const Report = ({ activeTab, setActiveTab }) => {
   const [attendanceError, setAttendanceError] = useState('');
   const [monthData, setMonthData] = useState(null);
   const [summary, setSummary] = useState(null);
+  const [exporting, setExporting] = useState(false);
   
   // Fetch branches from backend
   const fetchBranches = async () => {
@@ -240,6 +243,83 @@ const Report = ({ activeTab, setActiveTab }) => {
     }
   }, [selectedMonth, selectedBranch, selectedCourse]);
 
+  const handleExport = async () => {
+    if (!attendanceData || attendanceData.length === 0) return;
+    try {
+      setExporting(true);
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30);
+      const title = 'Monthly Attendance Report';
+      doc.text(title, (pageWidth - doc.getTextWidth(title)) / 2, 15);
+
+      // Meta
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const metaLeft = `Month: ${selectedMonth || 'N/A'}`;
+      const metaMid = `Branch: ${branches.find(b => b._id === selectedBranch)?.branchName || 'All'}`;
+      const metaRight = `Course: ${courses.find(c => c._id === selectedCourse)?.courseName || 'All'}`;
+      doc.text(metaLeft, 10, 22);
+      doc.text(metaMid, (pageWidth - doc.getTextWidth(metaMid)) / 2, 22);
+      const rightX = pageWidth - 10 - doc.getTextWidth(metaRight);
+      doc.text(metaRight, rightX, 22);
+      const exportedOn = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+      doc.text(exportedOn, (pageWidth - doc.getTextWidth(exportedOn)) / 2, 27);
+
+      const daysInMonth = monthData?.daysInMonth || Math.max(...attendanceData.map(s => s.attendance?.length || 0), 31);
+
+      // Build header: Adm No, Name, Day 1..N
+      const head = [['Adm No', 'Name', ...Array.from({ length: daysInMonth }, (_, i) => String(i + 1))]];
+
+      // Body rows
+      const body = attendanceData.map(s => {
+        const statuses = Array.from({ length: daysInMonth }, (_, i) => {
+          const v = s.attendance?.[i];
+          if (v === 1) return 'P';
+          if (v === 0) return 'A';
+          return '-';
+        });
+        return [s._id?.slice(-4) || 'N/A', s.fullName || 'N/A', ...statuses];
+      });
+
+      autoTable(doc, {
+        startY: 35,
+        head,
+        body,
+        theme: 'striped',
+        headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+        styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.1 },
+        columnStyles: {
+          0: { cellWidth: 18, halign: 'center' },
+          1: { cellWidth: 40, halign: 'left' }
+          // day columns auto width
+        },
+        margin: { left: 10, right: 10 },
+        tableWidth: 'auto'
+      });
+
+      // Page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        const text = `Page ${i} of ${pageCount}`;
+        doc.text(text, (pageWidth - doc.getTextWidth(text)) / 2, doc.internal.pageSize.getHeight() - 8);
+      }
+
+      doc.save(`attendance_${selectedMonth || 'all'}_${new Date().toISOString().split('T')[0]}.pdf`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen max-w-[1250px]  font-inter">
       {/* Global Header / Breadcrumb */}
@@ -322,6 +402,13 @@ const Report = ({ activeTab, setActiveTab }) => {
               </select>
               <ChevronDown className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 w-5 h-5 text-gray-400" />
             </div>
+            <button
+              onClick={handleExport}
+              disabled={attendanceLoading || exporting || attendanceData.length === 0}
+              className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm font-medium hover:bg-gray-50 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {exporting ? 'Exporting...' : 'Export PDF'}
+            </button>
             
             {/* Date Picker Icon Placeholder */}
             {/* <button className="flex items-center justify-center p-3 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition shadow-sm">

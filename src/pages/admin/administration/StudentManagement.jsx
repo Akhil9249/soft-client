@@ -3,6 +3,8 @@ import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const StudentManagement = () => {
 
@@ -99,7 +101,7 @@ export const StudentManagement = () => {
   const employmentStatus = ['Choose Employment Status', 'Full-time', 'Part-time', 'Contract'];
   const courseStatus = ['Choose Course Status','Active', 'Inactive','Dropped', 'Completed','Long leave'];
   const syllabusStatus = ['Choose Syllabus Status', 'Not Started', 'Learning', 'mini Project', 'Main Project'];
-  const placementStatus = ['Choose Placement Status', 'Placed', 'Not Placed'];
+  const placementStatus = ['Choose Placement Status', 'To be started', 'In Progress', 'Offer Declined', 'Placed', 'Not Placed'];
   const roles = ['Choose Role', 'super admin', 'admin', 'mentor', 'intern'];
 
   const fetchInterns = async (page = 1, search = '', courseStatus = '', course = '', branch = '', batch = '') => {
@@ -293,13 +295,13 @@ export const StudentManagement = () => {
       internPermanentAddress: student.internPermanentAddress || "",
       district: student.district || "",
       state: student.state || "",
+      photo: student.photo || null, // Keep existing URL if available
       course: student.course?._id || student.course || "",
       branch: student.branch?._id || student.branch || "",
       courseStartedDate: formatDateForInput(student.courseStartedDate),
       completionDate: formatDateForInput(student.completionDate),
       batch: student.batch || "",
-      courseStatus: student.courseStatus === 'Ongoing' ? 'Active' : 
-                   student.courseStatus === 'Completed' ? 'Completed' : 'Inactive',
+      courseStatus: student.courseStatus || 'Active',
       careerAdvisor: student.careerAdvisor?._id || student.careerAdvisor || "",
       remarks: student.remarks || "",
       internSyllabusStatus: student.internSyllabusStatus || 'Not Started',
@@ -308,6 +310,7 @@ export const StudentManagement = () => {
       portfolio: student.portfolio || "",
       companyName: student.companyName || "",
       jobRole: student.jobRole || "",
+      resume: student.resume || null, // Keep existing URL if available
       officialEmail: student.officialEmail || "",
       password: "",
     });
@@ -343,37 +346,52 @@ export const StudentManagement = () => {
     setViewingStudent(null);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      // Create a new window for PDF generation
-      const printWindow = window.open('', '_blank');
+      setLoading(true);
+      showNotification('info', 'Exporting', 'Preparing PDF export...');
       
-      // Prepare table data
-      const tableHeaders = [
-        'Name',
-        'Email',
-        'Phone',
-        'Course',
-        'Branch',
-        'Batch',
-        'Status',
-        'Date of Birth',
-        'Gender',
-        'Guardian Name',
-        'Address',
-        'District',
-        'State',
-        'Course Started',
-        'Completion Date',
-        'Syllabus Status',
-        'Career Advisor',
-        'Placement Status',
-        'Company',
-        'Job Role',
-        'Created Date'
-      ];
+      // Fetch all interns for export (no pagination)
+      const queryParams = new URLSearchParams({
+        page: '1',
+        limit: '10000' // High limit to get all interns
+      });
+      
+      const res = await getInternsData(queryParams.toString());
+      const allInterns = res?.data || [];
+      
+      if (allInterns.length === 0) {
+        showNotification('error', 'Export Failed', 'No students found to export');
+        return;
+      }
 
-      const tableData = interns.map(student => [
+      // Create new PDF document
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+      
+      // Add title (centered)
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30); // Orange color
+      const title = 'Students Management Report';
+      const titleWidth = doc.getTextWidth(title);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.text(title, (pageWidth - titleWidth) / 2, 20);
+      
+      // Reset text color
+      doc.setTextColor(0, 0, 0);
+
+      // Add export date and total count (centered)
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const exportDate = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+      const totalStudents = `Total Students: ${allInterns.length}`;
+      const exportDateWidth = doc.getTextWidth(exportDate);
+      const totalStudentsWidth = doc.getTextWidth(totalStudents);
+      doc.text(exportDate, (pageWidth - exportDateWidth) / 2, 30);
+      doc.text(totalStudents, (pageWidth - totalStudentsWidth) / 2, 35);
+
+      // Prepare table data with only the specified columns
+      const tableData = allInterns.map(student => [
         student.fullName || 'N/A',
         student.email || 'N/A',
         student.internPhoneNumber || 'N/A',
@@ -381,132 +399,52 @@ export const StudentManagement = () => {
         student.branch?.branchName || 'N/A',
         student.batch || 'N/A',
         student.courseStatus || 'N/A',
-        student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'N/A',
-        student.gender || 'N/A',
-        student.guardianName || 'N/A',
-        student.internPermanentAddress || 'N/A',
-        student.district || 'N/A',
-        student.state || 'N/A',
-        student.courseStartedDate ? new Date(student.courseStartedDate).toLocaleDateString() : 'N/A',
-        student.completionDate ? new Date(student.completionDate).toLocaleDateString() : 'N/A',
-        student.internSyllabusStatus || 'N/A',
-        student.careerAdvisor?.fullName || student.careerAdvisor || 'N/A',
-        student.placementStatus || 'N/A',
-        student.companyName || 'N/A',
-        student.jobRole || 'N/A',
-        student.createdAt ? new Date(student.createdAt).toLocaleDateString() : 'N/A'
+        student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-GB') : 'N/A'
       ]);
 
-      // Create HTML content for PDF
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Students Export</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 20px;
-              color: #333;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #f7931e;
-              padding-bottom: 10px;
-            }
-            .header h1 {
-              color: #f7931e;
-              margin: 0;
-              font-size: 24px;
-            }
-            .header p {
-              margin: 5px 0;
-              color: #666;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-              font-size: 10px;
-            }
-            th, td {
-              border: 1px solid #ddd;
-              padding: 6px;
-              text-align: left;
-              vertical-align: top;
-            }
-            th {
-              background-color: #f7931e;
-              color: white;
-              font-weight: bold;
-              font-size: 9px;
-            }
-            tr:nth-child(even) {
-              background-color: #f9f9f9;
-            }
-            tr:hover {
-              background-color: #f5f5f5;
-            }
-            .footer {
-              margin-top: 30px;
-              text-align: center;
-              font-size: 10px;
-              color: #666;
-              border-top: 1px solid #ddd;
-              padding-top: 10px;
-            }
-            @media print {
-              body { margin: 0; }
-              .header { page-break-inside: avoid; }
-              table { page-break-inside: auto; }
-              tr { page-break-inside: avoid; page-break-after: auto; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Students Management Report</h1>
-            <p>Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-            <p>Total Students: ${interns.length}</p>
-          </div>
-          
-          <table>
-            <thead>
-              <tr>
-                ${tableHeaders.map(header => `<th>${header}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${tableData.map(row => 
-                `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
-              ).join('')}
-            </tbody>
-          </table>
-          
-          <div class="footer">
-            <p>This report was generated from the Student Management System</p>
-            <p>© ${new Date().getFullYear()} Learning Management System</p>
-          </div>
-        </body>
-        </html>
-      `;
+      // Single table with all specified columns
+      autoTable(doc, {
+        startY: 45,
+        head: [['Name', 'Email', 'Phone', 'Course', 'Branch', 'Batch', 'Status', 'Created']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+        columnStyles: {
+          0: { cellWidth: 'auto', halign: 'left', fontSize: 9 },   // Name
+          1: { cellWidth: 'auto', halign: 'left', fontSize: 9 },   // Email
+          2: { cellWidth: 'auto', halign: 'left', fontSize: 9 },   // Phone
+          3: { cellWidth: 'auto', halign: 'left', fontSize: 9 },   // Course
+          4: { cellWidth: 'auto', halign: 'left', fontSize: 9 },   // Branch
+          5: { cellWidth: 'auto', halign: 'left', fontSize: 9 },   // Batch
+          6: { cellWidth: 'auto', halign: 'center', fontSize: 9 }, // Status
+          7: { cellWidth: 'auto', halign: 'center', fontSize: 9 }  // Created
+        },
+        styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak', lineWidth: 0.1 },
+        margin: { left: 10, right: 10 },
+        tableWidth: '95%'
+      });
 
-      // Write content to new window
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
+      // Add page numbers (centered)
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        const pageText = `Page ${i} of ${pageCount}`;
+        const pageTextWidth = doc.getTextWidth(pageText);
+        doc.text(pageText, (pageWidth - pageTextWidth) / 2, doc.internal.pageSize.getHeight() - 10);
+      }
+
+      // Save the PDF
+      doc.save(`students_export_${new Date().toISOString().split('T')[0]}.pdf`);
       
-      // Wait for content to load, then print
-      printWindow.onload = function() {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      };
-
-      showNotification('success', 'Export Successful', 'Student data has been exported as PDF successfully.');
+      showNotification('success', 'Export Successful', `Exported ${allInterns.length} students to PDF successfully`);
     } catch (error) {
       console.error('Export error:', error);
       showNotification('error', 'Export Failed', 'Failed to export student data. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -536,57 +474,59 @@ export const StudentManagement = () => {
   const handleCreateStudent = async (e) => {
     e.preventDefault();
     setError('');
-    const formDataObj = new FormData(e.currentTarget);
-
-    // Map UI values to backend expectations
-    const uiCourseStatus = formDataObj.get('courseStatus');
-    const courseStatusMap = { 'Active': 'Ongoing', 'Inactive': 'Dropped', 'Completed': 'Completed' };
-    const courseStatus = courseStatusMap[uiCourseStatus] || undefined;
-
-    const uiSyllabusStatus = formDataObj.get('internSyllabusStatus');
-    const syllabusMap = { 
-      'Not Started': 'Not Started', 
-      'Learning': 'Learning', 
-      'mini Project': 'mini Project', 
-      'Main Project': 'Main Project' 
-    };
-    const internSyllabusStatus = syllabusMap[uiSyllabusStatus] || undefined;
-
-    const payload = {
-      fullName: formDataObj.get('fullName') || undefined,
-      dateOfBirth: formDataObj.get('dateOfBirth') || undefined,
-      gender: formDataObj.get('gender') || undefined,
-      email: formDataObj.get('email') || undefined,
-      internPhoneNumber: formDataObj.get('internPhoneNumber') || undefined,
-      internWhatsAppNumber: formDataObj.get('internWhatsAppNumber') || undefined,
-      guardianName: formDataObj.get('guardianName') || undefined,
-      fatherName: formDataObj.get('fatherName') || undefined,
-      motherName: formDataObj.get('motherName') || undefined,
-      guardianParentPhone: formDataObj.get('guardianParentPhone') || undefined,
-      internPermanentAddress: formDataObj.get('internPermanentAddress') || undefined,
-      district: formDataObj.get('district') || undefined,
-      state: formDataObj.get('state') || undefined,
-
-      course: formDataObj.get('course') || undefined,
-      branch: formDataObj.get('branch') || undefined,
-      courseStartedDate: formDataObj.get('courseStartedDate') || undefined,
-      completionDate: formDataObj.get('completionDate') || undefined,
-      batch: formDataObj.get('batch') || undefined,
-      courseStatus,
-      careerAdvisor: formDataObj.get('careerAdvisor') || undefined,
-      remarks: formDataObj.get('remarks') || undefined,
-
-      internSyllabusStatus,
-
-      placementStatus: formDataObj.get('placementStatus') || undefined,
-      linkedin: formDataObj.get('linkedin') || undefined,
-      portfolio: formDataObj.get('portfolio') || undefined,
-      companyName: formDataObj.get('companyName') || undefined,
-      jobRole: formDataObj.get('jobRole') || undefined,
-
-      officialEmail: formDataObj.get('officialEmail') || undefined,
-      password: formDataObj.get('password') || undefined,
-    };
+    
+    // Build FormData for file uploads
+    const payload = new FormData();
+    
+    // Add text fields from formData state
+    if (formData.fullName) payload.append('fullName', formData.fullName);
+    if (formData.dateOfBirth) payload.append('dateOfBirth', formData.dateOfBirth);
+    if (formData.gender) payload.append('gender', formData.gender);
+    if (formData.email) payload.append('email', formData.email);
+    if (formData.internPhoneNumber) payload.append('internPhoneNumber', formData.internPhoneNumber);
+    if (formData.internWhatsAppNumber) payload.append('internWhatsAppNumber', formData.internWhatsAppNumber);
+    if (formData.guardianName) payload.append('guardianName', formData.guardianName);
+    if (formData.fatherName) payload.append('fatherName', formData.fatherName);
+    if (formData.motherName) payload.append('motherName', formData.motherName);
+    if (formData.guardianParentPhone) payload.append('guardianParentPhone', formData.guardianParentPhone);
+    if (formData.internPermanentAddress) payload.append('internPermanentAddress', formData.internPermanentAddress);
+    if (formData.district) payload.append('district', formData.district);
+    if (formData.state) payload.append('state', formData.state);
+    
+    if (formData.course) payload.append('course', formData.course);
+    if (formData.branch) payload.append('branch', formData.branch);
+    if (formData.courseStartedDate) payload.append('courseStartedDate', formData.courseStartedDate);
+    if (formData.completionDate) payload.append('completionDate', formData.completionDate);
+    if (formData.batch) payload.append('batch', formData.batch);
+    if (formData.courseStatus) payload.append('courseStatus', formData.courseStatus);
+    if (formData.careerAdvisor) payload.append('careerAdvisor', formData.careerAdvisor);
+    if (formData.remarks) payload.append('remarks', formData.remarks);
+    
+    if (formData.internSyllabusStatus) payload.append('internSyllabusStatus', formData.internSyllabusStatus);
+    
+    if (formData.placementStatus) payload.append('placementStatus', formData.placementStatus);
+    if (formData.linkedin) payload.append('linkedin', formData.linkedin);
+    if (formData.portfolio) payload.append('portfolio', formData.portfolio);
+    if (formData.companyName) payload.append('companyName', formData.companyName);
+    if (formData.jobRole) payload.append('jobRole', formData.jobRole);
+    
+    if (formData.officialEmail) payload.append('officialEmail', formData.officialEmail);
+    if (formData.password) payload.append('password', formData.password);
+    
+    // Add files only if they are File objects (new uploads)
+    if (formData?.photo instanceof File) {
+      payload.append('photo', formData.photo);
+    } else if (formData?.photo && typeof formData.photo === 'string') {
+      // If it's a string (existing URL), pass it as a field
+      payload.append('photo', formData.photo);
+    }
+    
+    if (formData?.resume instanceof File) {
+      payload.append('resume', formData.resume);
+    } else if (formData?.resume && typeof formData.resume === 'string') {
+      // If it's a string (existing URL), pass it as a field
+      payload.append('resume', formData.resume);
+    }
 
     try {
       setLoading(true);
@@ -730,9 +670,11 @@ export const StudentManagement = () => {
             className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           >
             <option value="">All Status</option>
-            <option value="Ongoing">Ongoing</option>
-            <option value="Completed">Completed</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
             <option value="Dropped">Dropped</option>
+            <option value="Completed">Completed</option>
+            <option value="Long leave">Long leave</option>
           </select>
           
           <select 
@@ -791,10 +733,11 @@ export const StudentManagement = () => {
           
           <button 
             onClick={handleExport}
-            className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200"
+            disabled={loading}
+            className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
+            {loading ? 'Exporting...' : 'Export'}
           </button>
         </div>
       </div>
@@ -859,10 +802,12 @@ export const StudentManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{intern.batch}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      intern.courseStatus === 'Ongoing' 
+                      intern.courseStatus === 'Active' 
                         ? 'bg-green-100 text-green-800' 
                         : intern.courseStatus === 'Completed'
                         ? 'bg-blue-100 text-blue-800'
+                        : intern.courseStatus === 'Long leave'
+                        ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
                       {intern.courseStatus}
@@ -1109,14 +1054,47 @@ export const StudentManagement = () => {
         </div>
         <div>
           <label className="block text-gray-700 font-medium mb-2">Photo <span className="text-gray-400">(Photo format: JPG/PNG only)</span></label>
-          <div className="flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent">
-            <span className="text-gray-500 flex-1">Upload Photo</span>
-            <input type="file" className="sr-only" id="photo-upload" />
-            <label htmlFor="photo-upload" className="cursor-pointer text-gray-500 hover:text-orange-500">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+          <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white">
+            <span className="text-gray-500 flex-1 truncate pr-2">
+              {formData?.photo instanceof File 
+                ? formData.photo.name 
+                : formData?.photo && typeof formData.photo === 'string' 
+                    ? 'Existing photo (click to change)' 
+                    : 'Upload Photo'}
+            </span>
+            <input 
+              onChange={(e) => {
+                try {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    // Validate file type
+                    if (!file.type || !file.type.match('image/(jpeg|jpg|png)')) {
+                      showNotification('error', 'Validation Error', 'Please upload only JPG or PNG images');
+                      e.target.value = ''; // Reset input to allow retry
+                      return;
+                    }
+                    setFormData((p) => ({ ...p, photo: file }));
+                    setError(''); // Clear any previous errors
+                  }
+                } catch (error) {
+                  console.error('Error handling photo upload:', error);
+                  showNotification('error', 'Upload Error', 'An error occurred while processing the file');
+                  if (e.target) {
+                    e.target.value = '';
+                  }
+                }
+              }}
+              type="file" 
+              accept="image/jpeg,image/jpg,image/png"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              id="photo-upload"
+              name="photo"
+            />
+            <div className="pointer-events-none flex-shrink-0">
+              <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm3-4a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2z" clipRule="evenodd"></path>
               </svg>
-            </label>
+            </div>
           </div>
         </div>
       </div>
@@ -1325,14 +1303,55 @@ export const StudentManagement = () => {
         </div>
         <div>
           <label className="block text-gray-700 font-medium mb-2">Resume <span className="text-gray-400">(Upload PDF only Max 5MB)</span></label>
-          <div className="flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent">
-            <span className="text-gray-500 flex-1">upload resume</span>
-            <input type="file" className="sr-only" id="resume-upload" />
-            <label htmlFor="resume-upload" className="cursor-pointer text-gray-500 hover:text-orange-500">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+          <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white">
+            <span className="text-gray-500 flex-1 truncate pr-2">
+              {formData?.resume instanceof File 
+                ? formData.resume.name 
+                : formData?.resume && typeof formData.resume === 'string' 
+                    ? 'Existing resume (click to change)' 
+                    : 'Upload resume'}
+            </span>
+            <input 
+              onChange={(e) => {
+                try {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    // Validate file type - check MIME type and file extension
+                    const isValidPdf = file.type === 'application/pdf' || 
+                                      (file.name && file.name.toLowerCase().endsWith('.pdf'));
+                    if (!isValidPdf) {
+                      showNotification('error', 'Validation Error', 'Please upload only PDF files');
+                      e.target.value = ''; // Reset input to allow retry
+                      return;
+                    }
+                    // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+                    if (file.size > 5 * 1024 * 1024) {
+                      showNotification('error', 'Validation Error', 'File size must be less than 5MB');
+                      e.target.value = ''; // Reset input to allow retry
+                      return;
+                    }
+                    setFormData((p) => ({ ...p, resume: file }));
+                    setError(''); // Clear any previous errors
+                  }
+                } catch (error) {
+                  console.error('Error handling resume upload:', error);
+                  showNotification('error', 'Upload Error', 'An error occurred while processing the file');
+                  if (e.target) {
+                    e.target.value = '';
+                  }
+                }
+              }}
+              type="file" 
+              accept="application/pdf,.pdf"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              id="resume-upload"
+              name="resume"
+            />
+            <div className="pointer-events-none flex-shrink-0">
+              <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm3-4a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2z" clipRule="evenodd"></path>
               </svg>
-            </label>
+            </div>
           </div>
         </div>
       </div>
@@ -1592,201 +1611,240 @@ export const StudentManagement = () => {
     if (activeSubModule === 'studentManagement') {
       return (
         <>
-        <Navbar headData={headData} activeTab={activeTab} />
-        <div className="flex-1 ">
-    
-          <div className="mb-6" >
-            <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
-          </div>
-
-          {activeTab === 'studentsList' ? renderStudentsList() : renderNewStudentForm()}
-        </div>
-
-        {/* Notification Modal */}
-        <NotificationModal />
-
-        {/* Delete Confirmation Modal */}
-        {showDeleteModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-              <div className="flex items-center mb-4">
-                <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-medium text-gray-900">Delete Student</h3>
-                </div>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm text-gray-500">
-                  Are you sure you want to delete the student <strong>"{deletingStudent?.fullName}"</strong>? 
-                  This action cannot be undone.
-                </p>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={cancelDelete}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDeleteStudent}
-                  disabled={loading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
+          <Navbar headData={headData} activeTab={activeTab} />
+          <div className="flex-1 ">
+            <div className="mb-6" >
+              <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
             </div>
+
+            {activeTab === 'studentsList' ? renderStudentsList() : renderNewStudentForm()}
           </div>
-        )}
 
-        {/* View Student Details Modal */}
-        {showViewModal && viewingStudent && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-              {/* Modal Header */}
-              <div className="px-8 py-6 border-b border-gray-200">
-                <div className="flex justify-between items-start">
-                  <h1 className="text-2xl font-semibold text-gray-900">{viewingStudent.fullName}</h1>
-                  <button 
-                    onClick={closeViewModal}
-                    className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print:hidden"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+          {/* Notification Modal */}
+          <NotificationModal />
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div className="flex items-center mb-4">
+                  <div className="flex-shrink-0">
+                    <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                     </svg>
-                    Back
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Body */}
-              <div className="px-8 py-6">
-                <div className="flex flex-col md:flex-row gap-10">
-                  {/* Left Column - Details */}
-                  <div className="flex-1 space-y-6">
-                    {/* Basic Details */}
-                    <div>
-                      <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
-                        Basic Details
-                      </h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Full Name:</span> <span className="text-gray-600">{viewingStudent.fullName || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Date of Birth:</span> <span className="text-gray-600">{viewingStudent.dateOfBirth ? new Date(viewingStudent.dateOfBirth).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Gender:</span> <span className="text-gray-600">{viewingStudent.gender || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Email Address:</span> <span className="text-gray-600">{viewingStudent.email || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Student Phone Number:</span> <span className="text-gray-600">{viewingStudent.internPhoneNumber || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Student WhatsApp Number:</span> <span className="text-gray-600">{viewingStudent.internWhatsAppNumber || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Guardian's Name:</span> <span className="text-gray-600">{viewingStudent.guardianName || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Father's Name:</span> <span className="text-gray-600">{viewingStudent.fatherName || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Mother's Name:</span> <span className="text-gray-600">{viewingStudent.motherName || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Guardian/Parent Phone:</span> <span className="text-gray-600">{viewingStudent.guardianParentPhone || 'N/A'}</span></p>
-                        <p className="col-span-2 leading-6"><span className="font-semibold text-gray-900">Student Permanent Address:</span> <span className="text-gray-600">{viewingStudent.internPermanentAddress || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">District:</span> <span className="text-gray-600">{viewingStudent.district || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">State:</span> <span className="text-gray-600">{viewingStudent.state || 'N/A'}</span></p>
-                      </div>
-                    </div>
-
-                    {/* Academic Details */}
-                    <div>
-                      <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
-                        Academic Details
-                      </h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Course:</span> <span className="text-gray-600">{viewingStudent.course?.courseName || viewingStudent.course || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingStudent.branch?.branchName || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Batch:</span> <span className="text-gray-600">{viewingStudent.batch || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Course Started Date:</span> <span className="text-gray-600">{viewingStudent.courseStartedDate ? new Date(viewingStudent.courseStartedDate).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Completion Date:</span> <span className="text-gray-600">{viewingStudent.completionDate ? new Date(viewingStudent.completionDate).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
-                        <p className="leading-6">
-                          <span className="font-semibold text-gray-900">Course Status:</span>{" "}
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            viewingStudent.courseStatus === 'Ongoing' 
-                              ? 'bg-green-100 text-green-800' 
-                              : viewingStudent.courseStatus === 'Completed'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {viewingStudent.courseStatus || 'N/A'}
-                          </span>
-                        </p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Syllabus Status:</span> <span className="text-gray-600">{viewingStudent.internSyllabusStatus || 'N/A'}</span></p>
-                        <p className="leading-6"><span className="font-semibold text-gray-900">Career Advisor:</span> <span className="text-gray-600">{viewingStudent.careerAdvisor?.fullName || viewingStudent.careerAdvisor || 'N/A'}</span></p>
-                        {viewingStudent.remarks && (
-                          <p className="col-span-2 leading-6">
-                            <span className="font-semibold text-gray-900">Remarks/Notes:</span>{" "}
-                            <span className="text-gray-600">{viewingStudent.remarks}</span>
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Placement Information */}
-                    {(viewingStudent.placementStatus || viewingStudent.linkedin || viewingStudent.portfolio || viewingStudent.companyName || viewingStudent.jobRole) && (
-                      <div>
-                        <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
-                          Placement Information
-                        </h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
-                          <p className="leading-6"><span className="font-semibold text-gray-900">Placement Status:</span> <span className="text-gray-600">{viewingStudent.placementStatus || 'N/A'}</span></p>
-                          <p className="leading-6"><span className="font-semibold text-gray-900">LinkedIn:</span> <span className="text-gray-600">{viewingStudent.linkedin || 'N/A'}</span></p>
-                          <p className="leading-6"><span className="font-semibold text-gray-900">Portfolio:</span> <span className="text-gray-600">{viewingStudent.portfolio || 'N/A'}</span></p>
-                          <p className="leading-6"><span className="font-semibold text-gray-900">Company Name:</span> <span className="text-gray-600">{viewingStudent.companyName || 'N/A'}</span></p>
-                          <p className="leading-6"><span className="font-semibold text-gray-900">Job Role:</span> <span className="text-gray-600">{viewingStudent.jobRole || 'N/A'}</span></p>
-                          <p className="leading-6"><span className="font-semibold text-gray-900">Official Email:</span> <span className="text-gray-600">{viewingStudent.officialEmail || 'N/A'}</span></p>
-                        </div>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Right Column - Profile Image */}
-                  <div className="flex flex-col items-center print:hidden">
-                    <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
-                      {viewingStudent.photo ? (
-                        <img
-                          src={viewingStudent.photo}
-                          alt={viewingStudent.fullName}
-                          className="w-48 h-48 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-48 h-48 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 text-4xl font-medium">
-                            {viewingStudent.fullName?.charAt(0)?.toUpperCase() || 'S'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="ml-3">
+                    <h3 className="text-lg font-medium text-gray-900">Delete Student</h3>
                   </div>
                 </div>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-8 py-6 border-t border-gray-200 print:hidden">
-                <div className="flex justify-end gap-4">
-                  <button 
-                    onClick={() => {
-                      closeViewModal();
-                      handleEditStudent(viewingStudent);
-                    }}
-                    className="bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500">
+                    Are you sure you want to delete the student <strong>"{deletingStudent?.fullName}"</strong>? 
+                    This action cannot be undone.
+                  </p>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={cancelDelete}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                   >
-                    Edit
+                    Cancel
                   </button>
                   <button
-                    onClick={() => window.print()}
-                    className="bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                    onClick={confirmDeleteStudent}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Print
+                    {loading ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* View Student Details Modal */}
+          {showViewModal && viewingStudent && (
+            <>
+              <style>{`
+                @media print {
+                  @page {
+                    margin: 0;
+                  }
+                  body * {
+                    visibility: hidden;
+                  }
+                  .print-modal-content, .print-modal-content * {
+                    visibility: visible;
+                  }
+                  .print-modal-content {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    max-width: 100% !important;
+                    margin: 0;
+                    padding: 0;
+                    box-shadow: none;
+                    border: none;
+                    background: white;
+                  }
+                  .print-modal-content .print-hide {
+                    display: none !important;
+                  }
+                  .print-modal-content .print-full-width {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                  }
+                  .print-modal-content .print-grid-full {
+                    grid-template-columns: 1fr 1fr !important;
+                    gap: 1rem !important;
+                  }
+                }
+              `}</style>
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:block print:bg-white print:opacity-100 print:p-0">
+                <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto print-modal-content">
+                  {/* Modal Header */}
+                  <div className="px-8 py-6 border-b border-gray-200 print:px-4 print:py-4 print-full-width">
+                    <div className="flex justify-between items-start">
+                      <h1 className="text-2xl font-semibold text-gray-900">{viewingStudent.fullName}</h1>
+                      <button 
+                        onClick={closeViewModal}
+                        className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print-hide"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                        Back
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Modal Body */}
+                  <div className="px-8 py-6 print:px-4 print:py-4 print-full-width">
+                    <div className="flex flex-col md:flex-row gap-10 print:flex-col print:gap-4 print-full-width">
+                      {/* Left Column - Details */}
+                      <div className="flex-1 space-y-6 print:flex-none print-full-width">
+                        {/* Basic Details */}
+                        <div>
+                          <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                            Basic Details
+                          </h2>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Full Name:</span> <span className="text-gray-600">{viewingStudent.fullName || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Date of Birth:</span> <span className="text-gray-600">{viewingStudent.dateOfBirth ? new Date(viewingStudent.dateOfBirth).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Gender:</span> <span className="text-gray-600">{viewingStudent.gender || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Email Address:</span> <span className="text-gray-600">{viewingStudent.email || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Student Phone Number:</span> <span className="text-gray-600">{viewingStudent.internPhoneNumber || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Student WhatsApp Number:</span> <span className="text-gray-600">{viewingStudent.internWhatsAppNumber || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Guardian's Name:</span> <span className="text-gray-600">{viewingStudent.guardianName || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Father's Name:</span> <span className="text-gray-600">{viewingStudent.fatherName || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Mother's Name:</span> <span className="text-gray-600">{viewingStudent.motherName || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Guardian/Parent Phone:</span> <span className="text-gray-600">{viewingStudent.guardianParentPhone || 'N/A'}</span></p>
+                            <p className="col-span-2 leading-6"><span className="font-semibold text-gray-900">Student Permanent Address:</span> <span className="text-gray-600">{viewingStudent.internPermanentAddress || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">District:</span> <span className="text-gray-600">{viewingStudent.district || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">State:</span> <span className="text-gray-600">{viewingStudent.state || 'N/A'}</span></p>
+                          </div>
+                        </div>
+
+                        {/* Academic Details */}
+                        <div>
+                          <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                            Academic Details
+                          </h2>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Course:</span> <span className="text-gray-600">{viewingStudent.course?.courseName || viewingStudent.course || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingStudent.branch?.branchName || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Batch:</span> <span className="text-gray-600">{viewingStudent.batch || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Course Started Date:</span> <span className="text-gray-600">{viewingStudent.courseStartedDate ? new Date(viewingStudent.courseStartedDate).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Completion Date:</span> <span className="text-gray-600">{viewingStudent.completionDate ? new Date(viewingStudent.completionDate).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                            <p className="leading-6">
+                              <span className="font-semibold text-gray-900">Course Status:</span>{" "}
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                viewingStudent.courseStatus === 'Active' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : viewingStudent.courseStatus === 'Completed'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : viewingStudent.courseStatus === 'Long leave'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {viewingStudent.courseStatus || 'N/A'}
+                              </span>
+                            </p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Syllabus Status:</span> <span className="text-gray-600">{viewingStudent.internSyllabusStatus || 'N/A'}</span></p>
+                            <p className="leading-6"><span className="font-semibold text-gray-900">Career Advisor:</span> <span className="text-gray-600">{viewingStudent.careerAdvisor?.fullName || viewingStudent.careerAdvisor || 'N/A'}</span></p>
+                            {viewingStudent.remarks && (
+                              <p className="col-span-2 leading-6">
+                                <span className="font-semibold text-gray-900">Remarks/Notes:</span>{" "}
+                                <span className="text-gray-600">{viewingStudent.remarks}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Placement Information */}
+                        {(viewingStudent.placementStatus || viewingStudent.linkedin || viewingStudent.portfolio || viewingStudent.companyName || viewingStudent.jobRole) && (
+                          <div>
+                            <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                              Placement Information
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                              <p className="leading-6"><span className="font-semibold text-gray-900">Placement Status:</span> <span className="text-gray-600">{viewingStudent.placementStatus || 'N/A'}</span></p>
+                              <p className="leading-6"><span className="font-semibold text-gray-900">LinkedIn:</span> <span className="text-gray-600">{viewingStudent.linkedin || 'N/A'}</span></p>
+                              <p className="leading-6"><span className="font-semibold text-gray-900">Portfolio:</span> <span className="text-gray-600">{viewingStudent.portfolio || 'N/A'}</span></p>
+                              <p className="leading-6"><span className="font-semibold text-gray-900">Company Name:</span> <span className="text-gray-600">{viewingStudent.companyName || 'N/A'}</span></p>
+                              <p className="leading-6"><span className="font-semibold text-gray-900">Job Role:</span> <span className="text-gray-600">{viewingStudent.jobRole || 'N/A'}</span></p>
+                              <p className="leading-6"><span className="font-semibold text-gray-900">Official Email:</span> <span className="text-gray-600">{viewingStudent.officialEmail || 'N/A'}</span></p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right Column - Profile Image */}
+                      <div className="flex flex-col items-center print-hide">
+                        <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
+                          {viewingStudent.photo ? (
+                            <img
+                              src={viewingStudent.photo}
+                              alt={viewingStudent.fullName}
+                              className="w-48 h-48 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-48 h-48 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-500 text-4xl font-medium">
+                                {viewingStudent.fullName?.charAt(0)?.toUpperCase() || 'S'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="px-8 py-6 border-t border-gray-200 print-hide">
+                    <div className="flex justify-end gap-4">
+                      <button 
+                        onClick={() => {
+                          closeViewModal();
+                          handleEditStudent(viewingStudent);
+                        }}
+                        className="bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => window.print()}
+                        className="bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                      >
+                        Print
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </>
       );
     } else if (activeSubModule === 'roleManagement') {
@@ -1839,5 +1897,5 @@ export const StudentManagement = () => {
     <>
       {renderContent()}
     </>
-  )
+  );
 }

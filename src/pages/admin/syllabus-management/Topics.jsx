@@ -3,6 +3,8 @@ import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 // import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const Topics = () => {
 
@@ -25,6 +27,10 @@ export const Topics = () => {
     title: '',
     message: ''
   });
+  
+  // View modal state
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingTopic, setViewingTopic] = useState(null);
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -129,6 +135,89 @@ export const Topics = () => {
     }));
   };
 
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const queryParams = new URLSearchParams({ page: '1', limit: '10000' });
+      if (filters.module) queryParams.append('module', filters.module);
+      if (searchTerm) queryParams.append('search', searchTerm);
+
+      const res = await getTopicsData(queryParams.toString());
+      const allTopics = res?.data || [];
+      if (!Array.isArray(allTopics) || allTopics.length === 0) {
+        showNotification('error', 'Export Failed', 'No topics found to export');
+        return;
+      }
+
+      const doc = new jsPDF('portrait', 'mm', 'a4');
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30);
+      const title = 'Topics Report';
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const titleWidth = doc.getTextWidth(title);
+      doc.text(title, (pageWidth - titleWidth) / 2, 20);
+
+      // Meta
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const exportedOn = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+      const totalText = `Total Topics: ${allTopics.length}`;
+      const exportedOnWidth = doc.getTextWidth(exportedOn);
+      const totalWidth = doc.getTextWidth(totalText);
+      doc.text(exportedOn, (pageWidth - exportedOnWidth) / 2, 30);
+      doc.text(totalText, (pageWidth - totalWidth) / 2, 35);
+
+      // Table data
+      const tableData = allTopics.map(t => [
+        t.topicName || 'N/A',
+        (typeof t.module === 'object' && t.module ? t.module.moduleName : t.module) || 'N/A',
+        t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-GB') : 'N/A'
+      ]);
+
+      autoTable(doc, {
+        startY: 45,
+        head: [['Topic Name', 'Module', 'Created']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          1: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          2: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+        },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1 },
+        margin: { left: 10, right: 10 },
+        tableWidth: 'auto'
+      });
+
+      // Page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        const text = `Page ${i} of ${pageCount}`;
+        const textWidth = doc.getTextWidth(text);
+        doc.text(text, (pageWidth - textWidth) / 2, doc.internal.pageSize.getHeight() - 10);
+      }
+
+      doc.save(`topics_export_${new Date().toISOString().split('T')[0]}.pdf`);
+      showNotification('success', 'Export Successful', `Exported ${allTopics.length} topics to PDF successfully`);
+    } catch (err) {
+      console.error('Topics export error:', err);
+      showNotification('error', 'Export Failed', 'Failed to export topics. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchModules();
     fetchTopics(pagination.currentPage, searchTerm, filters.module);
@@ -172,6 +261,16 @@ export const Topics = () => {
   const handleDeleteTopic = (topic) => {
     setDeletingTopic(topic);
     setShowDeleteModal(true);
+  };
+
+  const handleViewTopic = (topic) => {
+    setViewingTopic(topic);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingTopic(null);
   };
 
   const handleConfirmDelete = async () => {
@@ -368,9 +467,9 @@ export const Topics = () => {
   <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
 </div>
 <div className="flex justify-end ">
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+          <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
+            {loading ? 'Exporting...' : 'Export'}
           </button>
         </div>
         </div>
@@ -411,9 +510,9 @@ export const Topics = () => {
                   </option>
                 ))}
               </select>
-              <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
+              <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Export
+                {loading ? 'Exporting...' : 'Export'}
               </button>
             </div>
           </div>
@@ -473,6 +572,12 @@ export const Topics = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
+                          <button 
+                            onClick={() => handleViewTopic(topic)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            View
+                          </button>
                           <button 
                             onClick={() => handleEditTopic(topic)}
                             className="text-orange-600 hover:text-orange-900"
@@ -635,6 +740,71 @@ export const Topics = () => {
             >
               {loading ? 'Deleting...' : 'Delete'}
             </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* View Topic Details Modal */}
+    {showViewModal && viewingTopic && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+          {/* Modal Header */}
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex justify-between items-start">
+              <h1 className="text-xl font-semibold text-gray-900">{viewingTopic.topicName}</h1>
+              <button 
+                onClick={closeViewModal}
+                className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Close
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Body */}
+          <div className="px-6 py-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+              <p className="leading-6"><span className="font-semibold text-gray-900">Topic Name:</span> <span className="text-gray-600">{viewingTopic.topicName || 'N/A'}</span></p>
+              <p className="leading-6"><span className="font-semibold text-gray-900">Module:</span> <span className="text-gray-600">{typeof viewingTopic.module === 'object' && viewingTopic.module ? viewingTopic.module.moduleName : viewingTopic.module || 'N/A'}</span></p>
+              {viewingTopic.description && (
+                <p className="col-span-2 leading-6"><span className="font-semibold text-gray-900">Description:</span> <span className="text-gray-600">{viewingTopic.description}</span></p>
+              )}
+              {viewingTopic.duration && (
+                <p className="leading-6"><span className="font-semibold text-gray-900">Duration:</span> <span className="text-gray-600">{viewingTopic.duration} min</span></p>
+              )}
+              {viewingTopic.difficulty && (
+                <p className="leading-6"><span className="font-semibold text-gray-900">Difficulty:</span> <span className="text-gray-600">{viewingTopic.difficulty}</span></p>
+              )}
+              <p className="leading-6"><span className="font-semibold text-gray-900">Created:</span> <span className="text-gray-600">{viewingTopic.createdAt ? new Date(viewingTopic.createdAt).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+              {viewingTopic._id && (
+                <p className="leading-6"><span className="font-semibold text-gray-900">ID:</span> <span className="text-gray-600">{viewingTopic._id.slice(-6)}</span></p>
+              )}
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="px-6 py-4 border-t border-gray-200">
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={closeViewModal}
+                className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+              <button 
+                onClick={() => {
+                  closeViewModal();
+                  handleEditTopic(viewingTopic);
+                }}
+                className="bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+              >
+                Edit
+              </button>
+            </div>
           </div>
         </div>
       </div>

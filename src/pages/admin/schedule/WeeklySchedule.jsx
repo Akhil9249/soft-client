@@ -28,9 +28,11 @@ export const WeeklySchedule = () => {
   const [weeklySchedules, setWeeklySchedules] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [modules, setModules] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
   const [topics, setTopics] = useState([]);
 
-  const { getBatchesData, getAllBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, putWeeklySchedulesData, deleteWeeklySchedulesData, getStaffData, getModulesData, getTopicsData, updateWeeklyScheduleSubject } = AdminService();
+  const { getBatchesData, getAllBatchesData, getWeeklySchedulesData, postWeeklySchedulesData, putWeeklySchedulesData, deleteWeeklySchedulesData, getStaffData, getModulesData, getTopicsData, updateWeeklyScheduleSubject, getBranchesData } = AdminService();
 
   // Function to show modal message
   const showModalMessage = (message, type = 'info') => {
@@ -93,6 +95,20 @@ export const WeeklySchedule = () => {
       // ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch branches from backend
+  const fetchBranches = async () => {
+    try {
+      setBranchesLoading(true);
+      const res = await getBranchesData();
+      setBranches(Array.isArray(res?.data) ? res.data : []);
+    } catch (err) {
+      console.error('Failed to load branches:', err);
+      setBranches([]);
+    } finally {
+      setBranchesLoading(false);
     }
   };
 
@@ -262,6 +278,7 @@ console.log('loading=====', loading);
   // Load data when component mounts
   useEffect(() => {
     fetchBatches();
+    fetchBranches();
     fetchMentors();
     fetchWeeklySchedules();
     fetchModules();
@@ -839,7 +856,10 @@ console.log('loading=====', loading);
               </div>
               <div className="flex flex-wrap items-center space-x-2 sm:space-x-4">
                 <select className="p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500">
-                  <option>Calicut</option>
+                  <option value="">{branchesLoading ? 'Loading branches...' : 'All Branches'}</option>
+                  {branches.map(branch => (
+                    <option key={branch._id} value={branch._id}>{branch.branchName}</option>
+                  ))}
                 </select>
                 <select className="p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500">
                   <option>Alternative</option>

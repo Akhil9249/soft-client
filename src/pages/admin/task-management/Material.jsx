@@ -17,7 +17,7 @@ const Material = () => {
     const [formData, setFormData] = useState({
       title: '',
       mentor: '',
-      attachments: '',
+      attachments: null, // Will store File object or URL string
       audience: 'All interns',
     });
     
@@ -42,7 +42,7 @@ const Material = () => {
     const [filteredCourses, setFilteredCourses] = useState([]);
     const [filteredInterns, setFilteredInterns] = useState([]);
     
-    // File upload
+    // File upload - will store File object or URL string
     const [selectedFile, setSelectedFile] = useState(null);
     const [fileName, setFileName] = useState('');
     
@@ -169,10 +169,24 @@ const Material = () => {
     // Load mentors (staff)
     const loadMentors = async () => {
         try {
-            const response = await adminService.getStaffData();
-            setMentors(response.data || []);
+            // Fetch all staff (not paginated) to get all mentors
+            const response = await adminService.getStaffData('page=1&limit=10000');
+            const staffData = response?.data || [];
+            if (Array.isArray(staffData)) {
+                // Filter all mentors from staff data (both Active and Inactive)
+                // Check role.role since staff model uses role reference (not typeOfEmployee)
+                const mentorsData = staffData.filter(staff => {
+                    const roleName = staff.role?.role?.toLowerCase();
+                    return roleName === 'mentor' || staff.typeOfEmployee === 'Mentor';
+                });
+                console.log("All mentors (Active and Inactive):", mentorsData.length, mentorsData);
+                setMentors(mentorsData);
+            } else {
+                setMentors([]);
+            }
         } catch (error) {
             console.error('Error loading mentors:', error);
+            setMentors([]);
         }
     };
 
@@ -228,14 +242,40 @@ const Material = () => {
 
     // Handle file upload
     const handleFileUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setSelectedFile(file);
-            setFileName(file.name);
-            setFormData({
-                ...formData,
-                attachments: file.name
-            });
+        try {
+            const file = e.target.files?.[0];
+            if (file) {
+                // Validate file type - check MIME type and file extension
+                const isValidFile = file.type.match('image/(jpeg|jpg|png)') || 
+                                  file.type === 'application/pdf' ||
+                                  (file.name && (file.name.toLowerCase().endsWith('.jpg') || 
+                                                 file.name.toLowerCase().endsWith('.jpeg') || 
+                                                 file.name.toLowerCase().endsWith('.png') || 
+                                                 file.name.toLowerCase().endsWith('.pdf')));
+                if (!isValidFile) {
+                    showNotification('error', 'Validation Error', 'Please upload only JPG, PNG, or PDF files');
+                    e.target.value = ''; // Reset input to allow retry
+                    return;
+                }
+                // Validate file size (10MB = 10 * 1024 * 1024 bytes)
+                if (file.size > 10 * 1024 * 1024) {
+                    showNotification('error', 'Validation Error', 'File size must be less than 10MB');
+                    e.target.value = ''; // Reset input to allow retry
+                    return;
+                }
+                setSelectedFile(file);
+                setFileName(file.name);
+                setFormData({
+                    ...formData,
+                    attachments: file // Store File object
+                });
+            }
+        } catch (error) {
+            console.error('Error handling file upload:', error);
+            showNotification('error', 'Upload Error', 'An error occurred while processing the file');
+            if (e.target) {
+                e.target.value = '';
+            }
         }
     };
 
@@ -314,22 +354,43 @@ const Material = () => {
         setLoading(true);
         
         try {
-            const materialData = {
-                title: formData.title,
-                mentor: formData.mentor,
-                attachments: formData.attachments,
-                audience: formData.audience,
-                batches: selectedBatches.map(b => b._id),
-                courses: selectedCourses.map(c => c._id),
-                interns: selectedInterns.map(i => i._id),
-                individualInterns: selectedIndividualInterns.map(i => i._id)
-            };
+            // Build FormData for file uploads
+            const payload = new FormData();
+            
+            // Add text fields
+            if (formData.title) payload.append('title', formData.title.trim());
+            if (formData.mentor) payload.append('mentor', formData.mentor);
+            if (formData.audience) payload.append('audience', formData.audience);
+            
+            // Handle attachments file upload
+            if (formData?.attachments instanceof File) {
+                // New file selected - append the file
+                console.log('Uploading new attachment:', formData.attachments.name, formData.attachments.type);
+                payload.append('attachments', formData.attachments);
+            } else if (formData?.attachments && typeof formData.attachments === 'string' && formData.attachments.trim() !== '') {
+                // Existing URL - pass it as a field to preserve it
+                payload.append('attachments', formData.attachments);
+            }
+            
+            // Add audience-specific arrays
+            if (selectedBatches.length > 0) {
+                selectedBatches.forEach(batch => payload.append('batches', batch._id));
+            }
+            if (selectedCourses.length > 0) {
+                selectedCourses.forEach(course => payload.append('courses', course._id));
+            }
+            if (selectedInterns.length > 0) {
+                selectedInterns.forEach(intern => payload.append('interns', intern._id));
+            }
+            if (selectedIndividualInterns.length > 0) {
+                selectedIndividualInterns.forEach(intern => payload.append('individualInterns', intern._id));
+            }
 
             if (editingMaterial) {
-                await adminService.putMaterialsData(editingMaterial._id, materialData);
+                await adminService.putMaterialsData(editingMaterial._id, payload);
                 showNotification('success', 'Success', 'Material updated successfully!');
             } else {
-                await adminService.postMaterialsData(materialData);
+                await adminService.postMaterialsData(payload);
                 showNotification('success', 'Success', 'Material created successfully!');
             }
 
@@ -349,7 +410,7 @@ const Material = () => {
         setFormData({
             title: '',
             mentor: '',
-            attachments: '',
+            attachments: null,
             audience: 'All interns',
         });
         setSelectedBatches([]);
@@ -367,9 +428,20 @@ const Material = () => {
         setFormData({
             title: material.title,
             mentor: material.mentor._id,
-            attachments: material.attachments,
+            attachments: material.attachments || null, // Store as URL string or null
             audience: material.audience,
         });
+        
+        // Set file name for display if attachment exists
+        if (material.attachments) {
+            // Extract filename from URL or use the URL itself
+            const fileName = material.attachments.includes('/') 
+                ? material.attachments.split('/').pop() 
+                : material.attachments;
+            setFileName(fileName);
+        } else {
+            setFileName('');
+        }
         
         // Set selections based on material data
         setSelectedBatches(material.batches || []);
@@ -403,6 +475,58 @@ const Material = () => {
     const cancelDelete = () => {
         setShowDeleteModal(false);
         setDeletingMaterial(null);
+    };
+
+    // Handle attachment download
+    const handleDownloadAttachment = async (material) => {
+        try {
+            if (!material.attachments) {
+                showNotification('error', 'Download Error', 'No attachment available for this material.');
+                return;
+            }
+            
+            // Use backend proxy endpoint to download the file with authentication
+            const materialId = material._id;
+            
+            // Fetch file as blob using AdminService method (ensures proper authentication)
+            const response = await adminService.downloadMaterialAttachment(materialId);
+            
+            // Extract filename from response headers or use material title
+            const contentDisposition = response.headers['content-disposition'];
+            let filename = 'attachment';
+            
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            } else {
+                // Fallback: use material title
+                const urlParts = material.attachments.split('/');
+                const urlFilename = urlParts[urlParts.length - 1] || '';
+                const fileExtension = urlFilename.includes('.') 
+                    ? urlFilename.substring(urlFilename.lastIndexOf('.')) 
+                    : '';
+                filename = `${material.title.replace(/[^a-z0-9]/gi, '_')}${fileExtension}`;
+            }
+            
+            // Create blob URL and trigger download
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            
+            // Cleanup
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+        } catch (error) {
+            console.error('Error downloading attachment:', error);
+            showNotification('error', 'Download Error', error?.response?.data?.message || 'Failed to download attachment. Please try again.');
+        }
     };
   // Notification Modal Component
   const NotificationModal = () => {
@@ -717,16 +841,19 @@ const Material = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                          <div className="flex items-center justify-center">
                             {material.attachments ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                              <button
+                                onClick={() => handleDownloadAttachment(material)}
+                                className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 rounded hover:bg-blue-50"
+                                title="Download attachment"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                 </svg>
-                                {material.attachments}
-                              </span>
+                              </button>
                             ) : (
-                              <span className="text-gray-400">No attachments</span>
+                              <span className="text-gray-400">-</span>
                             )}
                           </div>
                         </td>
@@ -865,20 +992,27 @@ const Material = () => {
                 
                 {/* Attachments Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Attachments</label>
-                  <div className="relative mt-1">
+                  <label className="block text-sm font-medium text-gray-700">Attachments <span className="text-gray-400">(Optional - JPG/PNG/PDF only)</span></label>
+                  <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white mt-1">
+                    <span className="text-gray-500 flex-1 truncate pr-2">
+                      {formData?.attachments instanceof File 
+                        ? formData.attachments.name 
+                        : formData?.attachments && typeof formData.attachments === 'string' 
+                            ? 'Existing file (click to change)' 
+                            : 'Upload Attachment (Image/PDF)'}
+                    </span>
                     <input 
-                      type="file" 
-                      id="file-upload" 
+                      key={editingMaterial ? editingMaterial._id : 'new-material'}
                       onChange={handleFileUpload}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      type="file" 
+                      accept="image/jpeg,image/jpg,image/png,application/pdf,.pdf"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      id="file-upload"
+                      name="attachments"
                     />
-                    <div className="flex items-center justify-between w-full p-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-500 hover:bg-gray-50 transition-colors">
-                      <span className="truncate">
-                        {fileName || 'Upload Attachments'}
-                      </span>
-                      <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    <div className="pointer-events-none flex-shrink-0">
+                      <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm3-4a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2z" clipRule="evenodd"></path>
                       </svg>
                     </div>
                   </div>

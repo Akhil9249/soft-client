@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Navbar } from '../../../components/admin/AdminNavBar'
 import AdminService from '../../../services/admin-api-service/AdminService'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export const MentorBatches = () => {
   const headData = "Mentor Batches";
@@ -10,26 +12,65 @@ export const MentorBatches = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedMentors, setExpandedMentors] = useState(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [branches, setBranches] = useState([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
+    pageNumbers: [],
+    displayInfo: { showing: '', total: 0, pageInfo: '' },
+    limit: 5
+  });
 
-  const { getAllMentorsWithBatches } = AdminService();
+  const { getAllMentorsWithBatches, getBranchesData } = AdminService();
 
-  const fetchMentorsWithBatches = useCallback(async () => {
+  const fetchMentorsWithBatches = useCallback(async (page = 1) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getAllMentorsWithBatches();
+      const response = await getAllMentorsWithBatches(page, pagination.limit);
       setMentorsWithBatches(response.data || []);
+      if (response.pagination) setPagination(prev => ({ ...prev, ...response.pagination }));
     } catch (err) {
       console.error('Error fetching mentors with batches:', err);
       setError(err.response?.data?.message || 'Failed to fetch mentors with batches');
     } finally {
       setLoading(false);
     }
-  }, []); // Remove getAllMentorsWithBatches from dependencies
+  }, [getAllMentorsWithBatches, pagination.limit]);
 
   useEffect(() => {
-    fetchMentorsWithBatches();
+    fetchMentorsWithBatches(1);
   }, []); // Empty dependency array - only run once on mount
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchMentorsWithBatches(newPage);
+    }
+  };
+
+  // Fetch branches for filter
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        setBranchesLoading(true);
+        const res = await getBranchesData();
+        setBranches(Array.isArray(res?.data) ? res.data : []);
+      } catch (err) {
+        console.error('Error fetching branches:', err);
+        setBranches([]);
+      } finally {
+        setBranchesLoading(false);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   const handleRetry = useCallback(() => {
     setError(null);
@@ -61,12 +102,136 @@ export const MentorBatches = () => {
     }
   };
 
+  // Compute filtered mentors based on search and branch
+  const visibleMentors = mentorsWithBatches.filter((mentor) => {
+    const matchesSearch = searchTerm
+      ? (
+          mentor.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          mentor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          mentor.batches?.some(b => b.batchName?.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+      : true;
+
+    if (!selectedBranchId) return matchesSearch;
+
+    const selectedBranch = branches.find(b => b._id === selectedBranchId);
+    const selectedBranchName = selectedBranch?.branchName;
+    const matchesBranch = selectedBranchName
+      ? mentor.batches?.some(b => b.branchName === selectedBranchName)
+      : true;
+
+    return matchesSearch && matchesBranch;
+  });
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      // Fetch ALL mentors from backend (ignore current pagination)
+      let allMentors = [];
+      try {
+        const res = await getAllMentorsWithBatches(1, 10000);
+        allMentors = Array.isArray(res?.data) ? res.data : [];
+      } catch (e) {
+        // Fallback to current page data
+        allMentors = mentorsWithBatches || [];
+      }
+
+      // Apply current client-side filters (search + branch) to the full set
+      const filteredAllMentors = allMentors.filter((mentor) => {
+        const matchesSearch = searchTerm
+          ? (
+              mentor.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              mentor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              mentor.batches?.some(b => b.batchName?.toLowerCase().includes(searchTerm.toLowerCase()))
+            )
+          : true;
+
+        if (!selectedBranchId) return matchesSearch;
+
+        const selectedBranch = branches.find(b => b._id === selectedBranchId);
+        const selectedBranchName = selectedBranch?.branchName;
+        const matchesBranch = selectedBranchName
+          ? mentor.batches?.some(b => b.branchName === selectedBranchName)
+          : true;
+
+        return matchesSearch && matchesBranch;
+      });
+
+      const mentors = filteredAllMentors;
+      if (!Array.isArray(mentors) || mentors.length === 0) {
+        return; // nothing to export
+      }
+
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30);
+      const title = 'Mentor Batches Report';
+      doc.text(title, (pageWidth - doc.getTextWidth(title)) / 2, 15);
+
+      // Meta
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const exportedOn = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+      const totalText = `Total Mentors: ${mentors.length}`;
+      doc.text(exportedOn, (pageWidth - doc.getTextWidth(exportedOn)) / 2, 22);
+      doc.text(totalText, (pageWidth - doc.getTextWidth(totalText)) / 2, 27);
+
+      const tableData = mentors.map(m => [
+        m.fullName || 'N/A',
+        m.email || 'N/A',
+        m.role || 'N/A',
+        (m.batches?.length || 0).toString(),
+        (m.batches?.map(b => b.batchName).join(', ') || 'N/A'),
+        (m.scheduleDetails?.length || 0).toString()
+      ]);
+
+      autoTable(doc, {
+        startY: 35,
+        head: [['Mentor', 'Email', 'Role', 'Batches', 'Batch Names', 'Schedule Slots']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          1: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          2: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          3: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+          4: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          5: { cellWidth: 'auto', halign: 'center', fontSize: 8 }
+        },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1 },
+        margin: { left: 10, right: 10 },
+        tableWidth: 'auto'
+      });
+
+      // Page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        const text = `Page ${i} of ${pageCount}`;
+        doc.text(text, (pageWidth - doc.getTextWidth(text)) / 2, doc.internal.pageSize.getHeight() - 8);
+      }
+
+      doc.save(`mentor_batches_export_${new Date().toISOString().split('T')[0]}.pdf`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen min-h-screen max-w-[1250px]">
         <Navbar headData={headData} activeTab={activeTab} />
         <div className="p-6">
-          <div className="bg-white rounded-3xl shadow-lg p-8">
+          <div className="bg-white rounded-lg p-4">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
               <span className="ml-4 text-lg text-gray-600">Loading mentors with batches...</span>
@@ -82,7 +247,7 @@ export const MentorBatches = () => {
       <div className="min-h-screen">
         <Navbar headData={headData} activeTab={activeTab} />
         <div className="p-6">
-          <div className="bg-white rounded-3xl shadow-lg p-8">
+          <div className="bg-white rounded-md shadow-lg p-8">
             <div className="text-center text-red-600">
               <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
@@ -106,8 +271,8 @@ export const MentorBatches = () => {
     <div className="min-h-screen">
       <Navbar headData={headData} activeTab={activeTab} />
       
-      <div className="p-6">
-        <div className="bg-white rounded-3xl shadow-lg p-8">
+      <div className=" w-full min-h-screen max-w-[1250px]">
+        <div className="bg-white rounded-lg overflow-x-auto p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">Mentor Batches</h2>
@@ -115,12 +280,44 @@ export const MentorBatches = () => {
                 View all mentors and their assigned batches
               </p>
             </div>
-            <div className="text-sm text-gray-500">
-              Total: {mentorsWithBatches.length} mentors
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search mentors or batches..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8 4a4 4 100 8 4 4 000-8zM2 8a6 6 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 012 8z" clipRule="evenodd"></path>
+                </svg>
+              </div>
+              <select
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="py-2 px-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">{branchesLoading ? 'Loading branches...' : 'All Branches'}</option>
+                {branches.map(branch => (
+                  <option key={branch._id} value={branch._id}>{branch.branchName}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="flex items-center px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                {exporting ? 'Exporting...' : 'Export'}
+              </button>
+              <div className="text-sm text-gray-500 ml-2">
+                Total: {visibleMentors.length} mentors
+              </div>
             </div>
           </div>
 
-          {mentorsWithBatches.length === 0 ? (
+          {visibleMentors.length === 0 ? (
             <div className="text-center py-12">
               <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
@@ -153,7 +350,7 @@ export const MentorBatches = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {mentorsWithBatches.map((mentor) => (
+                  {visibleMentors.map((mentor) => (
                     <React.Fragment key={mentor._id}>
                       {/* Main Mentor Row */}
                       <tr className="hover:bg-gray-50">
@@ -295,6 +492,58 @@ export const MentorBatches = () => {
                   ))}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                  <div className="text-sm text-gray-700">
+                    <span>
+                      {pagination.displayInfo?.showing} of {pagination.displayInfo?.total} mentors
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage - 1)}
+                      disabled={!pagination.hasPrevPage || loading}
+                      className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                        pagination.hasPrevPage && !loading
+                          ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                          : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                      }`}
+                    >
+                      Previous
+                    </button>
+
+                    <div className="flex items-center space-x-1">
+                      {pagination.pageNumbers?.map((num) => (
+                        <button
+                          key={num}
+                          onClick={() => handlePageChange(num)}
+                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            pagination.currentPage === num
+                              ? 'bg-orange-500 text-white'
+                              : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage + 1)}
+                      disabled={!pagination.hasNextPage || loading}
+                      className={`px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-200 flex items-center ${
+                        pagination.hasNextPage && !loading
+                          ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                          : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

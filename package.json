@@ -20,6 +20,8 @@
     "axios": "^1.7.9",
     "bootstrap": "^5.3.5",
     "formik": "^2.4.6",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.474.0",
     "razorpay": "^2.9.6",

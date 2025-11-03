@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const RoleManagement = () => {
   const { getRolesData, postRolesData, putRolesData, deleteRolesData } = AdminService();
@@ -12,6 +14,9 @@ export const RoleManagement = () => {
   const [editingRole, setEditingRole] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingRole, setViewingRole] = useState(null);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [notification, setNotification] = useState({
     show: false,
     type: 'success', // 'success', 'error', 'info'
@@ -207,6 +212,273 @@ export const RoleManagement = () => {
     }
   };
 
+  // Fetch all roles for export (no pagination)
+  const fetchAllRoles = async () => {
+    try {
+      // Fetch with a very high limit to get all roles
+      const queryParams = new URLSearchParams({
+        page: '1',
+        limit: '10000' // High limit to get all roles
+      });
+      
+      const response = await getRolesData(queryParams.toString());
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching all roles:', error);
+      showNotification('error', 'Error', 'Failed to fetch roles for export');
+      return [];
+    }
+  };
+
+  // Export roles to CSV
+  const exportRolesToCSV = async () => {
+    try {
+      setLoading(true);
+      showNotification('info', 'Exporting', 'Preparing export...');
+      
+      // Fetch all roles
+      const allRoles = await fetchAllRoles();
+      
+      if (allRoles.length === 0) {
+        showNotification('error', 'Export Failed', 'No roles found to export');
+        return;
+      }
+
+      // Prepare CSV headers
+      const headers = [
+        'Role Name',
+        'Description',
+        'Status',
+        'Created Date',
+        'Updated Date',
+        'Student Management - Add',
+        'Student Management - View',
+        'Student Management - Edit',
+        'Student Management - Delete',
+        'Mentor Management - Add',
+        'Mentor Management - View',
+        'Mentor Management - Edit',
+        'Mentor Management - Delete',
+        'Course Management - Add',
+        'Course Management - View',
+        'Course Management - Edit',
+        'Course Management - Delete',
+        'Category Management - Add',
+        'Category Management - View',
+        'Category Management - Edit',
+        'Category Management - Delete',
+        'Module Management - Add',
+        'Module Management - View',
+        'Module Management - Edit',
+        'Module Management - Delete',
+        'Topic Management - Add',
+        'Topic Management - View',
+        'Topic Management - Edit',
+        'Topic Management - Delete',
+        'Task Management - Add',
+        'Task Management - View',
+        'Task Management - Edit',
+        'Task Management - Delete',
+        'Weekly Schedule - Add',
+        'Weekly Schedule - View',
+        'Weekly Schedule - Edit',
+        'Weekly Schedule - Delete',
+        'Schedule Timing - Add',
+        'Schedule Timing - View',
+        'Schedule Timing - Edit',
+        'Schedule Timing - Delete',
+        'Static Page - Add',
+        'Static Page - View',
+        'Static Page - Edit',
+        'Static Page - Delete'
+      ];
+
+      // Prepare CSV rows
+      const rows = allRoles.map(role => {
+        const permissions = role.permissions || {};
+        
+        const formatDate = (dateString) => {
+          if (!dateString) return 'N/A';
+          return new Date(dateString).toLocaleDateString('en-GB');
+        };
+
+        const getPermissionValue = (categoryKey, permissionKey) => {
+          const categoryPerms = permissions[categoryKey] || {};
+          return categoryPerms[permissionKey] ? 'Yes' : 'No';
+        };
+
+        return [
+          role.role || 'N/A',
+          role.description || 'N/A',
+          role.isActive ? 'Active' : 'Inactive',
+          formatDate(role.createdAt),
+          formatDate(role.updatedAt),
+          getPermissionValue('studentManagement', 'addStudent'),
+          getPermissionValue('studentManagement', 'viewStudent'),
+          getPermissionValue('studentManagement', 'editStudent'),
+          getPermissionValue('studentManagement', 'deleteStudent'),
+          getPermissionValue('mentorManagement', 'addMentor'),
+          getPermissionValue('mentorManagement', 'viewMentor'),
+          getPermissionValue('mentorManagement', 'editMentor'),
+          getPermissionValue('mentorManagement', 'deleteMentor'),
+          getPermissionValue('courseManagement', 'addCourse'),
+          getPermissionValue('courseManagement', 'viewCourse'),
+          getPermissionValue('courseManagement', 'editCourse'),
+          getPermissionValue('courseManagement', 'deleteCourse'),
+          getPermissionValue('categoryManagement', 'addCategory'),
+          getPermissionValue('categoryManagement', 'viewCategory'),
+          getPermissionValue('categoryManagement', 'editCategory'),
+          getPermissionValue('categoryManagement', 'deleteCategory'),
+          getPermissionValue('moduleManagement', 'addModule'),
+          getPermissionValue('moduleManagement', 'viewModule'),
+          getPermissionValue('moduleManagement', 'editModule'),
+          getPermissionValue('moduleManagement', 'deleteModule'),
+          getPermissionValue('topicManagement', 'addTopic'),
+          getPermissionValue('topicManagement', 'viewTopic'),
+          getPermissionValue('topicManagement', 'editTopic'),
+          getPermissionValue('topicManagement', 'deleteTopic'),
+          getPermissionValue('taskManagement', 'addTask'),
+          getPermissionValue('taskManagement', 'viewTask'),
+          getPermissionValue('taskManagement', 'editTask'),
+          getPermissionValue('taskManagement', 'deleteTask'),
+          getPermissionValue('weeklySchedule', 'addSchedule'),
+          getPermissionValue('weeklySchedule', 'viewSchedule'),
+          getPermissionValue('weeklySchedule', 'editSchedule'),
+          getPermissionValue('weeklySchedule', 'deleteSchedule'),
+          getPermissionValue('scheduleTiming', 'addTiming'),
+          getPermissionValue('scheduleTiming', 'viewTiming'),
+          getPermissionValue('scheduleTiming', 'editTiming'),
+          getPermissionValue('scheduleTiming', 'deleteTiming'),
+          getPermissionValue('staticPage', 'addPage'),
+          getPermissionValue('staticPage', 'viewPage'),
+          getPermissionValue('staticPage', 'editPage'),
+          getPermissionValue('staticPage', 'deletePage')
+        ];
+      });
+
+      // Convert to CSV format
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => {
+          // Escape commas and quotes in cell content
+          const cellStr = String(cell || '').replace(/"/g, '""');
+          return `"${cellStr}"`;
+        }).join(','))
+      ].join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `roles_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showNotification('success', 'Export Successful', `Exported ${allRoles.length} roles successfully`);
+    } catch (error) {
+      console.error('Error exporting roles:', error);
+      showNotification('error', 'Export Failed', 'Failed to export roles. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Export roles to PDF
+  const exportRolesToPDF = async () => {
+    try {
+      setLoading(true);
+      showNotification('info', 'Exporting', 'Preparing PDF export...');
+      
+      // Fetch all roles
+      const allRoles = await fetchAllRoles();
+      
+      if (allRoles.length === 0) {
+        showNotification('error', 'Export Failed', 'No roles found to export');
+        return;
+      }
+
+      // Create new PDF document
+      const doc = new jsPDF('portrait', 'mm', 'a4');
+      
+      const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('en-GB');
+      };
+
+      // Add title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30); // Orange color
+      doc.text('Roles Management Report', 14, 20);
+      
+      // Reset text color
+      doc.setTextColor(0, 0, 0);
+
+      // Add export date and total count
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Exported on: ${new Date().toLocaleDateString('en-GB')}`, 14, 30);
+      doc.text(`Total Roles: ${allRoles.length}`, 14, 35);
+
+      // Prepare table data with only basic role information
+      const tableData = allRoles.map(role => [
+        role.role || 'N/A',
+        role.description || 'No description',
+        role.isActive ? 'Active' : 'Inactive',
+        formatDate(role.createdAt)
+      ]);
+
+      // Add table to PDF
+      autoTable(doc, {
+        startY: 45,
+        head: [['Role Name', 'Description', 'Status', 'Created Date']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [247, 147, 30],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { cellWidth: 50, halign: 'left' }, // Role Name
+          1: { cellWidth: 80, halign: 'left' }, // Description
+          2: { cellWidth: 30, halign: 'center' }, // Status
+          3: { cellWidth: 40, halign: 'center' }  // Created Date
+        },
+        styles: {
+          fontSize: 10,
+          cellPadding: 4,
+          overflow: 'linebreak'
+        },
+        margin: { left: 14, right: 14 }
+      });
+
+      // Add page number
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() - 30, doc.internal.pageSize.getHeight() - 10);
+      }
+
+      // Save the PDF
+      doc.save(`roles_export_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      showNotification('success', 'Export Successful', `Exported ${allRoles.length} roles to PDF successfully`);
+    } catch (error) {
+      console.error('Error exporting roles to PDF:', error);
+      showNotification('error', 'Export Failed', 'Failed to export roles to PDF. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createRole = async (data) => {
     try {
       setLoading(true);
@@ -255,6 +527,18 @@ export const RoleManagement = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle view role
+  const handleViewRole = (role) => {
+    setViewingRole(role);
+    setShowViewModal(true);
+  };
+
+  // Close view modal
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingRole(null);
   };
 
   // Handle delete confirmation
@@ -408,6 +692,20 @@ export const RoleManagement = () => {
     }));
   }, []);
 
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
+
   // Handle search and filter changes with debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -448,10 +746,52 @@ export const RoleManagement = () => {
               <option key={role} value={role}>{role}</option>
             ))}
           </select>
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
-          </button>
+          <div className="relative export-dropdown">
+            <button 
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              disabled={loading}
+              className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              {loading ? 'Exporting...' : 'Export'}
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            
+            {showExportDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      setShowExportDropdown(false);
+                      exportRolesToCSV();
+                    }}
+                    disabled={loading}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export as CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExportDropdown(false);
+                      exportRolesToPDF();
+                    }}
+                    disabled={loading}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    Export as PDF
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -496,20 +836,29 @@ export const RoleManagement = () => {
                   {new Date(role.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button 
-                    onClick={() => editRole(role)}
-                    className="text-orange-600 hover:text-orange-900 mr-2"
-                    title="Edit Role"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteClick(role)}
-                    className="text-red-600 hover:text-red-900"
-                    title="Delete Role"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1H8a1 1 0 00-1 1v3m.75 0H18"></path></svg>
-                  </button>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => handleViewRole(role)}
+                      className="text-blue-600 hover:text-blue-900"
+                      title="View Role Details"
+                    >
+                      View
+                    </button>
+                    <button 
+                      onClick={() => editRole(role)}
+                      className="text-orange-600 hover:text-orange-900"
+                      title="Edit Role"
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteClick(role)}
+                      className="text-red-600 hover:text-red-900"
+                      title="Delete Role"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -848,10 +1197,6 @@ export const RoleManagement = () => {
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
           New Role
         </button> */}
-        <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-          Export
-        </button>
       </div>
     )}
     
@@ -862,6 +1207,197 @@ export const RoleManagement = () => {
 
   {/* Notification Modal */}
   <NotificationModal />
+
+  {/* View Role Details Modal */}
+  {showViewModal && viewingRole && (
+    <>
+      <style>{`
+        @media print {
+          @page {
+            margin: 0;
+          }
+          body * {
+            visibility: hidden;
+          }
+          .print-modal-content, .print-modal-content * {
+            visibility: visible;
+          }
+          .print-modal-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 100% !important;
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+            border: none;
+          }
+          .print-modal-content .print-hide {
+            display: none !important;
+          }
+          .print-modal-content .print-full-width {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+        }
+      `}</style>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:block print:bg-white print:opacity-100 print:p-0">
+        <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto print-modal-content">
+        {/* Modal Header */}
+        <div className="px-8 py-6 border-b border-gray-200 print:px-4 print:py-4 print-full-width">
+          <div className="flex justify-between items-start">
+            <h1 className="text-2xl font-semibold text-gray-900">{viewingRole.role}</h1>
+            <button 
+              onClick={closeViewModal}
+              className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print-hide"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+              Back
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Body */}
+        <div className="px-8 py-6 print:px-4 print:py-4 print-full-width">
+          <div className="flex flex-col md:flex-row gap-10 print:flex-col print:gap-4">
+            {/* Left Column - Role Details */}
+            <div className="flex-1 space-y-6 print:flex-none print-full-width">
+              {/* Basic Details */}
+              <div>
+                <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                  Role Information
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                  <p className="leading-6"><span className="font-semibold text-gray-900">Role Name:</span> <span className="text-gray-600">{viewingRole.role || 'N/A'}</span></p>
+                  <p className="leading-6">
+                    <span className="font-semibold text-gray-900">Status:</span>{" "}
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      viewingRole.isActive 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {viewingRole.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </p>
+                  <p className="col-span-2 leading-6">
+                    <span className="font-semibold text-gray-900">Description:</span>{" "}
+                    <span className="text-gray-600">{viewingRole.description || 'No description provided'}</span>
+                  </p>
+                  <p className="leading-6"><span className="font-semibold text-gray-900">Created Date:</span> <span className="text-gray-600">{viewingRole.createdAt ? new Date(viewingRole.createdAt).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                  <p className="leading-6"><span className="font-semibold text-gray-900">Updated Date:</span> <span className="text-gray-600">{viewingRole.updatedAt ? new Date(viewingRole.updatedAt).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                </div>
+              </div>
+
+              {/* Permissions Section */}
+              <div>
+                <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                  Permissions ({permissionCategories.reduce((total, category) => {
+                    const categoryPermissions = viewingRole.permissions?.[category.key] || {};
+                    const categoryCount = category.permissions.filter(p => categoryPermissions[p.key]).length;
+                    return total + categoryCount;
+                  }, 0)} of {permissionCategories.reduce((total, category) => total + category.permissions.length, 0)})
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-1 print-full-width">
+                  {permissionCategories.map((category) => {
+                    const categoryPermissions = viewingRole.permissions?.[category.key] || {};
+                    const hasAnyPermission = category.permissions.some(p => categoryPermissions[p.key]);
+                    
+                    if (!hasAnyPermission) return null;
+                    
+                    return (
+                      <div key={category.key} className="bg-gray-50 p-4 rounded-lg border border-gray-200 print-full-width print:p-3 print:mb-3">
+                        <div className="flex justify-between items-center mb-3 print:mb-2">
+                          <span className="text-gray-800 font-semibold text-sm">{category.title}</span>
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            category.permissions.every(p => categoryPermissions[p.key])
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {category.permissions.filter(p => categoryPermissions[p.key]).length} / {category.permissions.length}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {category.permissions.map((permission) => {
+                            const hasPermission = categoryPermissions[permission.key];
+                            return (
+                              <div key={permission.key} className="flex items-center">
+                                {hasPermission ? (
+                                  <svg className="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4 text-gray-300 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                  </svg>
+                                )}
+                                <span className={`text-xs ${hasPermission ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
+                                  {permission.label}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* No Permissions Message */}
+                {permissionCategories.every(category => {
+                  const categoryPermissions = viewingRole.permissions?.[category.key] || {};
+                  return !category.permissions.some(p => categoryPermissions[p.key]);
+                }) && (
+                  <div className="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No permissions assigned</h3>
+                    <p className="mt-1 text-sm text-gray-500">This role doesn't have any permissions assigned yet.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column - Role Icon */}
+            <div className="flex flex-col items-center print-hide">
+              <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
+                <div className="w-48 h-48 rounded-full bg-orange-100 flex items-center justify-center">
+                  <span className="text-orange-500 text-6xl font-medium">
+                    {viewingRole.role?.charAt(0)?.toUpperCase() || 'R'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="px-8 py-6 border-t border-gray-200 print-hide">
+          <div className="flex justify-end gap-4">
+            <button 
+              onClick={() => {
+                closeViewModal();
+                editRole(viewingRole);
+              }}
+              className="bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Edit Role
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+            >
+              Print
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </>
+  )}
 
   {/* Delete Confirmation Modal */}
   <DeleteConfirmationModal />

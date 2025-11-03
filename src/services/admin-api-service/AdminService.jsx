@@ -257,6 +257,13 @@ const AdminService = () => {
         const response = await axiosPrivate.delete(`/api/materials/${materialId}`);
         return response;
     };
+    
+    const downloadMaterialAttachment = async (materialId) => {
+        const response = await axiosPrivate.get(`/api/materials/${materialId}/download`, {
+            responseType: 'blob'
+        });
+        return response;
+    };
 
     const getMaterialsByMentor = async (mentorId) => {
         const response = await axiosPrivate.get(`/api/materials/mentor/${mentorId}`);
@@ -440,11 +447,15 @@ const AdminService = () => {
 
     // ======================================== notification management ========================================
     
-    const getNotificationsData = async (page = 1, limit = 5) => {
-        const url = `/api/notifications?page=${page}&limit=${limit}`;
-        const response = await axiosPrivate.get(url);
-        return response.data;
-    };
+       const getNotificationsData = async (page = 1, limit = 5, filters = {}) => {
+           const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+           if (filters.type) params.append('type', filters.type);
+           if (filters.audience) params.append('audience', filters.audience);
+           if (filters.branch) params.append('branch', filters.branch);
+           const url = `/api/notifications?${params.toString()}`;
+           const response = await axiosPrivate.get(url);
+           return response.data;
+       };
     
     const createNotification = async (data) => {
         const response = await axiosPrivate.post("/api/notifications", data);
@@ -473,8 +484,8 @@ const AdminService = () => {
     // };
     
 
-    const getAllMentorsWithBatches = async () => {
-        const response = await axiosPrivate.get("/api/weekly-schedules/mentors-batches");
+    const getAllMentorsWithBatches = async (page = 1, limit = 5) => {
+        const response = await axiosPrivate.get(`/api/weekly-schedules/mentors-batches?page=${page}&limit=${limit}`);
         return response.data;
     };
 
@@ -587,6 +598,7 @@ const AdminService = () => {
         postMaterialsData,
         putMaterialsData,
         deleteMaterialsData,
+        downloadMaterialAttachment,
         getMaterialsByMentor,
         getMaterialsByBatch,
         getMaterialsByCourse,

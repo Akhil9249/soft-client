@@ -3,6 +3,8 @@ import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { axiosPrivate } from '../../../axios';
 
 export const Batches = () => {
@@ -29,6 +31,8 @@ export const Batches = () => {
   const [formData, setFormData] = useState({});
   const [deletingBatch, setDeletingBatch] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingBatch, setViewingBatch] = useState(null);
   const [notification, setNotification] = useState({
     show: false,
     type: 'success', // 'success', 'error', 'info'
@@ -194,6 +198,95 @@ export const Batches = () => {
     }));
   };
 
+  // Export PDF
+  const [exporting, setExporting] = useState(false);
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+
+      const queryParams = new URLSearchParams({ page: '1', limit: '10000' });
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.branch) queryParams.append('branch', filters.branch);
+      if (searchTerm) queryParams.append('search', searchTerm);
+
+      const res = await getBatchesData(queryParams.toString());
+      const allBatches = res?.data || [];
+      if (!Array.isArray(allBatches) || allBatches.length === 0) {
+        showNotification('error', 'Export Failed', 'No batches found to export');
+        return;
+      }
+
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30);
+      const title = 'Batches Report';
+      doc.text(title, (pageWidth - doc.getTextWidth(title)) / 2, 15);
+
+      // Meta
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const exportedOn = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+      const totalText = `Total Batches: ${allBatches.length}`;
+      doc.text(exportedOn, (pageWidth - doc.getTextWidth(exportedOn)) / 2, 22);
+      doc.text(totalText, (pageWidth - doc.getTextWidth(totalText)) / 2, 27);
+
+      const resolveBranch = (b) => {
+        if (!b || !b.branch) return 'N/A';
+        return typeof b.branch === 'object' ? (b.branch.branchName || 'N/A') : b.branch;
+      };
+
+      const tableData = allBatches.map(b => [
+        b.batchName || 'N/A',
+        resolveBranch(b),
+        b.status || 'N/A',
+        (typeof b.totalInterns === 'number' ? b.totalInterns : (Array.isArray(b.interns) ? b.interns.length : 0)).toString(),
+        b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-GB') : 'N/A'
+      ]);
+
+      autoTable(doc, {
+        startY: 35,
+        head: [['Batch Name', 'Branch', 'Status', 'Total Interns', 'Created']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          1: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          2: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          3: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+          4: { cellWidth: 'auto', halign: 'center', fontSize: 8 }
+        },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1 },
+        margin: { left: 10, right: 10 },
+        tableWidth: 'auto'
+      });
+
+      // Footer page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        const text = `Page ${i} of ${pageCount}`;
+        doc.text(text, (pageWidth - doc.getTextWidth(text)) / 2, doc.internal.pageSize.getHeight() - 8);
+      }
+
+      doc.save(`batches_export_${new Date().toISOString().split('T')[0]}.pdf`);
+      showNotification('success', 'Export Successful', `Exported ${allBatches.length} batches to PDF successfully`);
+    } catch (err) {
+      console.error('Batches export error:', err);
+      showNotification('error', 'Export Failed', 'Failed to export batches. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   useEffect(() => {
     fetchBranches();
     fetchBatches(pagination.currentPage, searchTerm, filters.status, filters.branch);
@@ -314,6 +407,16 @@ export const Batches = () => {
     setInternAdmissionNumber('');
     setInternCourseName('');
     setActiveTab('batches');
+  };
+
+  const handleViewBatch = (batch) => {
+    setViewingBatch(batch);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingBatch(null);
   };
 
   const handleDeleteBatch = (batch) => {
@@ -567,9 +670,9 @@ export const Batches = () => {
               <ExportIcon />
               Export
             </button> */}
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+          <button onClick={handleExport} disabled={exporting} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
+            {exporting ? 'Exporting...' : 'Export'}
           </button>
         </div>
       </div>
@@ -620,9 +723,9 @@ export const Batches = () => {
                     </option>
                   ))}
                 </select>
-                <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
+                <button onClick={handleExport} disabled={exporting} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  Export
+                  {exporting ? 'Exporting...' : 'Export'}
                 </button>
               </div>
             </div>
@@ -704,6 +807,13 @@ export const Batches = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
+                            <button 
+                              onClick={() => handleViewBatch(batch)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="View Details"
+                            >
+                              View
+                            </button>
                             <button 
                               onClick={() => handleEditBatch(batch)}
                               className="text-orange-600 hover:text-orange-900"
@@ -1093,6 +1203,167 @@ export const Batches = () => {
           </div>
         )}
       </div>
+
+      {/* View Batch Details Modal */}
+      {showViewModal && viewingBatch && (
+        <>
+          <style>{`
+            @media print {
+              @page { margin: 0; }
+              body * { visibility: hidden; }
+              .print-modal-content, .print-modal-content * { visibility: visible; }
+              .print-modal-content {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-width: 100% !important;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                border: none;
+                background: white;
+              }
+              .print-modal-content .print-hide { display: none !important; }
+              .print-modal-content .print-full-width { width: 100% !important; max-width: 100% !important; }
+              .print-modal-content .print-grid-full { grid-template-columns: 1fr 1fr !important; gap: 1rem !important; }
+            }
+          `}</style>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:block print:bg-white print:opacity-100 print:p-0">
+            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto print-modal-content">
+            {/* Modal Header */}
+            <div className="px-8 py-6 border-b border-gray-200 print:px-4 print:py-4 print-full-width">
+              <div className="flex justify-between items-start">
+                <h1 className="text-2xl font-semibold text-gray-900">{viewingBatch.batchName}</h1>
+                <button 
+                  onClick={closeViewModal}
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print-hide"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                  </svg>
+                  Back
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-8 py-6 print:px-4 print:py-4 print-full-width">
+              <div className="flex flex-col md:flex-row gap-10 print:flex-col print:gap-4 print-full-width">
+                {/* Left Column - Batch Details */}
+                <div className="flex-1 space-y-6 print:flex-none print-full-width">
+                  {/* Basic Details */}
+                  <div>
+                    <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                      Batch Details
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                      <p className="leading-6"><span className="font-semibold text-gray-900">Batch Name:</span> <span className="text-gray-600">{viewingBatch.batchName || 'N/A'}</span></p>
+                      <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{typeof viewingBatch.branch === 'object' && viewingBatch.branch ? viewingBatch.branch.branchName : 'N/A'}</span></p>
+                      <p className="leading-6">
+                        <span className="font-semibold text-gray-900">Status:</span>{" "}
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          viewingBatch.status === 'Active'
+                            ? 'bg-green-100 text-green-800'
+                            : viewingBatch.status === 'Inactive'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {viewingBatch.status || 'N/A'}
+                        </span>
+                      </p>
+                      <p className="leading-6"><span className="font-semibold text-gray-900">Total Interns:</span> <span className="text-gray-600">{viewingBatch.totalInterns || 0}</span></p>
+                      <p className="leading-6"><span className="font-semibold text-gray-900">Created Date:</span> <span className="text-gray-600">{viewingBatch.createdAt ? new Date(viewingBatch.createdAt).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                      <p className="leading-6"><span className="font-semibold text-gray-900">Updated Date:</span> <span className="text-gray-600">{viewingBatch.updatedAt ? new Date(viewingBatch.updatedAt).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
+                    </div>
+                  </div>
+
+                  {/* Interns List */}
+                  {viewingBatch.interns && viewingBatch.interns.length > 0 && (
+                    <div>
+                      <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                        Assigned Interns ({viewingBatch.interns.length})
+                      </h2>
+                      <div className="space-y-3">
+                        {viewingBatch.interns.map((intern, index) => (
+                          <div key={intern._id || index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900">{intern.fullName || 'N/A'}</div>
+                                <div className="text-sm text-gray-500">{intern.email || 'N/A'}</div>
+                                <div className="text-sm text-gray-500">{intern.course?.courseName || intern.course || 'N/A'}</div>
+                                {intern.admissionNumber && (
+                                  <div className="text-sm text-gray-500">Admission No: {intern.admissionNumber}</div>
+                                )}
+                              </div>
+                              <div className="flex-shrink-0">
+                                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                  <span className="text-orange-600 font-medium text-sm">
+                                    {intern.fullName?.charAt(0)?.toUpperCase() || 'I'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Interns Message */}
+                  {(!viewingBatch.interns || viewingBatch.interns.length === 0) && (
+                    <div>
+                      <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                        Assigned Interns
+                      </h2>
+                      <div className="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">No interns assigned</h3>
+                        <p className="mt-1 text-sm text-gray-500">This batch doesn't have any interns assigned yet.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column - Batch Icon */}
+                <div className="flex flex-col items-center print-hide">
+                  <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
+                    <div className="w-48 h-48 rounded-full bg-orange-100 flex items-center justify-center">
+                      <span className="text-orange-500 text-6xl font-medium">
+                        {viewingBatch.batchName?.charAt(0)?.toUpperCase() || 'B'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-8 py-6 border-t border-gray-200 print-hide">
+              <div className="flex justify-end gap-4">
+                <button 
+                  onClick={() => {
+                    closeViewModal();
+                    handleEditBatch(viewingBatch);
+                  }}
+                  className="bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Edit Batch
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                >
+                  Print
+                </button>
+              </div>
+            </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

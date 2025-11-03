@@ -5,6 +5,8 @@ import api from "../../../axios";
 import Tabs from "../../../components/button/Tabs";
 import { Navbar } from "../../../components/admin/AdminNavBar";
 import AdminService from "../../../services/admin-api-service/AdminService";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const StaffManagement = () => {
     const { getStaffData,putStaffData,postStaffData,getBranchesData,deleteStaffData,getRolesData } = AdminService();
@@ -43,7 +45,8 @@ export const StaffManagement = () => {
     });
     const [filters, setFilters] = useState({
         department: '',
-        employmentStatus: ''
+        employmentStatus: '',
+        branch: ''
     });
     const [formData, setFormData] = useState({
         // Basic Details
@@ -56,7 +59,7 @@ export const StaffManagement = () => {
         staffPermanentAddress: "",
         district: "",
         state: "",
-        photo: "",
+        photo: null, // Will store File object
 
         // Professional Details
         department: "",
@@ -66,7 +69,7 @@ export const StaffManagement = () => {
         dateOfJoining: "",
         employmentStatus: "",
         resignationDate: "",
-        resume: "",
+        resume: null, // Will store File object
         remarks: "",
 
         // Login & Access
@@ -112,7 +115,7 @@ export const StaffManagement = () => {
     };
 
     // Fetch staff from backend
-    const fetchStaff = async (page = 1, search = '', department = '', employmentStatus = '') => {
+    const fetchStaff = async (page = 1, search = '', department = '', employmentStatus = '', branch = '') => {
         try {
             setLoading(true);
             setError('');
@@ -126,6 +129,7 @@ export const StaffManagement = () => {
             if (search) queryParams.append('search', search);
             if (department) queryParams.append('department', department);
             if (employmentStatus) queryParams.append('employmentStatus', employmentStatus);
+            if (branch) queryParams.append('branch', branch);
             
             const res = await getStaffData(queryParams.toString());
             // Handle different response structures
@@ -180,7 +184,7 @@ export const StaffManagement = () => {
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= pagination.totalPages) {
             setPagination(prev => ({ ...prev, currentPage: newPage }));
-            fetchStaff(newPage, searchTerm, filters.department, filters.employmentStatus);
+            fetchStaff(newPage, searchTerm, filters.department, filters.employmentStatus, filters.branch);
         }
     };
 
@@ -197,7 +201,7 @@ export const StaffManagement = () => {
 
     // Load staff and branches when component mounts
     useEffect(() => {
-            fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus);
+            fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus, filters.branch);
         fetchBranches();
         fetchRoles();
     }, []);
@@ -205,7 +209,7 @@ export const StaffManagement = () => {
     // Handle search and filter changes with debounce
     useEffect(() => {
         const timeoutId = setTimeout(() => {
-            fetchStaff(1, searchTerm, filters.department, filters.employmentStatus);
+            fetchStaff(1, searchTerm, filters.department, filters.employmentStatus, filters.branch);
         }, 500); // 500ms debounce
 
         return () => clearTimeout(timeoutId);
@@ -258,7 +262,7 @@ export const StaffManagement = () => {
             staffPermanentAddress: staffMember.staffPermanentAddress || "",
             district: staffMember.district || "",
             state: staffMember.state || "",
-            photo: staffMember.photo || "",
+            photo: staffMember.photo || null, // Keep existing URL if available
             department: staffMember.department || "",
             branch: staffMember.branch?._id || staffMember.branch || "",
             role: staffMember.role?._id || staffMember.role || "",
@@ -266,7 +270,7 @@ export const StaffManagement = () => {
             dateOfJoining: formatDateForInput(staffMember.dateOfJoining),
             employmentStatus: staffMember.employmentStatus || "",
             resignationDate: formatDateForInput(staffMember.resignationDate),
-            resume: staffMember.resume || "",
+            resume: staffMember.resume || null, // Keep existing URL if available
             remarks: staffMember.remarks || "",
             officialEmail: staffMember.officialEmail || "",
             password: "",
@@ -288,7 +292,7 @@ export const StaffManagement = () => {
             staffPermanentAddress: "",
             district: "",
             state: "",
-            photo: "",
+            photo: null,
             department: "",
             branch: "",
             role: "",
@@ -296,7 +300,7 @@ export const StaffManagement = () => {
             dateOfJoining: "",
             employmentStatus: "",
             resignationDate: "",
-            resume: "",
+            resume: null,
             remarks: "",
             officialEmail: "",
             password: "",
@@ -320,164 +324,102 @@ export const StaffManagement = () => {
         setViewingStaff(null);
     };
 
-    const handleExport = () => {
+    const handleExport = async () => {
         try {
-            // Create a new window for PDF generation
-            const printWindow = window.open('', '_blank');
+            setLoading(true);
+            showNotification('info', 'Exporting', 'Preparing PDF export...');
             
-            // Prepare table data
-            const tableHeaders = [
-                'Name',
-                'Email',
-                'Phone',
-                'WhatsApp',
-                'Department',
-                'Branch',
-                'Role',
-                'Status',
-                'Date of Birth',
-                'Gender',
-                'Address',
-                'District',
-                'State',
-                'Years of Experience',
-                'Date of Joining',
-                'Resignation Date',
-                'Official Email',
-                'Created Date'
-            ];
+            // Fetch all staff for export (no pagination)
+            const queryParams = new URLSearchParams({
+                page: '1',
+                limit: '10000' // High limit to get all staff
+            });
+            
+            const res = await getStaffData(queryParams.toString());
+            const allStaff = res.data?.data || res.data || [];
+            
+            if (allStaff.length === 0) {
+                showNotification('error', 'Export Failed', 'No staff found to export');
+                return;
+            }
 
-            const tableData = staff.map(staffMember => [
+            // Create new PDF document
+            const doc = new jsPDF('portrait', 'mm', 'a4');
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(247, 147, 30); // Orange color
+            doc.text('Staff Management Report', 14, 20);
+            
+            // Reset text color
+            doc.setTextColor(0, 0, 0);
+
+            // Add export date and total count
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Exported on: ${new Date().toLocaleDateString('en-GB')}`, 14, 30);
+            doc.text(`Total Staff: ${allStaff.length}`, 14, 35);
+
+            // Prepare table data with only specified columns
+            const tableData = allStaff.map(staffMember => [
                 staffMember.fullName || 'N/A',
                 staffMember.email || 'N/A',
-                staffMember.staffPhoneNumber || 'N/A',
-                staffMember.staffWhatsAppNumber || 'N/A',
                 staffMember.department || 'N/A',
-                staffMember.branch?.branchName || 'N/A',
                 staffMember.role?.role || 'N/A',
-                staffMember.employmentStatus || 'N/A',
-                staffMember.dateOfBirth ? new Date(staffMember.dateOfBirth).toLocaleDateString() : 'N/A',
-                staffMember.gender || 'N/A',
-                staffMember.staffPermanentAddress || 'N/A',
-                staffMember.district || 'N/A',
-                staffMember.state || 'N/A',
-                staffMember.yearsOfExperience || 'N/A',
-                staffMember.dateOfJoining ? new Date(staffMember.dateOfJoining).toLocaleDateString() : 'N/A',
-                staffMember.resignationDate ? new Date(staffMember.resignationDate).toLocaleDateString() : 'N/A',
-                staffMember.officialEmail || 'N/A',
-                staffMember.createdAt ? new Date(staffMember.createdAt).toLocaleDateString() : 'N/A'
+                staffMember.branch?.branchName || 'N/A',
+                staffMember.employmentStatus || 'N/A'
             ]);
 
-            // Create HTML content for PDF
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Staff Export</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            margin: 20px;
-                            color: #333;
-                        }
-                        .header {
-                            text-align: center;
-                            margin-bottom: 30px;
-                            border-bottom: 2px solid #f7931e;
-                            padding-bottom: 10px;
-                        }
-                        .header h1 {
-                            color: #f7931e;
-                            margin: 0;
-                            font-size: 24px;
-                        }
-                        .header p {
-                            margin: 5px 0;
-                            color: #666;
-                        }
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin-top: 20px;
-                            font-size: 10px;
-                        }
-                        th, td {
-                            border: 1px solid #ddd;
-                            padding: 6px;
-                            text-align: left;
-                            vertical-align: top;
-                        }
-                        th {
-                            background-color: #f7931e;
-                            color: white;
-                            font-weight: bold;
-                            font-size: 9px;
-                        }
-                        tr:nth-child(even) {
-                            background-color: #f9f9f9;
-                        }
-                        tr:hover {
-                            background-color: #f5f5f5;
-                        }
-                        .footer {
-                            margin-top: 30px;
-                            text-align: center;
-                            font-size: 10px;
-                            color: #666;
-                            border-top: 1px solid #ddd;
-                            padding-top: 10px;
-                        }
-                        @media print {
-                            body { margin: 0; }
-                            .header { page-break-inside: avoid; }
-                            table { page-break-inside: auto; }
-                            tr { page-break-inside: avoid; page-break-after: auto; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h1>Staff Management Report</h1>
-                        <p>Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
-                        <p>Total Staff: ${staff.length}</p>
-                    </div>
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                ${tableHeaders.map(header => `<th>${header}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableData.map(row => 
-                                `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
-                            ).join('')}
-                        </tbody>
-                    </table>
-                    
-                    <div class="footer">
-                        <p>This report was generated from the Staff Management System</p>
-                        <p>© ${new Date().getFullYear()} Learning Management System</p>
-                    </div>
-                </body>
-                </html>
-            `;
+            // Add table to PDF
+            autoTable(doc, {
+                startY: 45,
+                head: [['Name', 'Email', 'Department', 'Role', 'Branch', 'Status']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [247, 147, 30],
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    fontSize: 9
+                },
+                columnStyles: {
+                    0: { cellWidth: 'auto', halign: 'left', fontSize: 8 }, // Name
+                    1: { cellWidth: 'auto', halign: 'left', fontSize: 8 }, // Email
+                    2: { cellWidth: 'auto', halign: 'left', fontSize: 8 }, // Department
+                    3: { cellWidth: 'auto', halign: 'left', fontSize: 8 }, // Role
+                    4: { cellWidth: 'auto', halign: 'left', fontSize: 8 }, // Branch
+                    5: { cellWidth: 'auto', halign: 'center', fontSize: 8 } // Status
+                },
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 3,
+                    overflow: 'linebreak',
+                    lineWidth: 0.1
+                },
+                margin: { left: 10, right: 10 },
+                tableWidth: 'auto'
+            });
 
-            // Write content to new window
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
+            // Add page number
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() - 30, doc.internal.pageSize.getHeight() - 10);
+            }
+
+            // Save the PDF
+            doc.save(`staff_export_${new Date().toISOString().split('T')[0]}.pdf`);
             
-            // Wait for content to load, then print
-            printWindow.onload = function() {
-                printWindow.focus();
-                printWindow.print();
-                printWindow.close();
-            };
-
-            showNotification('success', 'Export Successful', 'Staff data has been exported as PDF successfully.');
+            showNotification('success', 'Export Successful', `Exported ${allStaff.length} staff to PDF successfully`);
         } catch (error) {
             console.error('Export error:', error);
             showNotification('error', 'Export Failed', 'Failed to export staff data. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -489,7 +431,7 @@ export const StaffManagement = () => {
             setError('');
             const res = await deleteStaffData(deletingStaff._id);
             showNotification('success', 'Success', 'Staff deleted successfully.');
-            await fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus);
+            await fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus, filters.branch);
             setShowDeleteModal(false);
             setDeletingStaff(null);
         } catch (err) {
@@ -533,33 +475,47 @@ export const StaffManagement = () => {
             return;
         }
 
-        // Build payload matching backend schema (omit confirmPassword)
-        const payload = {
-            fullName: formData.fullName,
-            dateOfBirth: formData.dateOfBirth || null,
-            gender: formData.gender,
-            email: formData.email,
-            staffPhoneNumber: formData.staffPhoneNumber,
-            staffWhatsAppNumber: formData.staffWhatsAppNumber || "",
-            staffPermanentAddress: formData.staffPermanentAddress || "",
-            district: formData.district || "",
-            state: formData.state || "",
-            photo: formData.photo || "",
-            department: formData.department,
-            branch: formData.branch,
-            role: formData.role,
-            yearsOfExperience: formData.yearsOfExperience ? Number(formData.yearsOfExperience) : 0,
-            dateOfJoining: formData.dateOfJoining || null,
-            employmentStatus: formData.employmentStatus,
-            resignationDate: formData.resignationDate || null,
-            resume: formData.resume || "",
-            remarks: formData.remarks || "",
-            officialEmail: formData.officialEmail,
-        };
-
+        // Build FormData for file uploads
+        const payload = new FormData();
+        
+        // Add text fields
+        payload.append('fullName', formData.fullName);
+        if (formData.dateOfBirth) payload.append('dateOfBirth', formData.dateOfBirth);
+        payload.append('gender', formData.gender);
+        payload.append('email', formData.email);
+        payload.append('staffPhoneNumber', formData.staffPhoneNumber);
+        if (formData.staffWhatsAppNumber) payload.append('staffWhatsAppNumber', formData.staffWhatsAppNumber);
+        if (formData.staffPermanentAddress) payload.append('staffPermanentAddress', formData.staffPermanentAddress);
+        if (formData.district) payload.append('district', formData.district);
+        if (formData.state) payload.append('state', formData.state);
+        payload.append('department', formData.department);
+        payload.append('branch', formData.branch);
+        payload.append('role', formData.role);
+        payload.append('yearsOfExperience', formData.yearsOfExperience ? Number(formData.yearsOfExperience) : 0);
+        if (formData.dateOfJoining) payload.append('dateOfJoining', formData.dateOfJoining);
+        payload.append('employmentStatus', formData.employmentStatus);
+        if (formData.resignationDate) payload.append('resignationDate', formData.resignationDate);
+        if (formData.remarks) payload.append('remarks', formData.remarks);
+        payload.append('officialEmail', formData.officialEmail);
+        
+        // Add files only if they are File objects (new uploads)
+        if (formData.photo instanceof File) {
+            payload.append('photo', formData.photo);
+        } else if (formData.photo && typeof formData.photo === 'string') {
+            // If it's a string (existing URL), pass it as a field
+            payload.append('photo', formData.photo);
+        }
+        
+        if (formData.resume instanceof File) {
+            payload.append('resume', formData.resume);
+        } else if (formData.resume && typeof formData.resume === 'string') {
+            // If it's a string (existing URL), pass it as a field
+            payload.append('resume', formData.resume);
+        }
+        
         // Only include password if it's provided (for new staff or password updates)
         if (formData.password && formData.password.trim() !== '') {
-            payload.password = formData.password;
+            payload.append('password', formData.password);
         }
 
         try {
@@ -576,7 +532,7 @@ export const StaffManagement = () => {
             }
             
             // Refresh staff list
-            await fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus);
+            await fetchStaff(pagination.currentPage, searchTerm, filters.department, filters.employmentStatus, filters.branch);
             // Switch tab and reset form
             setActiveTab('staffList');
             setEditingStaff(null);
@@ -591,7 +547,7 @@ export const StaffManagement = () => {
                 staffPermanentAddress: "",
                 district: "",
                 state: "",
-                photo: "",
+                photo: null,
                 department: "",
                 branch: "",
                 role: "",
@@ -599,7 +555,7 @@ export const StaffManagement = () => {
                 dateOfJoining: "",
                 employmentStatus: "",
                 resignationDate: "",
-                resume: "",
+                resume: null,
                 remarks: "",
                 officialEmail: "",
                 password: "",
@@ -648,6 +604,16 @@ export const StaffManagement = () => {
                         ))}
                     </select>
                     <select 
+                        value={filters.branch}
+                        onChange={(e) => handleFilterChange('branch', e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                        <option value="">All Branches</option>
+                        {branches.map(branch => (
+                            <option key={branch._id} value={branch._id}>{branch.branchName}</option>
+                        ))}
+                    </select>
+                    <select 
                         value={filters.employmentStatus}
                         onChange={(e) => handleFilterChange('employmentStatus', e.target.value)}
                         className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -658,10 +624,11 @@ export const StaffManagement = () => {
                     </select>
                     <button 
                         onClick={handleExport}
-                        className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                        disabled={loading}
+                        className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        Export
+                        {loading ? 'Exporting...' : 'Export'}
                     </button>
                 </div>
             </div>
@@ -864,14 +831,39 @@ export const StaffManagement = () => {
                 </div>
                 <div>
                     <label className="block text-gray-700 font-medium mb-2">Photo <span className="text-gray-400">(Photo format: JPG/PNG only)</span></label>
-                    <div className="flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent">
-                        <span className="text-gray-500 flex-1">Upload Photo</span>
-                        <input onChange={(e) => setFormData((p) => ({ ...p, photo: e.target.files?.[0]?.name || "" }))} type="file" className="sr-only" id="photo-upload" />
-                        <label htmlFor="photo-upload" className="cursor-pointer text-gray-500 hover:text-orange-500">
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white">
+                        <span className="text-gray-500 flex-1 truncate pr-2">
+                            {formData.photo instanceof File 
+                                ? formData.photo.name 
+                                : formData.photo && typeof formData.photo === 'string' 
+                                    ? 'Existing photo (click to change)' 
+                                    : 'Upload Photo'}
+                        </span>
+                        <input 
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    // Validate file type
+                                    if (!file.type.match('image/(jpeg|jpg|png)')) {
+                                        showNotification('error', 'Validation Error', 'Please upload only JPG or PNG images');
+                                        e.target.value = ''; // Reset input to allow retry
+                                        return;
+                                    }
+                                    setFormData((p) => ({ ...p, photo: file }));
+                                    setError(''); // Clear any previous errors
+                                }
+                            }} 
+                            type="file" 
+                            accept="image/jpeg,image/jpg,image/png"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            id="photo-upload"
+                            name="photo"
+                        />
+                        <div className="pointer-events-none flex-shrink-0">
+                            <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm3-4a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2z" clipRule="evenodd"></path>
                             </svg>
-                        </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -930,14 +922,45 @@ export const StaffManagement = () => {
                 </div>
                 <div>
                     <label className="block text-gray-700 font-medium mb-2">Resume <span className="text-gray-400">(Upload PDF only Max 5MB)</span></label>
-                    <div className="flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent">
-                        <span className="text-gray-500 flex-1">Upload resume</span>
-                        <input onChange={(e) => setFormData((p) => ({ ...p, resume: e.target.files?.[0]?.name || "" }))} type="file" className="sr-only" id="resume-upload" />
-                        <label htmlFor="resume-upload" className="cursor-pointer text-gray-500 hover:text-orange-500">
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white">
+                        <span className="text-gray-500 flex-1 truncate pr-2">
+                            {formData.resume instanceof File 
+                                ? formData.resume.name 
+                                : formData.resume && typeof formData.resume === 'string' 
+                                    ? 'Existing resume (click to change)' 
+                                    : 'Upload resume'}
+                        </span>
+                        <input 
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    // Validate file type
+                                    if (file.type !== 'application/pdf') {
+                                        showNotification('error', 'Validation Error', 'Please upload only PDF files');
+                                        e.target.value = ''; // Reset input to allow retry
+                                        return;
+                                    }
+                                    // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+                                    if (file.size > 5 * 1024 * 1024) {
+                                        showNotification('error', 'Validation Error', 'File size must be less than 5MB');
+                                        e.target.value = ''; // Reset input to allow retry
+                                        return;
+                                    }
+                                    setFormData((p) => ({ ...p, resume: file }));
+                                    setError(''); // Clear any previous errors
+                                }
+                            }} 
+                            type="file" 
+                            accept="application/pdf"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                            id="resume-upload"
+                            name="resume"
+                        />
+                        <div className="pointer-events-none flex-shrink-0">
+                            <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm3-4a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2z" clipRule="evenodd"></path>
                             </svg>
-                        </label>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -1128,15 +1151,48 @@ export const StaffManagement = () => {
 
             {/* View Staff Details Modal */}
             {showViewModal && viewingStaff && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+                <>
+                    <style>{`
+                        @media print {
+                            @page {
+                                margin: 0;
+                            }
+                            body * {
+                                visibility: hidden;
+                            }
+                            .print-modal-content, .print-modal-content * {
+                                visibility: visible;
+                            }
+                            .print-modal-content {
+                                position: absolute;
+                                left: 0;
+                                top: 0;
+                                width: 100%;
+                                max-width: 100% !important;
+                                margin: 0;
+                                padding: 0;
+                                box-shadow: none;
+                                border: none;
+                                background: white;
+                            }
+                            .print-modal-content .print-hide {
+                                display: none !important;
+                            }
+                            .print-modal-content .print-full-width {
+                                width: 100% !important;
+                                max-width: 100% !important;
+                            }
+                        }
+                    `}</style>
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:block print:bg-white print:opacity-100 print:p-0">
+                        <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto print-modal-content">
                         {/* Modal Header */}
-                        <div className="px-8 py-6 border-b border-gray-200">
+                        <div className="px-8 py-6 border-b border-gray-200 print:px-4 print:py-4 print-full-width">
                             <div className="flex justify-between items-start">
                                 <h1 className="text-2xl font-semibold text-gray-900">{viewingStaff.fullName}</h1>
                                 <button 
                                     onClick={closeViewModal}
-                                    className="flex items-center text-black gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print:hidden"
+                                    className="flex items-center text-black gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print-hide"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
@@ -1147,16 +1203,16 @@ export const StaffManagement = () => {
                         </div>
 
                         {/* Modal Body */}
-                        <div className="px-8 py-6">
-                            <div className="flex flex-col md:flex-row gap-10">
+                        <div className="px-8 py-6 print:px-4 print:py-4 print-full-width">
+                            <div className="flex flex-col md:flex-row gap-10 print:flex-col print:gap-4 print-full-width">
                                 {/* Left Column - Details */}
-                                <div className="flex-1 space-y-6">
+                                <div className="flex-1 space-y-6 print:flex-none print-full-width">
                                     {/* Basic Details */}
                                     <div>
                                         <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
                                             Basic Details
                                         </h2>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Full Name:</span> <span className="text-gray-600">{viewingStaff.fullName || 'N/A'}</span></p>
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Date of Birth:</span> <span className="text-gray-600">{viewingStaff.dateOfBirth ? new Date(viewingStaff.dateOfBirth).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Gender:</span> <span className="text-gray-600">{viewingStaff.gender || 'N/A'}</span></p>
@@ -1174,7 +1230,7 @@ export const StaffManagement = () => {
                                         <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
                                             Professional Details
                                         </h2>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
                                             <p className="leading-6"><span className="font-semibold text-gray-900">ID:</span> <span className="text-gray-600">{viewingStaff._id?.slice(-4) || 'N/A'}</span></p>
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Department:</span> <span className="text-gray-600">{viewingStaff.department || 'N/A'}</span></p>
                                             <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingStaff.branch?.branchName || 'N/A'}</span></p>
@@ -1199,7 +1255,7 @@ export const StaffManagement = () => {
                                 </div>
 
                                 {/* Right Column - Profile Image */}
-                                <div className="flex flex-col items-center">
+                                <div className="flex flex-col items-center print-hide">
                                     <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
                                         {viewingStaff.photo ? (
                                             <img
@@ -1220,7 +1276,7 @@ export const StaffManagement = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="px-8 py-6 border-t border-gray-200 print:hidden">
+                        <div className="px-8 py-6 border-t border-gray-200 print-hide">
                             <div className="flex justify-end gap-4">
                                 <button 
                                     onClick={() => {
@@ -1241,6 +1297,7 @@ export const StaffManagement = () => {
                         </div>
                     </div>
                 </div>
+                </>
             )}
 
         </div>

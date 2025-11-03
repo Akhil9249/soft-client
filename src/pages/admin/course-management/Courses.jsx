@@ -3,6 +3,8 @@ import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const Courses = () => {
   // const axiosPrivate = useAxiosPrivate();
@@ -60,6 +62,9 @@ export const Courses = () => {
     title: '',
     message: ''
   });
+  
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingCourse, setViewingCourse] = useState(null);
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -216,6 +221,16 @@ export const Courses = () => {
     setShowDeleteModal(true);
   };
 
+  const handleViewCourse = (course) => {
+    setViewingCourse(course);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingCourse(null);
+  };
+
   const confirmDeleteCourse = async () => {
     if (!deletingCourse) return;
     
@@ -327,6 +342,103 @@ export const Courses = () => {
     }));
   };
 
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const queryParams = new URLSearchParams({ page: '1', limit: '10000' });
+      if (filters.category) queryParams.append('category', filters.category);
+      if (filters.courseType) queryParams.append('courseType', filters.courseType);
+      if (searchTerm) queryParams.append('search', searchTerm);
+
+      const res = await getCoursesData(queryParams.toString());
+      const allCourses = res?.data || [];
+      if (!Array.isArray(allCourses) || allCourses.length === 0) {
+        showNotification('error', 'Export Failed', 'No courses found to export');
+        return;
+      }
+
+      const doc = new jsPDF('portrait', 'mm', 'a4');
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30);
+      const title = 'Courses Report';
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const titleWidth = doc.getTextWidth(title);
+      doc.text(title, (pageWidth - titleWidth) / 2, 20);
+
+      // Meta
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const exportedOn = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+      const totalText = `Total Courses: ${allCourses.length}`;
+      const exportedOnWidth = doc.getTextWidth(exportedOn);
+      const totalWidth = doc.getTextWidth(totalText);
+      doc.text(exportedOn, (pageWidth - exportedOnWidth) / 2, 30);
+      doc.text(totalText, (pageWidth - totalWidth) / 2, 35);
+
+      // Fee formatter (handles strings with symbols/commas)
+      const formatFee = (fee) => {
+        if (fee === null || fee === undefined || fee === '') return 'N/A';
+        const numeric = typeof fee === 'number' ? fee : parseFloat(String(fee).toString().replace(/[^0-9.-]/g, ''));
+        if (Number.isNaN(numeric)) return 'N/A';
+        return `${numeric.toLocaleString('en-IN')}`; // no currency symbol, no quotes
+      };
+
+      // Table data
+      const tableData = allCourses.map(c => [
+        c.courseName || 'N/A',
+        c.duration || 'N/A',
+        (typeof c.category === 'object' && c.category ? c.category.categoryName : c.category) || 'N/A',
+        c.courseType || 'N/A',
+        formatFee(c.courseFee),
+        c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-GB') : 'N/A'
+      ]);
+
+      autoTable(doc, {
+        startY: 45,
+        head: [['Course Name', 'Duration', 'Category', 'Type', 'Fee', 'Created']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          1: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          2: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          3: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          4: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          5: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+        },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1 },
+        margin: { left: 10, right: 10 },
+        tableWidth: 'auto'
+      });
+
+      // Page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        const text = `Page ${i} of ${pageCount}`;
+        const textWidth = doc.getTextWidth(text);
+        doc.text(text, (pageWidth - textWidth) / 2, doc.internal.pageSize.getHeight() - 10);
+      }
+
+      doc.save(`courses_export_${new Date().toISOString().split('T')[0]}.pdf`);
+      showNotification('success', 'Export Successful', `Exported ${allCourses.length} courses to PDF successfully`);
+    } catch (err) {
+      console.error('Courses export error:', err);
+      showNotification('error', 'Export Failed', 'Failed to export courses. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderStudentsList = () => (
     <div className="bg-white p-6 rounded-lg shadow-md flex-grow">
@@ -724,9 +836,13 @@ export const Courses = () => {
               <option key={type} value={type}>{type}</option>
             ))}
           </select>
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
+          <button 
+            onClick={handleExport}
+            disabled={loading}
+            className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
+            {loading ? 'Exporting...' : 'Export'}
           </button>
         </div>
       </div>
@@ -829,6 +945,12 @@ export const Courses = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleViewCourse(course)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        View
+                      </button>
                       <button 
                         onClick={() => handleEditCourse(course)}
                         className="text-orange-600 hover:text-orange-900"
@@ -1323,6 +1445,86 @@ export const Courses = () => {
               >
                 {loading ? 'Deleting...' : 'Delete'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Course Details Modal */}
+      {showViewModal && viewingCourse && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-start">
+                <h1 className="text-xl font-semibold text-gray-900">{viewingCourse.courseName}</h1>
+                <button 
+                  onClick={closeViewModal}
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                  </svg>
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                <p className="leading-6"><span className="font-semibold text-gray-900">Course Name:</span> <span className="text-gray-600">{viewingCourse.courseName || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Duration:</span> <span className="text-gray-600">{viewingCourse.duration || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Category:</span> <span className="text-gray-600">{typeof viewingCourse.category === 'object' && viewingCourse.category ? viewingCourse.category.categoryName : viewingCourse.category || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Type:</span> <span className="text-gray-600">{viewingCourse.courseType || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Fee:</span> <span className="text-gray-600">{viewingCourse.courseFee ? `₹${Number(viewingCourse.courseFee).toLocaleString()}` : 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Created:</span> <span className="text-gray-600">{viewingCourse.createdAt ? new Date(viewingCourse.createdAt).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">ID:</span> <span className="text-gray-600">{viewingCourse._id?.slice(-6) || 'N/A'}</span></p>
+              </div>
+
+              {/* Syllabus */}
+              <div className="mt-5">
+                <h2 className="text-[#f7931e] font-semibold mb-3 text-base italic">Syllabus</h2>
+                {viewingCourse.syllabusFile ? (
+                  <div className="flex items-center">
+                    <svg className="w-4 h-4 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
+                    </svg>
+                    <span className="text-sm text-red-600 font-medium">PDF</span>
+                    <a 
+                      href={viewingCourse.syllabusFile} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="ml-2 text-blue-600 hover:text-blue-800 text-xs"
+                    >
+                      View
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No syllabus uploaded.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={closeViewModal}
+                  className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+                <button 
+                  onClick={() => {
+                    closeViewModal();
+                    handleEditCourse(viewingCourse);
+                  }}
+                  className="bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
             </div>
           </div>
         </div>

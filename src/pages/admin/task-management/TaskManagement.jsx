@@ -3,6 +3,8 @@ import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 // import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const TaskManagement = () => {
 
@@ -40,6 +42,10 @@ export const TaskManagement = () => {
     title: '',
     message: ''
   });
+  
+  // View modal state
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingTask, setViewingTask] = useState(null);
   
  
   // Pagination state
@@ -229,23 +235,25 @@ export const TaskManagement = () => {
   const fetchMentors = async () => {
     try {
       setMentorsLoading(true);
-      const res = await getStaffData();
+      // Fetch all staff (not paginated) to get all mentors
+      const res = await getStaffData('page=1&limit=10000');
       console.log("staff data==", res?.data);
       const staffData = res?.data || [];
       if (Array.isArray(staffData)) {
-        // Filter only mentors from staff data
-        const mentorsData = staffData.filter(staff => 
-          staff.typeOfEmployee === 'Mentor' && staff.employmentStatus === 'Active'
-        );
+        // Filter all mentors from staff data (both Active and Inactive)
+        // Check role.role since staff model uses role reference (not typeOfEmployee)
+        const mentorsData = staffData.filter(staff => {
+          const roleName = staff.role?.role?.toLowerCase();
+          return roleName === 'mentor' || staff.typeOfEmployee === 'Mentor';
+        });
+        console.log("All mentors (Active and Inactive):", mentorsData.length, mentorsData);
         setMentors(mentorsData);
       } else {
         setMentors([]);
       }
     } catch (err) {
       console.error('Failed to load mentors:', err);
-      setMentors([
-        { _id: '1', fullName: 'Choose Mentor' }
-      ]);
+      setMentors([]);
     } finally {
       setMentorsLoading(false);
     }
@@ -304,6 +312,109 @@ export const TaskManagement = () => {
       ...prev,
       [filterType]: value
     }));
+  };
+
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const queryParams = new URLSearchParams({ page: '1', limit: '10000' });
+      if (filters.taskType) queryParams.append('taskType', filters.taskType);
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.audience) queryParams.append('audience', filters.audience);
+      if (searchTerm) queryParams.append('search', searchTerm);
+
+      const res = await getTasksData(queryParams.toString());
+      const allTasks = res?.data || [];
+      if (!Array.isArray(allTasks) || allTasks.length === 0) {
+        showNotification('error', 'Export Failed', 'No tasks found to export');
+        return;
+      }
+
+      const doc = new jsPDF('landscape', 'mm', 'a4');
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30);
+      const title = 'Tasks Report';
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const titleWidth = doc.getTextWidth(title);
+      doc.text(title, (pageWidth - titleWidth) / 2, 15);
+
+      // Meta
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const exportedOn = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+      const totalText = `Total Tasks: ${allTasks.length}`;
+      const exportedOnWidth = doc.getTextWidth(exportedOn);
+      const totalWidth = doc.getTextWidth(totalText);
+      doc.text(exportedOn, (pageWidth - exportedOnWidth) / 2, 22);
+      doc.text(totalText, (pageWidth - totalWidth) / 2, 27);
+
+      // Mentor resolver
+      const resolveMentor = (task) => {
+        if (!task.assignedMentor) return 'N/A';
+        if (typeof task.assignedMentor === 'object') return task.assignedMentor.fullName || 'N/A';
+        const m = mentors.find(x => x._id === task.assignedMentor);
+        return m?.fullName || task.assignedMentor;
+      };
+
+      // Table data
+      const tableData = allTasks.map(t => [
+        t.title || 'N/A',
+        t.taskType || 'N/A',
+        t.module || 'N/A',
+        resolveMentor(t),
+        t.audience || 'N/A',
+        t.status || 'N/A',
+        t.dueDate ? new Date(t.dueDate).toLocaleDateString('en-GB') : 'N/A',
+        t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-GB') : 'N/A'
+      ]);
+
+      autoTable(doc, {
+        startY: 35,
+        head: [['Title', 'Type', 'Module', 'Mentor', 'Audience', 'Status', 'Due Date', 'Created']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          1: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          2: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          3: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          4: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          5: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          6: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+          7: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+        },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1 },
+        margin: { left: 10, right: 10 },
+        tableWidth: 'auto'
+      });
+
+      // Page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        const text = `Page ${i} of ${pageCount}`;
+        const textWidth = doc.getTextWidth(text);
+        doc.text(text, (pageWidth - textWidth) / 2, doc.internal.pageSize.getHeight() - 8);
+      }
+
+      doc.save(`tasks_export_${new Date().toISOString().split('T')[0]}.pdf`);
+      showNotification('success', 'Export Successful', `Exported ${allTasks.length} tasks to PDF successfully`);
+    } catch (err) {
+      console.error('Tasks export error:', err);
+      showNotification('error', 'Export Failed', 'Failed to export tasks. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Load data when component mounts
@@ -393,7 +504,7 @@ export const TaskManagement = () => {
       startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : "",
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
       description: task.description || "",
-      attachments: task.attachments || "",
+      attachments: task.attachments || null, // Store as URL string or null
       totalMarks: task.totalMarks || "",
       achievedMarks: task.achievedMarks || "",
       status: task.status || "",
@@ -476,6 +587,7 @@ export const TaskManagement = () => {
     setSelectedCourses([]);
     setCourseSearchTerm('');
     setActiveTab('tasks-list');
+    // Note: File input will be reset automatically by the key prop
   };
 
   const handleDeleteClick = (task) => {
@@ -514,6 +626,17 @@ export const TaskManagement = () => {
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
     setTaskToDelete(null);
+  };
+
+  // View handlers
+  const handleViewTask = (task) => {
+    setViewingTask(task);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingTask(null);
   };
 
   const handleInternSearch = (searchTerm) => {
@@ -602,25 +725,22 @@ export const TaskManagement = () => {
     console.log('Is edit mode:', isEditMode);
     console.log('Editing task:', editingTask);
 
-    const formDataObj = new FormData(e.currentTarget);
+    // Build FormData for file uploads
+    const payload = new FormData();
     
-    // Handle attachments properly
-    const attachmentsFile = formDataObj.get('attachments');
-    let attachmentsValue = undefined;
-    if (attachmentsFile && attachmentsFile.size > 0) {
-      // If a file is selected, you might want to handle file upload here
-      // For now, we'll just use the file name
-      attachmentsValue = attachmentsFile.name;
-    }
+    // Add text fields from formData state
+    if (formData.title) payload.append('title', formData.title.trim());
+    if (formData.taskType) payload.append('taskType', formData.taskType);
+    if (formData.module) payload.append('module', formData.module.trim());
     
     // Find the mentor ID from the selected mentor name
-    const selectedMentorName = formDataObj.get('assignedMentor');
-    const selectedMentor = mentors.find(mentor => mentor.fullName === selectedMentorName);
+    const selectedMentor = mentors.find(mentor => mentor.fullName === formData.assignedMentor);
     const mentorId = selectedMentor ? selectedMentor._id : undefined;
+    if (mentorId) payload.append('assignedMentor', mentorId);
 
     // Ensure dates are properly formatted
-    const startDateValue = formDataObj.get('startDate');
-    const dueDateValue = formDataObj.get('dueDate');
+    const startDateValue = formData.startDate;
+    const dueDateValue = formData.dueDate;
     
     // Convert dates to ISO string format to avoid timezone issues
     const startDate = startDateValue ? new Date(startDateValue + 'T00:00:00.000Z').toISOString() : undefined;
@@ -638,24 +758,38 @@ export const TaskManagement = () => {
       }
     }
 
-    const payload = {
-      title: formDataObj.get('title') || undefined,
-      taskType: formDataObj.get('taskType') || undefined,
-      module: formDataObj.get('module') || undefined,
-      assignedMentor: mentorId,
-      startDate: startDate,
-      dueDate: dueDate,
-      description: formDataObj.get('description') || undefined,
-      attachments: attachmentsValue,
-      totalMarks: formDataObj.get('totalMarks') || undefined,
-      achievedMarks: formDataObj.get('achievedMarks') || undefined,
-      status: formDataObj.get('status') || undefined,
-      audience: formDataObj.get('audience') || undefined,
-      batches: selectedBatches.length > 0 ? selectedBatches.map(batch => batch._id) : [],
-      courses: selectedCourses.length > 0 ? selectedCourses.map(course => course._id) : [],
-      interns: [], // This field is for general interns, not individual ones
-      individualInterns: selectedInterns.length > 0 ? selectedInterns.map(intern => intern._id) : []
-    };
+    if (startDate) payload.append('startDate', startDate);
+    if (dueDate) payload.append('dueDate', dueDate);
+    if (formData.description) payload.append('description', formData.description.trim());
+    
+    // Handle attachments file upload
+    if (formData?.attachments instanceof File) {
+      // New file selected - append the file
+      console.log('Uploading new attachment:', formData.attachments.name, formData.attachments.type);
+      payload.append('attachments', formData.attachments);
+    } else if (formData?.attachments && typeof formData.attachments === 'string' && formData.attachments.trim() !== '') {
+      // Existing URL - pass it as a field to preserve it
+      payload.append('attachments', formData.attachments);
+    }
+    
+    if (formData.totalMarks) payload.append('totalMarks', formData.totalMarks);
+    if (formData.achievedMarks) payload.append('achievedMarks', formData.achievedMarks);
+    if (formData.status) payload.append('status', formData.status);
+    if (formData.audience) payload.append('audience', formData.audience);
+    
+    // Add audience-specific arrays
+    // Note: When appending multiple values with the same key in FormData,
+    // Express parses them as arrays automatically
+    if (selectedBatches.length > 0) {
+      selectedBatches.forEach(batch => payload.append('batches', batch._id));
+    }
+    if (selectedCourses.length > 0) {
+      selectedCourses.forEach(course => payload.append('courses', course._id));
+    }
+    // For empty interns array, don't append anything - backend will use default []
+    if (selectedInterns.length > 0) {
+      selectedInterns.forEach(intern => payload.append('individualInterns', intern._id));
+    }
 
     try {
       setLoading(true);
@@ -799,9 +933,9 @@ export const TaskManagement = () => {
         <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
       <div className="flex justify-end ">
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+          <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
+            {loading ? 'Exporting...' : 'Export'}
           </button>
         </div>
 
@@ -862,9 +996,9 @@ export const TaskManagement = () => {
                   <option value="By courses">By courses</option>
                   <option value="Individual interns">Individual interns</option>
                 </select>
-                <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
+                <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  Export
+                  {loading ? 'Exporting...' : 'Export'}
                 </button>
               </div>
             </div>
@@ -955,6 +1089,12 @@ export const TaskManagement = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
+                            <button 
+                              onClick={() => handleViewTask(task)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              View
+                            </button>
                             <button 
                               onClick={() => handleEditTask(task)}
                               className="text-orange-600 hover:text-orange-900"
@@ -1100,7 +1240,7 @@ export const TaskManagement = () => {
                     ) : (
                       (mentors || []).map(mentor => (
                         <option key={mentor._id} value={mentor.fullName}>
-                          {mentor.fullName}
+                          {mentor.fullName} {mentor.employmentStatus ? `(${mentor.employmentStatus})` : ''}
                         </option>
                       ))
                     )}
@@ -1153,19 +1293,61 @@ export const TaskManagement = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Attachments</label>
-                  <div className="relative mt-1">
-                    <input
+                  <label className="block text-sm font-medium text-gray-700">Attachments <span className="text-gray-400">(Optional - JPG/PNG/PDF only)</span></label>
+                  <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white mt-1">
+                    <span className="text-gray-500 flex-1 truncate pr-2">
+                      {formData?.attachments instanceof File 
+                        ? formData.attachments.name 
+                        : formData?.attachments && typeof formData.attachments === 'string' 
+                            ? 'Existing file (click to change)' 
+                            : 'Upload Attachment'}
+                    </span>
+                    <input 
+                      key={isEditMode && editingTask ? editingTask._id : 'new-task'}
+                      onChange={(e) => {
+                        try {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            // Validate file type - check MIME type and file extension
+                            const isValidFile = file.type.match('image/(jpeg|jpg|png)') || 
+                                              file.type === 'application/pdf' ||
+                                              (file.name && (file.name.toLowerCase().endsWith('.jpg') || 
+                                                             file.name.toLowerCase().endsWith('.jpeg') || 
+                                                             file.name.toLowerCase().endsWith('.png') || 
+                                                             file.name.toLowerCase().endsWith('.pdf')));
+                            if (!isValidFile) {
+                              showNotification('error', 'Validation Error', 'Please upload only JPG, PNG, or PDF files');
+                              e.target.value = ''; // Reset input to allow retry
+                              return;
+                            }
+                            // Validate file size (10MB = 10 * 1024 * 1024 bytes)
+                            if (file.size > 10 * 1024 * 1024) {
+                              showNotification('error', 'Validation Error', 'File size must be less than 10MB');
+                              e.target.value = ''; // Reset input to allow retry
+                              return;
+                            }
+                            setFormData((p) => ({ ...p, attachments: file }));
+                            setError(''); // Clear any previous errors
+                          }
+                        } catch (error) {
+                          console.error('Error handling attachment upload:', error);
+                          showNotification('error', 'Upload Error', 'An error occurred while processing the file');
+                          if (e.target) {
+                            e.target.value = '';
+                          }
+                        }
+                      }}
+                      type="file" 
+                      accept="image/jpeg,image/jpg,image/png,application/pdf,.pdf"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      id="attachments-upload"
                       name="attachments"
-                      type="file"
-                      className="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
                     />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                      <UploadIcon />
+                    <div className="pointer-events-none flex-shrink-0">
+                      <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm3-4a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2z" clipRule="evenodd"></path>
+                      </svg>
                     </div>
-                    {formData.attachments && (
-                      <p className="text-sm text-gray-500 mt-1">Current: {formData.attachments}</p>
-                    )}
                   </div>
                 </div>
                 <div>
@@ -1715,6 +1897,118 @@ export const TaskManagement = () => {
                   ) : (
                     'Delete Task'
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Task Details Modal */}
+      {showViewModal && viewingTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-start">
+                <h1 className="text-xl font-semibold text-gray-900">{viewingTask.title}</h1>
+                <button 
+                  onClick={closeViewModal}
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                  </svg>
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                <p className="leading-6"><span className="font-semibold text-gray-900">Task Type:</span> <span className="text-gray-600">{viewingTask.taskType || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Module:</span> <span className="text-gray-600">{viewingTask.module || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Mentor:</span> <span className="text-gray-600">{typeof viewingTask.assignedMentor === 'object' ? viewingTask.assignedMentor?.fullName : mentors.find(m => m._id === viewingTask.assignedMentor)?.fullName || viewingTask.assignedMentor || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Audience:</span> <span className="text-gray-600">{viewingTask.audience || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Status:</span> <span className="text-gray-600">{viewingTask.status || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Start Date:</span> <span className="text-gray-600">{viewingTask.startDate ? new Date(viewingTask.startDate).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Due Date:</span> <span className="text-gray-600">{viewingTask.dueDate ? new Date(viewingTask.dueDate).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+                {viewingTask._id && (
+                  <p className="leading-6"><span className="font-semibold text-gray-900">ID:</span> <span className="text-gray-600">{viewingTask._id.slice(-6)}</span></p>
+                )}
+              </div>
+
+              {viewingTask.description && (
+                <div className="mt-4">
+                  <h2 className="text-[#f7931e] font-semibold mb-2 text-base italic">Description</h2>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{viewingTask.description}</p>
+                </div>
+              )}
+
+              {viewingTask.attachments && (
+                <div className="mt-4">
+                  <h2 className="text-[#f7931e] font-semibold mb-2 text-base italic">Attachments</h2>
+                  <div className="flex items-center gap-2">
+                    <a 
+                      href={viewingTask.attachments} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                      </svg>
+                      View Attachment
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Audience details */}
+              {(viewingTask.audience === 'By batches' && viewingTask.batches?.length) ||
+               (viewingTask.audience === 'By courses' && viewingTask.courses?.length) ||
+               (viewingTask.audience === 'Individual interns' && viewingTask.individualInterns?.length) ? (
+                <div className="mt-5">
+                  <h2 className="text-[#f7931e] font-semibold mb-3 text-base italic">Target Audience Details</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.isArray(viewingTask.batches) && viewingTask.batches.map((b, i) => (
+                      <span key={`b-${i}`} className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full border border-green-200">
+                        {typeof b === 'object' ? b.batchName : b}
+                      </span>
+                    ))}
+                    {Array.isArray(viewingTask.courses) && viewingTask.courses.map((c, i) => (
+                      <span key={`c-${i}`} className="inline-flex items-center px-2 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-full border border-purple-200">
+                        {typeof c === 'object' ? c.courseName : c}
+                      </span>
+                    ))}
+                    {Array.isArray(viewingTask.individualInterns) && viewingTask.individualInterns.map((s, i) => (
+                      <span key={`i-${i}`} className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full border border-blue-200">
+                        {typeof s === 'object' ? (s.fullName || s.email || s._id?.slice(-4)) : s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={closeViewModal}
+                  className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+                <button 
+                  onClick={() => {
+                    closeViewModal();
+                    handleEditTask(viewingTask);
+                  }}
+                  className="bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                >
+                  Edit
                 </button>
               </div>
             </div>

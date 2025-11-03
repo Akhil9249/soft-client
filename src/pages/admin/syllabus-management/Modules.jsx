@@ -3,6 +3,8 @@ import Tabs from '../../../components/button/Tabs';
 import { Navbar } from '../../../components/admin/AdminNavBar';
 // import useAxiosPrivate from '../../../hooks/useAxiosPrivate';
 import AdminService from '../../../services/admin-api-service/AdminService';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const Modules = () => {
 
@@ -32,6 +34,10 @@ export const Modules = () => {
     title: '',
     message: ''
   });
+  
+  // View modal state
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingModule, setViewingModule] = useState(null);
   
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -181,6 +187,91 @@ export const Modules = () => {
     }));
   };
 
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const queryParams = new URLSearchParams({ page: '1', limit: '10000' });
+      if (filters.course) queryParams.append('course', filters.course);
+      if (searchTerm) queryParams.append('search', searchTerm);
+
+      const res = await getModulesData(queryParams.toString());
+      const allModules = res?.data || [];
+      if (!Array.isArray(allModules) || allModules.length === 0) {
+        showNotification('error', 'Export Failed', 'No modules found to export');
+        return;
+      }
+
+      const doc = new jsPDF('portrait', 'mm', 'a4');
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(247, 147, 30);
+      const title = 'Modules Report';
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const titleWidth = doc.getTextWidth(title);
+      doc.text(title, (pageWidth - titleWidth) / 2, 20);
+
+      // Meta
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      const exportedOn = `Exported on: ${new Date().toLocaleDateString('en-GB')}`;
+      const totalText = `Total Modules: ${allModules.length}`;
+      const exportedOnWidth = doc.getTextWidth(exportedOn);
+      const totalWidth = doc.getTextWidth(totalText);
+      doc.text(exportedOn, (pageWidth - exportedOnWidth) / 2, 30);
+      doc.text(totalText, (pageWidth - totalWidth) / 2, 35);
+
+      // Table data
+      const tableData = allModules.map(m => [
+        m.moduleName || 'N/A',
+        (typeof m.course === 'object' && m.course ? m.course.courseName : m.course) || 'N/A',
+        m.totalTopics ?? (Array.isArray(m.topics) ? m.topics.length : 0),
+        m.createdAt ? new Date(m.createdAt).toLocaleDateString('en-GB') : 'N/A'
+      ]);
+
+      autoTable(doc, {
+        startY: 45,
+        head: [['Module Name', 'Course', 'Total Topics', 'Created']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [247, 147, 30], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          1: { cellWidth: 'auto', halign: 'left', fontSize: 8 },
+          2: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+          3: { cellWidth: 'auto', halign: 'center', fontSize: 8 },
+        },
+        styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak', lineWidth: 0.1 },
+        margin: { left: 10, right: 10 },
+        tableWidth: 'auto'
+      });
+
+      // Page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(128, 128, 128);
+        const text = `Page ${i} of ${pageCount}`;
+        const textWidth = doc.getTextWidth(text);
+        doc.text(text, (pageWidth - textWidth) / 2, doc.internal.pageSize.getHeight() - 10);
+      }
+
+      doc.save(`modules_export_${new Date().toISOString().split('T')[0]}.pdf`);
+      showNotification('success', 'Export Successful', `Exported ${allModules.length} modules to PDF successfully`);
+    } catch (err) {
+      console.error('Modules export error:', err);
+      showNotification('error', 'Export Failed', 'Failed to export modules. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchCourses();
     fetchModules(pagination.currentPage, searchTerm, filters.course);
@@ -209,7 +300,7 @@ export const Modules = () => {
     setFormData({
       moduleName: module.moduleName || "",
       course: typeof module.course === 'object' ? module.course._id : module.course || "",
-      moduleImage: module.moduleImage || "",
+      moduleImage: module.moduleImage || null, // Store as URL string or null
     });
     // Fetch topics for this module
     fetchModuleTopics(module._id);
@@ -228,6 +319,22 @@ export const Modules = () => {
   const handleDeleteModule = (module) => {
     setDeletingModule(module);
     setShowDeleteModal(true);
+  };
+
+  // Handle view module
+  const handleViewModule = async (module) => {
+    setViewingModule(module);
+    setShowViewModal(true);
+    try {
+      await fetchModuleTopics(module._id);
+    } catch (e) {
+      // ignore view-time topic load errors
+    }
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingModule(null);
   };
 
   const handleConfirmDelete = async () => {
@@ -257,35 +364,43 @@ export const Modules = () => {
     setError('');
     setSuccess('');
 
-    const formDataObj = new FormData(e.currentTarget);
-
-    const moduleName = formDataObj.get('moduleName');
-    const course = formDataObj.get('course');
-    const moduleImage = formDataObj.get('moduleImage');
+    // Build FormData for file uploads
+    const payload = new FormData();
+    
+    // Add text fields from formData state
+    if (formData.moduleName) payload.append('moduleName', formData.moduleName.trim());
+    if (formData.course) payload.append('course', formData.course);
+    payload.append('totalTopics', '0');
+    
+    // Handle moduleImage file upload
+    // Only append if it's a File object (new upload) or a string (existing URL to preserve)
+    // But prioritize File over string - if we have a File, don't send the string
+    if (formData?.moduleImage instanceof File) {
+      // New file selected - append the file
+      console.log('Uploading new file:', formData.moduleImage.name, formData.moduleImage.type);
+      payload.append('moduleImage', formData.moduleImage);
+    } else if (formData?.moduleImage && typeof formData.moduleImage === 'string' && formData.moduleImage.trim() !== '') {
+      // Existing URL - pass it as a field to preserve it (only if no new file was selected)
+      payload.append('moduleImage', formData.moduleImage);
+    }
+    // If neither, don't append anything (will preserve existing in backend)
 
     // Validate required fields
-    if (!moduleName || !course) {
+    if (!formData.moduleName || !formData.course) {
       showNotification('error', 'Validation Error', 'Module name and course are required');
       return;
     }
-
-    const payload = {
-      moduleName: moduleName.trim(),
-      course: course,
-      totalTopics: 0,
-      moduleImage: moduleImage ? moduleImage.name : null, // For now, just store filename
-    };
 
     try {
       setLoading(true);
       let res;
       if (isEditMode && editingModule) {
         // Update existing module
-        const res = await putModulesData(editingModule._id, payload);
+        res = await putModulesData(editingModule._id, payload);
         showNotification('success', 'Success', 'Module updated successfully.');
       } else {
         // Create new module
-        const res = await postModulesData(payload);
+        res = await postModulesData(payload);
         showNotification('success', 'Success', 'Module created successfully.');
       }
       
@@ -295,7 +410,6 @@ export const Modules = () => {
       setIsEditMode(false);
       setFormData({});
       setModuleTopics([]);
-      // e.currentTarget.reset();
     } catch (err) {
       showNotification('error', 'Error', err?.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} module`);
     } finally {
@@ -474,9 +588,9 @@ export const Modules = () => {
                     </option>
                   ))}
                 </select>
-                <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200">
+        <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  Export
+          {loading ? 'Exporting...' : 'Export'}
                 </button>
               </div>
             </div>
@@ -542,6 +656,12 @@ export const Modules = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
+                            <button 
+                              onClick={() => handleViewModule(module)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              View
+                            </button>
                             <button 
                               onClick={() => handleEditModule(module)}
                               className="text-orange-600 hover:text-orange-900"
@@ -662,23 +782,61 @@ export const Modules = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Module Image <span className="text-gray-400">(Optional - JPG/PNG only)</span></label>
-                  <div className="flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent">
-                    <span className="text-gray-500 flex-1">
-                      {formData.moduleImage ? formData.moduleImage : 'Upload Module Image'}
+                  <label className="block text-sm font-medium text-gray-700">Module Image/PDF <span className="text-gray-400">(Optional - JPG/PNG/PDF only)</span></label>
+                  <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white">
+                    <span className="text-gray-500 flex-1 truncate pr-2">
+                      {formData?.moduleImage instanceof File 
+                        ? formData.moduleImage.name 
+                        : formData?.moduleImage && typeof formData.moduleImage === 'string' 
+                            ? 'Existing file (click to change)' 
+                            : 'Upload Module Image/PDF'}
                     </span>
                     <input 
-                      name="moduleImage" 
+                      key={isEditMode && editingModule ? editingModule._id : 'new-module'}
+                      onChange={(e) => {
+                        try {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            // Validate file type - check MIME type and file extension
+                            const isValidFile = file.type.match('image/(jpeg|jpg|png)') || 
+                                              file.type === 'application/pdf' ||
+                                              (file.name && (file.name.toLowerCase().endsWith('.jpg') || 
+                                                             file.name.toLowerCase().endsWith('.jpeg') || 
+                                                             file.name.toLowerCase().endsWith('.png') || 
+                                                             file.name.toLowerCase().endsWith('.pdf')));
+                            if (!isValidFile) {
+                              showNotification('error', 'Validation Error', 'Please upload only JPG, PNG, or PDF files');
+                              e.target.value = ''; // Reset input to allow retry
+                              return;
+                            }
+                            // Validate file size (10MB = 10 * 1024 * 1024 bytes)
+                            if (file.size > 10 * 1024 * 1024) {
+                              showNotification('error', 'Validation Error', 'File size must be less than 10MB');
+                              e.target.value = ''; // Reset input to allow retry
+                              return;
+                            }
+                            setFormData((p) => ({ ...p, moduleImage: file }));
+                            setError(''); // Clear any previous errors
+                          }
+                        } catch (error) {
+                          console.error('Error handling file upload:', error);
+                          showNotification('error', 'Upload Error', 'An error occurred while processing the file');
+                          if (e.target) {
+                            e.target.value = '';
+                          }
+                        }
+                      }}
                       type="file" 
-                      accept="image/*" 
-                      className="sr-only" 
-                      id="module-image-upload" 
+                      accept="image/jpeg,image/jpg,image/png,application/pdf,.pdf"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      id="module-image-upload"
+                      name="moduleImage"
                     />
-                    <label htmlFor="module-image-upload" className="cursor-pointer text-gray-500 hover:text-orange-500">
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="pointer-events-none flex-shrink-0">
+                      <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm3-4a1 1 0 011-1h6a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2z" clipRule="evenodd"></path>
                       </svg>
-                    </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -865,6 +1023,84 @@ export const Modules = () => {
               >
                 {loading ? 'Removing...' : 'Remove Topic'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Module Details Modal */}
+      {showViewModal && viewingModule && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-start">
+                <h1 className="text-xl font-semibold text-gray-900">{viewingModule.moduleName}</h1>
+                <button 
+                  onClick={closeViewModal}
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                  </svg>
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                <p className="leading-6"><span className="font-semibold text-gray-900">Module Name:</span> <span className="text-gray-600">{viewingModule.moduleName || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Course:</span> <span className="text-gray-600">{typeof viewingModule.course === 'object' && viewingModule.course ? viewingModule.course.courseName : viewingModule.course || 'N/A'}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Total Topics:</span> <span className="text-gray-600">{moduleTopics?.length || 0}</span></p>
+                <p className="leading-6"><span className="font-semibold text-gray-900">Created:</span> <span className="text-gray-600">{viewingModule.createdAt ? new Date(viewingModule.createdAt).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+                {viewingModule._id && (
+                  <p className="leading-6"><span className="font-semibold text-gray-900">ID:</span> <span className="text-gray-600">{viewingModule._id.slice(-6)}</span></p>
+                )}
+              </div>
+
+              {/* Topics List */}
+              <div className="mt-5">
+                <h2 className="text-[#f7931e] font-semibold mb-3 text-base italic">Topics</h2>
+                {Array.isArray(moduleTopics) && moduleTopics.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {moduleTopics.map((topic) => (
+                      <div key={topic._id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="text-sm font-medium text-gray-900">{topic.topicName || 'Untitled Topic'}</div>
+                        <div className="text-xs text-gray-500 mt-1">{topic.description || 'No description'}</div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">{topic.duration || '0'} min</span>
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">{topic.difficulty || 'Beginner'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No topics available for this module.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={closeViewModal}
+                  className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+                <button 
+                  onClick={() => {
+                    closeViewModal();
+                    handleEditModule(viewingModule);
+                  }}
+                  className="bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
             </div>
           </div>
         </div>
