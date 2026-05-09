@@ -644,10 +644,10 @@ export const StudentManagement = () => {
   };
 
   const renderStudentsList = () => (
-    <div className="bg-white p-6 rounded-lg shadow-md flex-grow">
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md flex-grow">
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex-1 mr-4">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+        <div className="flex-1 sm:mr-4">
           <div className="relative">
             <input
               type="text"
@@ -663,7 +663,7 @@ export const StudentManagement = () => {
             </div>
           </div>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
           <select 
             value={filters.courseStatus}
             onChange={(e) => handleFilterChange('courseStatus', e.target.value)}
@@ -757,99 +757,158 @@ export const StudentManagement = () => {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th> */}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex justify-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {interns.map((intern, idx) => (
-                <tr key={intern._id || idx} className="hover:bg-gray-50">
-                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td> */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                          <span className="text-orange-600 font-medium text-sm">
-                            {intern.fullName?.charAt(0)?.toUpperCase() || 'S'}
-                          </span>
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex justify-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {interns.map((intern, idx) => (
+                  <tr key={intern._id || idx} className="hover:bg-gray-50">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                            <span className="text-orange-600 font-medium text-sm">
+                              {intern.fullName?.charAt(0)?.toUpperCase() || 'S'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{intern.fullName}</div>
+                          <div className="text-sm text-gray-500">{intern.internPhoneNumber}</div>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{intern.fullName}</div>
-                        <div className="text-sm text-gray-500">{intern.internPhoneNumber}</div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{intern.email}</div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {intern.course?.courseName || intern.course || 'N/A'}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{intern.branch?.branchName || 'N/A'}</td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{intern.batch}</td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        intern.courseStatus === 'Active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : intern.courseStatus === 'Completed'
+                          ? 'bg-blue-100 text-blue-800'
+                          : intern.courseStatus === 'Long leave'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {intern.courseStatus}
+                      </span>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {intern.createdAt ? new Date(intern.createdAt).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handleViewStudent(intern)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="View Details"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleEditStudent(intern)}
+                          className="text-orange-600 hover:text-orange-900"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteStudent(intern)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {interns.map((intern, idx) => (
+              <div key={intern._id || idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="flex-shrink-0 h-12 w-12">
+                    <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                      <span className="text-orange-600 font-medium text-base">
+                        {intern.fullName?.charAt(0)?.toUpperCase() || 'S'}
+                      </span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{intern.email}</div>
-                    {/* <div className="text-sm text-gray-500">{intern.officialEmail}</div> */}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {intern.course?.courseName || intern.course || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{intern.branch?.branchName || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{intern.batch}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      intern.courseStatus === 'Active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : intern.courseStatus === 'Completed'
-                        ? 'bg-blue-100 text-blue-800'
-                        : intern.courseStatus === 'Long leave'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {intern.courseStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {intern.createdAt ? new Date(intern.createdAt).toLocaleDateString() : 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => handleViewStudent(intern)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="View Details"
-                      >
-                        View
-                      </button>
-                      <button 
-                        onClick={() => handleEditStudent(intern)}
-                        className="text-orange-600 hover:text-orange-900"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteStudent(intern)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 truncate">{intern.fullName}</h3>
+                    <p className="text-sm text-gray-500">{intern.internPhoneNumber}</p>
+                    <p className="text-xs text-gray-500 truncate">{intern.email}</p>
+                  </div>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${
+                    intern.courseStatus === 'Active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : intern.courseStatus === 'Completed'
+                      ? 'bg-blue-100 text-blue-800'
+                      : intern.courseStatus === 'Long leave'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {intern.courseStatus}
+                  </span>
+                </div>
+                <div className="space-y-2 text-sm text-gray-600 mb-3">
+                  <div><span className="font-medium">Course:</span> {intern.course?.courseName || intern.course || 'N/A'}</div>
+                  <div><span className="font-medium">Branch:</span> {intern.branch?.branchName || 'N/A'}</div>
+                  <div><span className="font-medium">Batch:</span> {intern.batch || 'N/A'}</div>
+                  <div><span className="font-medium">Created:</span> {intern.createdAt ? new Date(intern.createdAt).toLocaleDateString() : 'N/A'}</div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                  <button 
+                    onClick={() => handleViewStudent(intern)}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                  >
+                    View
+                  </button>
+                  <button 
+                    onClick={() => handleEditStudent(intern)}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-md hover:bg-orange-100 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteStudent(intern)}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Pagination Controls */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
-          <div className="flex items-center text-sm text-gray-700">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4 py-3 bg-white border-t border-gray-200">
+          <div className="flex items-center text-xs sm:text-sm text-gray-700 text-center sm:text-left">
             <span>
               Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
             </span>
@@ -901,12 +960,12 @@ export const StudentManagement = () => {
   );
 
   const renderNewStudentForm = () => (
-    <form onSubmit={handleCreateStudent} className="bg-white p-6 rounded-lg shadow-md flex-grow">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">
+    <form onSubmit={handleCreateStudent} className="bg-white p-4 sm:p-6 rounded-lg shadow-md flex-grow">
+      <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">
         {isEditMode ? `Edit Student - ${editingStudent?.fullName}` : 'Create New Student'}
       </h2>
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Basic Details</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Basic Details</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div>
           <label className="block text-gray-700 font-medium mb-2">Full Name</label>
             <input 
@@ -1099,8 +1158,8 @@ export const StudentManagement = () => {
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Academic Details</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Academic Details</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div>
           <label className="block text-gray-700 font-medium mb-2">Course</label>
           <select 
@@ -1229,8 +1288,8 @@ export const StudentManagement = () => {
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Student Syllabus</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Student Syllabus</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div>
           <label className="block text-gray-700 font-medium mb-2">Student Syllabus Status</label>
           <select 
@@ -1244,8 +1303,8 @@ export const StudentManagement = () => {
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Placement Information <span className="text-gray-400">(Optional)</span></h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Placement Information <span className="text-gray-400">(Optional)</span></h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div>
           <label className="block text-gray-700 font-medium mb-2">Placement Status</label>
           <select 
@@ -1356,8 +1415,8 @@ export const StudentManagement = () => {
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Login & Access</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Login & Access</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div>
           <label className="block text-gray-700 font-medium mb-2">Student Email Address</label>
           <input 
@@ -1385,15 +1444,15 @@ export const StudentManagement = () => {
           <input type="password" placeholder="Re-Enter The Password" className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" />
         </div>
       </div>
-      <div className="flex justify-end mt-8 space-x-4">
+      <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-6 sm:mt-8">
         <button 
           type="button"
           onClick={handleCancelEdit}
-          className="px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-200"
         >
           Cancel
         </button>
-        <button type="submit" disabled={loading} className="px-6 py-2 bg-orange-500 text-white rounded-md font-medium shadow-md hover:bg-orange-600 transition-colors duration-200 disabled:opacity-60">
+        <button type="submit" disabled={loading} className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-orange-500 text-white rounded-md font-medium shadow-md hover:bg-orange-600 transition-colors duration-200 disabled:opacity-60">
           {loading 
             ? (isEditMode ? 'Updating...' : 'Creating...') 
             : (isEditMode ? 'Update Student' : 'Create Student')
@@ -1446,9 +1505,9 @@ export const StudentManagement = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-          <div className="p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 {getIcon()}
@@ -1625,8 +1684,8 @@ export const StudentManagement = () => {
 
           {/* Delete Confirmation Modal */}
           {showDeleteModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center mb-4">
                   <div className="flex-shrink-0">
                     <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1643,17 +1702,17 @@ export const StudentManagement = () => {
                     This action cannot be undone.
                   </p>
                 </div>
-                <div className="flex justify-end space-x-3">
+                <div className="flex flex-col sm:flex-row justify-end gap-3">
                   <button
                     onClick={cancelDelete}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={confirmDeleteStudent}
                     disabled={loading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Deleting...' : 'Delete'}
                   </button>
@@ -1704,24 +1763,24 @@ export const StudentManagement = () => {
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:block print:bg-white print:opacity-100 print:p-0">
                 <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto print-modal-content">
                   {/* Modal Header */}
-                  <div className="px-8 py-6 border-b border-gray-200 print:px-4 print:py-4 print-full-width">
-                    <div className="flex justify-between items-start">
-                      <h1 className="text-2xl font-semibold text-gray-900">{viewingStudent.fullName}</h1>
+                  <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-200 print:px-4 print:py-4 print-full-width">
+                    <div className="flex justify-between items-start gap-4">
+                      <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 break-words">{viewingStudent.fullName}</h1>
                       <button 
                         onClick={closeViewModal}
-                        className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print-hide"
+                        className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print-hide flex-shrink-0"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
-                        Back
+                        <span className="hidden sm:inline">Back</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Modal Body */}
-                  <div className="px-8 py-6 print:px-4 print:py-4 print-full-width">
-                    <div className="flex flex-col md:flex-row gap-10 print:flex-col print:gap-4 print-full-width">
+                  <div className="px-4 sm:px-8 py-4 sm:py-6 print:px-4 print:py-4 print-full-width">
+                    <div className="flex flex-col md:flex-row gap-6 sm:gap-10 print:flex-col print:gap-4 print-full-width">
                       {/* Left Column - Details */}
                       <div className="flex-1 space-y-6 print:flex-none print-full-width">
                         {/* Basic Details */}
@@ -1729,7 +1788,7 @@ export const StudentManagement = () => {
                           <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
                             Basic Details
                           </h2>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm print:grid-cols-2 print-full-width">
                             <p className="leading-6"><span className="font-semibold text-gray-900">Full Name:</span> <span className="text-gray-600">{viewingStudent.fullName || 'N/A'}</span></p>
                             <p className="leading-6"><span className="font-semibold text-gray-900">Date of Birth:</span> <span className="text-gray-600">{viewingStudent.dateOfBirth ? new Date(viewingStudent.dateOfBirth).toLocaleDateString('en-GB').replace(/\//g, ' / ') : 'N/A'}</span></p>
                             <p className="leading-6"><span className="font-semibold text-gray-900">Gender:</span> <span className="text-gray-600">{viewingStudent.gender || 'N/A'}</span></p>
@@ -1751,7 +1810,7 @@ export const StudentManagement = () => {
                           <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
                             Academic Details
                           </h2>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm print:grid-cols-2 print-full-width">
                             <p className="leading-6"><span className="font-semibold text-gray-900">Course:</span> <span className="text-gray-600">{viewingStudent.course?.courseName || viewingStudent.course || 'N/A'}</span></p>
                             <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingStudent.branch?.branchName || 'N/A'}</span></p>
                             <p className="leading-6"><span className="font-semibold text-gray-900">Batch:</span> <span className="text-gray-600">{viewingStudent.batch || 'N/A'}</span></p>
@@ -1788,7 +1847,7 @@ export const StudentManagement = () => {
                             <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
                               Placement Information
                             </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm print:grid-cols-2 print-full-width">
                               <p className="leading-6"><span className="font-semibold text-gray-900">Placement Status:</span> <span className="text-gray-600">{viewingStudent.placementStatus || 'N/A'}</span></p>
                               <p className="leading-6"><span className="font-semibold text-gray-900">LinkedIn:</span> <span className="text-gray-600">{viewingStudent.linkedin || 'N/A'}</span></p>
                               <p className="leading-6"><span className="font-semibold text-gray-900">Portfolio:</span> <span className="text-gray-600">{viewingStudent.portfolio || 'N/A'}</span></p>
@@ -1802,16 +1861,16 @@ export const StudentManagement = () => {
 
                       {/* Right Column - Profile Image */}
                       <div className="flex flex-col items-center print-hide">
-                        <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
+                        <div className="w-32 h-32 sm:w-48 sm:h-48 rounded-full overflow-hidden mb-4">
                           {viewingStudent.photo ? (
                             <img
                               src={viewingStudent.photo}
                               alt={viewingStudent.fullName}
-                              className="w-48 h-48 rounded-full object-cover"
+                              className="w-full h-full rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-48 h-48 rounded-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-gray-500 text-4xl font-medium">
+                            <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-500 text-3xl sm:text-4xl font-medium">
                                 {viewingStudent.fullName?.charAt(0)?.toUpperCase() || 'S'}
                               </span>
                             </div>
@@ -1822,20 +1881,20 @@ export const StudentManagement = () => {
                   </div>
 
                   {/* Modal Footer */}
-                  <div className="px-8 py-6 border-t border-gray-200 print-hide">
-                    <div className="flex justify-end gap-4">
+                  <div className="px-4 sm:px-8 py-4 sm:py-6 border-t border-gray-200 print-hide">
+                    <div className="flex flex-col sm:flex-row justify-end gap-3">
                       <button 
                         onClick={() => {
                           closeViewModal();
                           handleEditStudent(viewingStudent);
                         }}
-                        className="bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="w-full sm:w-auto bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => window.print()}
-                        className="bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                        className="w-full sm:w-auto bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
                       >
                         Print
                       </button>

@@ -46,13 +46,13 @@ const NotificationForm = memo(({
     filteredCourses,
     filteredInterns
 }) => (
-    <div className="p-8 bg-white rounded-lg h-full shadow-lg">
-        <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900">
+    <div className="p-4 sm:p-6 lg:p-8 bg-white rounded-lg h-full shadow-lg">
+        <div className="mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900">
                 {isEditMode ? `Edit Notification - ${editingNotification?.title}` : 'Create New Notification'}
             </h3>
             </div>
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
                 {/* Notification Title Input */}
                 <div className="flex flex-col">
                     <label htmlFor="notification-title" className="text-sm text-gray-600 mb-2">
@@ -88,7 +88,7 @@ const NotificationForm = memo(({
                 </div>
 
             {/* Type, Audience and Branch Selectors */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                     <div className="flex flex-col">
                         <label htmlFor="notification-type" className="text-sm text-gray-600 mb-2">
                             Type of Notification
@@ -168,13 +168,13 @@ const NotificationForm = memo(({
             </div>
 
                 {/* Audience Selection Section */}
-                <div className="mt-8 border-t border-gray-200 pt-6">
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">Audience Selection</h4>
+                <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-4 sm:pt-6">
+                    <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Audience Selection</h4>
                     
                     {/* Intern Search Section - Only show when Individual interns is selected */}
                     {formData.audience === 'Individual interns' && (
-                        <div className="mt-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="mt-4 sm:mt-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                                 {/* Search Section */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Search Interns</label>
@@ -300,8 +300,8 @@ const NotificationForm = memo(({
 
                     {/* Batch Search Section - Only show when By batches is selected */}
                     {formData.audience === 'By batches' && (
-                        <div className="mt-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="mt-4 sm:mt-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                                 {/* Search Section */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Search Batches</label>
@@ -427,8 +427,8 @@ const NotificationForm = memo(({
 
                     {/* Course Search Section - Only show when By courses is selected */}
                     {formData.audience === 'By courses' && (
-                        <div className="mt-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="mt-4 sm:mt-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                                 {/* Search Section */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Search Courses</label>
@@ -554,17 +554,17 @@ const NotificationForm = memo(({
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-8 flex justify-end space-x-4">
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
                 <button
                     onClick={handleCancel}
-                    className="px-6 py-3 text-gray-700 font-medium rounded-xl border border-gray-300 hover:bg-gray-200 transition-colors duration-200"
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm text-gray-700 font-medium rounded-xl border border-gray-300 hover:bg-gray-200 transition-colors duration-200"
                 >
                     Cancel
                 </button>
                 <button
                     onClick={handlePublish}
                         disabled={isSubmitting}
-                        className="px-6 py-3 text-white font-medium bg-[#F9A825] rounded-xl hover:bg-[#F9A825] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm text-white font-medium bg-[#F9A825] rounded-xl hover:bg-[#F9A825] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                         {isSubmitting ? (isEditMode ? 'Updating...' : 'Publishing...') : (isEditMode ? 'Update Notification' : 'Publish')}
                 </button>
@@ -1150,10 +1150,10 @@ export const Notification = () => {
     const NotificationsView = () => {
         if (notificationsLoading) {
             return (
-                <div className="flex items-center justify-center p-12 bg-white rounded-lg h-full shadow-lg">
+                <div className="flex items-center justify-center p-6 sm:p-12 bg-white rounded-lg h-full shadow-lg">
                     <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F9A825] mx-auto mb-4"></div>
-                        <p className="text-gray-500">Loading notifications...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-[#F9A825] mx-auto mb-4"></div>
+                        <p className="text-xs sm:text-sm text-gray-500">Loading notifications...</p>
                     </div>
                 </div>
             );
@@ -1161,14 +1161,14 @@ export const Notification = () => {
 
         if (notificationsError) {
             return (
-                <div className="flex items-center justify-center p-12 bg-white rounded-3xl h-full shadow-lg">
-                    <div className="text-center text-red-500">
-                        <BellRing className="w-16 h-16 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold mb-2 text-red-600">Error Loading Notifications</h2>
-                        <p className="text-lg text-red-500 mb-4">{notificationsError}</p>
+                <div className="flex items-center justify-center p-6 sm:p-12 bg-white rounded-lg sm:rounded-3xl h-full shadow-lg">
+                    <div className="text-center text-red-500 px-4">
+                        <BellRing className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" />
+                        <h2 className="text-lg sm:text-2xl font-bold mb-2 text-red-600">Error Loading Notifications</h2>
+                        <p className="text-sm sm:text-lg text-red-500 mb-4">{notificationsError}</p>
                         <button
                             onClick={fetchNotifications}
-                            className="px-4 py-2 bg-[#F9A825] text-white rounded-lg hover:bg-[#F9A825]/90 transition-colors"
+                            className="px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#F9A825] text-white rounded-lg hover:bg-[#F9A825]/90 transition-colors"
                         >
                             Try Again
                 </button>
@@ -1179,33 +1179,33 @@ export const Notification = () => {
 
         if (notifications.length === 0) {
             return (
-                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-lg h-full shadow-lg">
-                    <div className="text-center text-gray-400">
-                        <BellRing className="w-16 h-16 mx-auto mb-4" />
-                        <h2 className="text-2xl font-bold mb-2 text-gray-800">No notifications available.</h2>
-                        <p className="text-lg text-gray-600">Please add notification to view them here.</p>
+                <div className="flex flex-col items-center justify-center p-6 sm:p-8 bg-white rounded-lg h-full shadow-lg">
+                    <div className="text-center text-gray-400 px-4">
+                        <BellRing className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" />
+                        <h2 className="text-lg sm:text-2xl font-bold mb-2 text-gray-800">No notifications available.</h2>
+                        <p className="text-sm sm:text-lg text-gray-600">Please add notification to view them here.</p>
                     </div>
                 </div>
             );
         }
 
         return (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-                <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 lg:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Notifications</h2>
                         {paginationInfo && (
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-xs sm:text-sm text-gray-500 mt-1">
                                 {paginationInfo.displayInfo?.showing} of {paginationInfo.displayInfo?.total} notifications
                             </p>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                         <button
                             onClick={() => fetchNotifications(currentPage)}
-                            className="px-4 py-2 bg-[#F9A825] text-white rounded-lg hover:bg-[#F9A825]/90 transition-colors flex items-center"
+                            className="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm bg-[#F9A825] text-white rounded-lg hover:bg-[#F9A825]/90 transition-colors flex items-center justify-center"
                         >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
                             Refresh
@@ -1213,19 +1213,19 @@ export const Notification = () => {
                         <button
                             onClick={() => handleExport()}
                             disabled={notificationsLoading || exporting || notifications.length === 0}
-                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             {exporting ? 'Exporting...' : 'Export PDF'}
                         </button>
                     </div>
                 </div>
                 {/* Filters Row */}
-                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                     <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
                     >
                         <option value="">All Types</option>
                         <option value="Task Notification">Task Notification</option>
@@ -1237,7 +1237,7 @@ export const Notification = () => {
                     <select
                         value={filterAudience}
                         onChange={(e) => setFilterAudience(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
                     >
                         <option value="">All Audience</option>
                         <option value="All interns">All interns</option>
@@ -1248,7 +1248,7 @@ export const Notification = () => {
                     <select
                         value={filterBranch}
                         onChange={(e) => setFilterBranch(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#F9A825]"
                     >
                         <option value="">All Branches</option>
                         {branches.map(b => (
@@ -1258,37 +1258,37 @@ export const Notification = () => {
                     <div className="flex items-center">
                         <button
                             onClick={() => { setFilterType(''); setFilterAudience(''); setFilterBranch(''); fetchNotifications(1); }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:bg-gray-50"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm bg-white hover:bg-gray-50"
                         >
                             Clear Filters
                         </button>
                     </div>
                 </div>
 
-                {/* Notifications Table */}
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Title
                                 </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Type
                                 </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Audience
                                 </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Branch
                                 </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Push Notification
                                 </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Created Date
                                 </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
@@ -1302,7 +1302,7 @@ export const Notification = () => {
                                     <React.Fragment key={notification._id}>
                                         {/* Main row */}
                                         <tr className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="w-8 h-8 bg-[#F9A825]/10 rounded-full flex items-center justify-center mr-3">
                                                         <BellRing className="w-4 h-4 text-[#F9A825]" />
@@ -1317,12 +1317,12 @@ export const Notification = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                                     {notification.type}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                                         {notification.audience}
@@ -1345,7 +1345,7 @@ export const Notification = () => {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                                 {notification.branch ? (
                                                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
                                                         {notification.branch.branchName || notification.branch}
@@ -1354,7 +1354,7 @@ export const Notification = () => {
                                                     <span className="text-gray-400 text-sm">-</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                                                 {notification.pushNotification ? (
                                                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
                                                         Yes
@@ -1363,13 +1363,13 @@ export const Notification = () => {
                                                     <span className="text-gray-400 text-sm">No</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                                                 <div>
                                                     <div>{notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : 'N/A'}</div>
-                                                    <div className="text-xs">{notification.createdAt ? new Date(notification.createdAt).toLocaleTimeString() : 'N/A'}</div>
+                                                    <div className="text-[10px] sm:text-xs">{notification.createdAt ? new Date(notification.createdAt).toLocaleTimeString() : 'N/A'}</div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-xs sm:text-sm font-medium">
                                                 <div className="flex space-x-2">
                                                     <button
                                                         onClick={() => handleViewNotification(notification)}
@@ -1399,7 +1399,7 @@ export const Notification = () => {
                                         {/* Expanded row with audience details */}
                                         {isExpanded && hasAudienceDetails && (
                                             <tr className="bg-gray-50">
-                                                <td colSpan="7" className="px-6 py-4">
+                                                <td colSpan="7" className="px-4 lg:px-6 py-4">
                                                     <div className="bg-white rounded-lg p-4 border border-gray-200">
                                                         <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                                                             <svg className="w-4 h-4 mr-2 text-[#F9A825]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1456,30 +1456,164 @@ export const Notification = () => {
                     </table>
                 </div>
 
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                    {notifications.map((notification) => {
+                        const hasAudienceDetails = notification.batches?.length > 0 || notification.courses?.length > 0 || notification.individualInterns?.length > 0;
+                        const isExpanded = expandedRows.has(notification._id);
+                        
+                        return (
+                            <div key={notification._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center mb-2">
+                                            <div className="w-8 h-8 bg-[#F9A825]/10 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                                                <BellRing className="w-4 h-4 text-[#F9A825]" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-medium text-gray-900 truncate" title={notification.title}>
+                                                    {notification.title}
+                                                </div>
+                                                <div className="text-xs text-gray-500 truncate mt-1" title={notification.content}>
+                                                    {notification.content}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {notification.type}
+                                            </span>
+                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                {notification.audience}
+                                            </span>
+                                            {notification.branch && (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                                    {notification.branch.branchName || notification.branch}
+                                                </span>
+                                            )}
+                                            {notification.pushNotification && (
+                                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                    Push
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-2">
+                                            {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : 'N/A'} {notification.createdAt ? new Date(notification.createdAt).toLocaleTimeString() : 'N/A'}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {hasAudienceDetails && (
+                                    <button
+                                        onClick={() => toggleRowExpansion(notification._id)}
+                                        className="w-full mb-3 text-xs text-gray-600 hover:text-gray-800 flex items-center justify-center py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                                    >
+                                        {isExpanded ? 'Hide Details' : 'Show Details'}
+                                        <svg 
+                                            className={`w-3 h-3 ml-2 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                )}
+                                
+                                {isExpanded && hasAudienceDetails && (
+                                    <div className="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200">
+                                        <h4 className="text-xs font-medium text-gray-900 mb-2">Target Audience Details</h4>
+                                        <div className="space-y-2">
+                                            {notification.batches?.length > 0 && (
+                                                <div>
+                                                    <span className="text-xs font-medium text-gray-600">Batches:</span>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {notification.batches.map((batch, index) => (
+                                                            <span key={index} className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+                                                                {typeof batch === 'object' ? batch.batchName : batch}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {notification.courses?.length > 0 && (
+                                                <div>
+                                                    <span className="text-xs font-medium text-gray-600">Courses:</span>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {notification.courses.map((course, index) => (
+                                                            <span key={index} className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full">
+                                                                {typeof course === 'object' ? course.courseName : course}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {notification.individualInterns?.length > 0 && (
+                                                <div>
+                                                    <span className="text-xs font-medium text-gray-600">Individual Interns:</span>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {notification.individualInterns.map((intern, index) => (
+                                                            <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                                                                {typeof intern === 'object' ? intern.fullName : intern}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        onClick={() => handleViewNotification(notification)}
+                                        className="w-full text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded font-medium transition-colors"
+                                    >
+                                        View
+                                    </button>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() => handleEditNotification(notification)}
+                                            className="text-xs text-[#F9A825] hover:text-[#F9A825]/80 bg-[#F9A825]/10 hover:bg-[#F9A825]/20 px-3 py-2 rounded font-medium transition-colors"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteClick(notification)}
+                                            className="text-xs text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-2 rounded font-medium transition-colors"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
                 {/* Pagination Controls */}
                 {paginationInfo && paginationInfo.totalPages > 1 && (
-                    <div className="mt-6 flex items-center justify-between">
-                        
-                        <div className="text-sm text-gray-500">
+                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
                             {paginationInfo.displayInfo.pageInfo}
                         </div>
 
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={handlePrevPage}
                                 disabled={!paginationInfo.hasPrevPage}
-                                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 Previous
                             </button>
                             
                             {/* Page Numbers - Use backend calculated pageNumbers */}
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center gap-1">
                                 {paginationInfo.pageNumbers.map((pageNum) => (
                                     <button
                                         key={pageNum}
                                         onClick={() => handlePageChange(pageNum)}
-                                        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                                        className={`px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${
                                             paginationInfo.currentPage === pageNum
                                                 ? 'bg-[#F9A825] text-white'
                                                 : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
@@ -1493,7 +1627,7 @@ export const Notification = () => {
                             <button
                                 onClick={handleNextPage}
                                 disabled={!paginationInfo.hasNextPage}
-                                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 Next
                             </button>
@@ -1647,9 +1781,9 @@ export const Notification = () => {
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-                    <div className="p-6">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                    <div className="p-4 sm:p-6">
                         {/* Modal Header */}
                         <div className="flex items-center mb-4">
                             <div className="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center">
@@ -1679,17 +1813,17 @@ export const Notification = () => {
                         </div>
                         
                         {/* Modal Actions */}
-                        <div className="flex space-x-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={handleDeleteCancel}
-                                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F9A825]"
+                                className="w-full sm:flex-1 px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F9A825]"
                                 disabled={isSubmitting}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDeleteConfirm}
-                                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 disabled:cursor-not-allowed"
+                                className="w-full sm:flex-1 px-4 py-2 text-xs sm:text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 disabled:cursor-not-allowed"
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? (
@@ -1709,24 +1843,24 @@ export const Notification = () => {
 
         {/* View Notification Details Modal */}
         {showViewModal && viewingNotification && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                        <div className="flex justify-between items-start">
-                            <h1 className="text-xl font-semibold text-gray-900">{viewingNotification.title}</h1>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+                <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                        <div className="flex justify-between items-start gap-3">
+                            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 flex-1 min-w-0">{viewingNotification.title}</h1>
                             <button 
                                 onClick={closeViewModal}
-                                className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                                className="flex items-center gap-1 text-xs sm:text-sm border border-gray-300 px-2 sm:px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
                             >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
-                                Close
+                                <span className="hidden sm:inline">Close</span>
                             </button>
                         </div>
                     </div>
-                    <div className="px-6 py-5">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                    <div className="px-4 sm:px-6 py-4 sm:py-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm">
                             <p className="leading-6"><span className="font-semibold text-gray-900">Type:</span> <span className="text-gray-600">{viewingNotification.type || 'N/A'}</span></p>
                             <p className="leading-6"><span className="font-semibold text-gray-900">Audience:</span> <span className="text-gray-600">{viewingNotification.audience || 'N/A'}</span></p>
                             <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingNotification.branch?.branchName || (typeof viewingNotification.branch === 'string' ? viewingNotification.branch : 'N/A')}</span></p>
@@ -1767,11 +1901,11 @@ export const Notification = () => {
                             </div>
                         ) : null}
                     </div>
-                    <div className="px-6 py-4 border-top border-gray-200">
-                        <div className="flex justify-end gap-3">
+                    <div className="px-4 sm:px-6 py-3 sm:py-4 border-top border-gray-200">
+                        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                             <button 
                                 onClick={closeViewModal}
-                                className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                                className="w-full sm:w-auto bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 text-xs sm:text-sm rounded-lg hover:bg-gray-200 transition-colors"
                             >
                                 Close
                             </button>
@@ -1780,7 +1914,7 @@ export const Notification = () => {
                                     closeViewModal();
                                     handleEditNotification(viewingNotification);
                                 }}
-                                className="bg-[#F9A825] text-white px-4 py-2 rounded-lg hover:bg-[#d89100] transition-colors"
+                                className="w-full sm:w-auto bg-[#F9A825] text-white px-4 py-2 text-xs sm:text-sm rounded-lg hover:bg-[#d89100] transition-colors"
                             >
                                 Edit
                             </button>

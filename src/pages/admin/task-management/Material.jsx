@@ -571,9 +571,9 @@ const Material = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-          <div className="p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 {getIcon()}
@@ -608,8 +608,8 @@ const Material = () => {
       
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -626,16 +626,16 @@ const Material = () => {
                 This action cannot be undone.
               </p>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 Delete
               </button>
@@ -645,40 +645,40 @@ const Material = () => {
       )}
       
     <Navbar headData="Material" activeTab={activeTab} />  
-    <div className="flex justify-between items-center ">
-      <div className="mb-6">
+    
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="w-full sm:w-auto">
         <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
-      <div className="flex justify-end ">
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
-          </button>
-        </div>
-
-      </div>  
+      <div className="flex justify-end w-full sm:w-auto">
+        <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 text-sm sm:text-base">
+          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Export
+        </button>
+      </div>
+    </div>  
     
-      <div className="w-full  bg-white rounded-xl shadow-2xl p-6 sm:p-8">
+    <div className="w-full bg-white rounded-xl shadow-2xl p-4 sm:p-6 lg:p-8">
 
         {/* Content Area - Materials List */}
         {activeTab === 'materialList' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold text-gray-800">Materials List</h3>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800">Materials List</h3>
               <button
                 onClick={() => {
                   resetForm();
                   setActiveTab('new-material');
                 }}
-                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm sm:text-base"
               >
                 Add New Material
               </button>
             </div>
 
             {/* Search and Filter Controls */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex-1 mr-4">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+              <div className="flex-1 sm:mr-4">
                 <div className="relative">
                   <input
                     type="text"
@@ -694,7 +694,7 @@ const Material = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
                 <select 
                   value={filters.audience}
                   onChange={(e) => handleFilterChange('audience', e.target.value)}
@@ -750,151 +750,258 @@ const Material = () => {
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Title
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Mentor
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Audience
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Attachments
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {materials.map((material) => (
-                      <tr key={material._id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {material.title}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {material.mentor?.fullName || 'N/A'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col space-y-1">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {material.audience}
-                            </span>
-                            
-                            {/* Audience-specific details */}
-                            {material.audience === 'By batches' && material.batches?.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                {material.batches.slice(0, 2).map((batch, index) => (
-                                  <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                    {batch.batchName}
-                                  </span>
-                                ))}
-                                {material.batches.length > 2 && (
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                    +{material.batches.length - 2} more
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            
-                            {material.audience === 'By courses' && material.courses?.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                {material.courses.slice(0, 2).map((course, index) => (
-                                  <span key={index} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                                    {course.courseName}
-                                  </span>
-                                ))}
-                                {material.courses.length > 2 && (
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                    +{material.courses.length - 2} more
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            
-                            {material.audience === 'Individual interns' && material.individualInterns?.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                {material.individualInterns.slice(0, 2).map((intern, index) => (
-                                  <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                                    {intern.fullName}
-                                  </span>
-                                ))}
-                                {material.individualInterns.length > 2 && (
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                    +{material.individualInterns.length - 2} more
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center justify-center">
-                            {material.attachments ? (
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Title
+                        </th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Mentor
+                        </th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Audience
+                        </th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Attachments
+                        </th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Created Date
+                        </th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {materials.map((material) => (
+                        <tr key={material._id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {material.title}
+                            </div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {material.mentor?.fullName || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col space-y-1">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {material.audience}
+                              </span>
+                              
+                              {/* Audience-specific details */}
+                              {material.audience === 'By batches' && material.batches?.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {material.batches.slice(0, 2).map((batch, index) => (
+                                    <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                      {batch.batchName}
+                                    </span>
+                                  ))}
+                                  {material.batches.length > 2 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                      +{material.batches.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {material.audience === 'By courses' && material.courses?.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {material.courses.slice(0, 2).map((course, index) => (
+                                    <span key={index} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                                      {course.courseName}
+                                    </span>
+                                  ))}
+                                  {material.courses.length > 2 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                      +{material.courses.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {material.audience === 'Individual interns' && material.individualInterns?.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {material.individualInterns.slice(0, 2).map((intern, index) => (
+                                    <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                      {intern.fullName}
+                                    </span>
+                                  ))}
+                                  {material.individualInterns.length > 2 && (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                      +{material.individualInterns.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center justify-center">
+                              {material.attachments ? (
+                                <button
+                                  onClick={() => handleDownloadAttachment(material)}
+                                  className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 rounded hover:bg-blue-50"
+                                  title="Download attachment"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                  </svg>
+                                </button>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {new Date(material.createdAt).toLocaleDateString()}
+                            </div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex space-x-2">
                               <button
-                                onClick={() => handleDownloadAttachment(material)}
-                                className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 rounded hover:bg-blue-50"
-                                title="Download attachment"
+                                onClick={() => handleEdit(material)}
+                                className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-100 transition-colors"
+                                title="Edit material"
                               >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                 </svg>
                               </button>
-                            ) : (
-                              <span className="text-gray-400">-</span>
+                              <button
+                                onClick={() => handleDelete(material)}
+                                className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-100 transition-colors"
+                                title="Delete material"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {materials.map((material) => (
+                    <div key={material._id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900 truncate">{material.title}</h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(material.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2 ml-2">
+                          <button
+                            onClick={() => handleEdit(material)}
+                            className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-100 transition-colors"
+                            title="Edit material"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(material)}
+                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-100 transition-colors"
+                            title="Delete material"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div><span className="font-medium">Mentor:</span> {material.mentor?.fullName || 'N/A'}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Audience:</span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {material.audience}
+                          </span>
+                        </div>
+                        {/* Audience-specific details */}
+                        {material.audience === 'By batches' && material.batches?.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {material.batches.slice(0, 3).map((batch, index) => (
+                              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                {batch.batchName}
+                              </span>
+                            ))}
+                            {material.batches.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                +{material.batches.length - 3} more
+                              </span>
                             )}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {new Date(material.createdAt).toLocaleDateString()}
+                        )}
+                        {material.audience === 'By courses' && material.courses?.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {material.courses.slice(0, 3).map((course, index) => (
+                              <span key={index} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                                {course.courseName}
+                              </span>
+                            ))}
+                            {material.courses.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                +{material.courses.length - 3} more
+                              </span>
+                            )}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex space-x-2">
+                        )}
+                        {material.audience === 'Individual interns' && material.individualInterns?.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {material.individualInterns.slice(0, 3).map((intern, index) => (
+                              <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                {intern.fullName}
+                              </span>
+                            ))}
+                            {material.individualInterns.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                +{material.individualInterns.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                          <span className="font-medium">Attachments:</span>
+                          {material.attachments ? (
                             <button
-                              onClick={() => handleEdit(material)}
-                              className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-100 transition-colors"
-                              title="Edit material"
+                              onClick={() => handleDownloadAttachment(material)}
+                              className="text-blue-600 hover:text-blue-800 transition-colors cursor-pointer p-1 rounded hover:bg-blue-50"
+                              title="Download attachment"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                               </svg>
                             </button>
-                            <button
-                              onClick={() => handleDelete(material)}
-                              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-100 transition-colors"
-                              title="Delete material"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
-                <div className="flex items-center text-sm text-gray-700">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                <div className="flex items-center text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                   <span>
                     Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
                   </span>
@@ -947,15 +1054,15 @@ const Material = () => {
 
         {/* Content Area - New Material Form */}
         {activeTab === 'new-material' && (
-          <form onSubmit={handleSubmit} className="space-y-8 mt-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 lg:space-y-8 mt-4 sm:mt-6">
             
             {/* 1. Material Details Section */}
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-800 border-b pb-2">
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 border-b pb-2">
                 {editingMaterial ? 'Edit Material' : 'Material Details'}
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 
                 {/* Title Input */}
                 <div>
@@ -1022,9 +1129,9 @@ const Material = () => {
 
             {/* 2. Audience Selection Section */}
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-800 border-b pb-2">Audience Selection</h3>
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 border-b pb-2">Audience Selection</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {/* Audience Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Audience Type</label>
@@ -1046,8 +1153,8 @@ const Material = () => {
             {/* 2. Material Details Section */}
                            {/* Intern Search Section - Only show when Individual interns is selected */}
                            {formData.audience === 'Individual interns' && (
-                  <div className="mt-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="mt-4 sm:mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Search Section */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Search Interns</label>
@@ -1173,8 +1280,8 @@ const Material = () => {
 
                 {/* Batch Search Section - Only show when By batches is selected */}
                 {formData.audience === 'By batches' && (
-                  <div className="mt-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="mt-4 sm:mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Search Section */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Search Batches</label>
@@ -1300,8 +1407,8 @@ const Material = () => {
 
                 {/* Course Search Section - Only show when By courses is selected */}
                 {formData.audience === 'By courses' && (
-                  <div className="mt-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="mt-4 sm:mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Search Section */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Search Courses</label>
@@ -1426,21 +1533,21 @@ const Material = () => {
                 )}
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 border-t border-gray-200">
               <button 
                 type="button" 
                 onClick={() => {
                   resetForm();
                   setActiveTab('materialList');
                 }}
-                className="py-2 px-6 rounded-lg bg-white border border-red-400 font-medium text-red-600 hover:bg-red-50 transition-colors shadow-md"
+                className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-white border border-red-400 font-medium text-red-600 hover:bg-red-50 transition-colors shadow-md"
               >
                 Cancel
               </button>
               <button 
                 type="submit" 
                 disabled={loading || !formData.title.trim() || !formData.mentor}
-                className="py-2 px-6 rounded-lg bg-orange-500 text-white font-medium shadow-md hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-orange-500 text-white font-medium shadow-md hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (editingMaterial ? 'Updating...' : 'Adding...') : (editingMaterial ? 'Update Material' : 'Add Material')}
               </button>

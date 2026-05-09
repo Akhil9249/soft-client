@@ -44,10 +44,12 @@ function App() {
       </Route>
 
       <Route element={<AdminProtectedRoute />}>
+      
         <Route element={<SuperAdminProtectedRoute />} >
           <Route path="/" element={<RoleManagement />} />
           <Route path="/staff-management" element={<StaffManagement />} />
         </Route>
+        
         <Route path="/student-management" element={<StudentManagement />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/category" element={<Category />} />

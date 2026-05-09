@@ -55,10 +55,12 @@ const AdminService = () => {
         const response = await axiosPrivate.post("/api/branches",data);
         return response.data;
     };
+
     const putBranchesData = async (branchId, data) => {
         const response = await axiosPrivate.put(`/api/branches/${branchId}`, data);
         return response.data;
     };
+    
     const deleteBranchesData = async (branchId) => {
         const response = await axiosPrivate.delete(`/api/branches/${branchId}`);
         return response.data;

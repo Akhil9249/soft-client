@@ -21,7 +21,8 @@ import {
   SquarePen,
   Download,
   X,
-  Send
+  Send,
+  Menu
 } from 'lucide-react';
 
 const Icon = ({ path, className, viewBox = "0 0 24 24" }) => (
@@ -30,7 +31,7 @@ const Icon = ({ path, className, viewBox = "0 0 24 24" }) => (
   </svg>
 );
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setAuth } = useAuth();
@@ -66,6 +67,10 @@ const Sidebar = () => {
   // Handle navigation item click
   const handleNavItemClick = (itemPath) => {
     setActiveNavItem(itemPath);
+    // Close mobile menu when a link is clicked
+    if (setIsMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
   };
 
   // Automatically set active navigation item based on current URL
@@ -103,9 +108,23 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 bg-white p-6 shadow-md flex flex-col justify-between rounded-r-2xl ">
-    {/* <aside className="w-64 bg-white p-6 shadow-md flex flex-col justify-between rounded-r-2xl max-h-screen  overflow-y-auto"> */}
-      <div>
+    <>
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static
+        w-64 bg-white p-6 shadow-md flex flex-col justify-between rounded-r-2xl h-screen overflow-hidden z-50
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="overflow-y-auto flex-1 scrollbar-hide">
         <div className="flex items-center mb-8">
           <svg
             className="w-8 h-8 text-orange-500 mr-2"
@@ -455,13 +474,27 @@ const Sidebar = () => {
                     Notification
                   </Link>
                 </li>
+                <li>
+                  <Link 
+                    to="/branch" 
+                    onClick={() => handleNavItemClick('/branch')}
+                    className={`block py-1 px-2 rounded-md transition-colors duration-200 ${
+                      activeNavItem === '/branch' 
+                        ? 'bg-orange-100 text-orange-600 font-semibold' 
+                        : 'hover:text-orange-500 hover:bg-orange-50'
+                    }`}
+                  >
+                    Branch
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
 
         </nav>
+      </div>
 
-        <div className="mt-8">
+      <div className="mt-8 flex-shrink-0 pt-4 border-t border-gray-200">
         <button 
           onClick={handleLogout}
           className="flex items-center text-red-500 font-medium p-2 rounded-lg transition-colors duration-200 hover:bg-red-50 hover:text-red-600 w-full text-left"
@@ -470,9 +503,17 @@ const Sidebar = () => {
           Log Out
         </button>
       </div>
-      </div>
       
+      {/* Mobile Close Button */}
+      <button
+        onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
+        className="lg:hidden absolute top-4 right-4 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        aria-label="Close menu"
+      >
+        <X className="w-5 h-5" />
+      </button>
     </aside>
+    </>
   );
 };
 
@@ -517,12 +558,12 @@ const Navbar = ({headData , activeTab}) => {
   };
 
   return (
-    <header className="flex justify-between items-center mb-6 ">
+    <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <div className="flex flex-col">
-        <h1 className="text-2xl font-semibold text-gray-800">{headData}</h1>
-        <p className="text-sm text-gray-500">{headData} &gt; {activeTab}</p>
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">{headData}</h1>
+        <p className="text-xs sm:text-sm text-gray-500">{headData} &gt; {activeTab}</p>
       </div>
-      <div className="flex items-center space-x-4 border border-gray-600 rounded-md p-2">
+      <div className="flex items-center space-x-4 border border-gray-600 rounded-md p-2 w-full sm:w-auto">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
             {userImage ? (

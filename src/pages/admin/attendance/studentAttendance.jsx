@@ -146,9 +146,9 @@ const Sidebar = ({ activeMenu, setActiveMenu }) => {
 
 // Status Card Component
 const StatusCard = ({ label, value, colorClass }) => (
-    <div className="p-4 bg-white rounded-xl shadow-sm flex flex-col justify-center items-center">
-        <div className="text-xs font-semibold text-gray-500 mb-1">{label}</div>
-        <div className="text-3xl font-extrabold" style={{ color: colorClass }}>
+    <div className="p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm flex flex-col justify-center items-center">
+        <div className="text-[10px] sm:text-xs font-semibold text-gray-500 mb-1">{label}</div>
+        <div className="text-2xl sm:text-3xl font-extrabold" style={{ color: colorClass }}>
             {value}
         </div>
     </div>
@@ -158,18 +158,18 @@ const StatusCard = ({ label, value, colorClass }) => (
 const ActionBar = ({ activeTab, setActiveTab, branches, selectedBranch, onBranchChange, branchesLoading, selectedDays, onDaysChange, courses, selectedCourse, onCourseChange, coursesLoading, timings, selectedTiming, onTimingChange, timingsLoading }) => {
     const todayDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return (
-        <div className="flex justify-between items-center mb-6">
-            <div className="flex space-x-3">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4 sm:mb-6">
+            <div className="flex space-x-3 w-full lg:w-auto">
                 <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
             </div>
             
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 w-full lg:w-auto">
                 {/* Branch Dropdown */}
                 <select 
                     value={selectedBranch} 
                     onChange={onBranchChange}
                     disabled={branchesLoading}
-                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                     <option value="">
                         {branchesLoading ? 'Loading branches...' : 'All Branches'}
@@ -185,7 +185,7 @@ const ActionBar = ({ activeTab, setActiveTab, branches, selectedBranch, onBranch
                 <select 
                     value={selectedDays} 
                     onChange={onDaysChange}
-                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                     <option value="">All Days</option>
                     <option value="MWF">MWF</option>
@@ -197,7 +197,7 @@ const ActionBar = ({ activeTab, setActiveTab, branches, selectedBranch, onBranch
                     value={selectedCourse} 
                     onChange={onCourseChange}
                     disabled={coursesLoading}
-                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                     <option value="">
                         {coursesLoading ? 'Loading courses...' : 'All Courses'}
@@ -214,7 +214,7 @@ const ActionBar = ({ activeTab, setActiveTab, branches, selectedBranch, onBranch
                     value={selectedTiming} 
                     onChange={onTimingChange}
                     disabled={timingsLoading}
-                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-md bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                     <option value="">
                         {timingsLoading ? 'Loading timings...' : 'All Timings'}
@@ -245,12 +245,12 @@ const AttendanceToggle = ({ isPresent, onToggle }) => (
 
 // Attendance Table Row
 const AttendanceRow = ({ attendance, isPresent, onToggle }) => (
-    <div className="grid grid-cols-7 py-3 border-b border-gray-100 text-sm items-center">
-        <div className="font-medium text-gray-800 pl-4">{attendance.name}</div>
-        <div className="text-gray-600">{attendance.email || 'N/A'}</div>
-        <div className="text-gray-600">{attendance.mentor}</div>
+    <div className="grid grid-cols-7 py-3 border-b border-gray-100 text-xs sm:text-sm items-center">
+        <div className="font-medium text-gray-800 pl-2 sm:pl-4 truncate">{attendance.name}</div>
+        <div className="text-gray-600 truncate text-[10px] sm:text-xs">{attendance.email || 'N/A'}</div>
+        <div className="text-gray-600 truncate text-[10px] sm:text-xs">{attendance.mentor}</div>
         <div className="flex items-center">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            <span className={`px-1.5 sm:px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium ${
                 attendance.attendanceStatus 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-red-100 text-red-800'
@@ -258,9 +258,9 @@ const AttendanceRow = ({ attendance, isPresent, onToggle }) => (
                 {attendance.attendanceStatus ? 'Present' : 'Absent'}
             </span>
         </div>
-        <div className="text-gray-600">{attendance.checkInTime || 'N/A'}</div>
-        <div className="text-gray-600">{attendance.checkOutTime || 'N/A'}</div>
-        <div className="flex justify-end pr-4">
+        <div className="text-gray-600 text-[10px] sm:text-xs">{attendance.checkInTime || 'N/A'}</div>
+        <div className="text-gray-600 text-[10px] sm:text-xs">{attendance.checkOutTime || 'N/A'}</div>
+        <div className="flex justify-end pr-2 sm:pr-4">
             <AttendanceToggle isPresent={isPresent} onToggle={onToggle} />
         </div>
     </div>
@@ -621,7 +621,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
 
 
     return (
-        <div className="px-6">
+        <div className="px-2 sm:px-4 lg:px-6">
             <ActionBar 
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
@@ -642,12 +642,12 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
             />
 
             {/* Create Daily Attendance Button */}
-            <div className="mb-6 flex justify-end">
+            <div className="mb-4 sm:mb-6 flex justify-end">
                 <div className="flex space-x-3">
                     <button 
                         onClick={createDailyAttendance}
                         disabled={loading}
-                        className={`px-4 py-2 text-white font-semibold rounded-lg ${customOrange} ${customOrangeHover} shadow-md disabled:opacity-50`}
+                        className={`px-3 sm:px-4 py-2 text-xs sm:text-sm text-white font-semibold rounded-lg ${customOrange} ${customOrangeHover} shadow-md disabled:opacity-50`}
                     >
                         {loading ? 'Creating...' : 'Create Daily Attendance'}
                     </button>
@@ -656,15 +656,15 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
 
             {/* Loading State */}
             {loading && (
-                <div className="text-center py-8">
-                    <div className="text-gray-500">Loading interns...</div>
+                <div className="text-center py-6 sm:py-8">
+                    <div className="text-xs sm:text-sm text-gray-500">Loading interns...</div>
                 </div>
             )}
 
             {/* Error State */}
             {error && (
-                <div className="text-center py-8">
-                    <div className="text-red-500">{error}</div>
+                <div className="text-center py-6 sm:py-8">
+                    <div className="text-xs sm:text-sm text-red-500">{error}</div>
                 </div>
             )}
 
@@ -690,27 +690,27 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                     </div> */}
 
             {/* Status Cards */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-                        <StatusCard label="Total Records" value={totalRecords < 10 ? `0${totalRecords}` : totalRecords} colorClass="#000" />
-                <StatusCard label="Total Present" value={totalPresent < 10 ? `0${totalPresent}` : totalPresent} colorClass="#10B981" /> {/* Emerald-500 */}
-                <StatusCard label="Total Absent" value={totalAbsent < 10 ? `0${totalAbsent}` : totalAbsent} colorClass="#EF4444" /> {/* Red-500 */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+                <StatusCard label="Total Records" value={totalRecords < 10 ? `0${totalRecords}` : totalRecords} colorClass="#000" />
+                <StatusCard label="Total Present" value={totalPresent < 10 ? `0${totalPresent}` : totalPresent} colorClass="#10B981" />
+                <StatusCard label="Total Absent" value={totalAbsent < 10 ? `0${totalAbsent}` : totalAbsent} colorClass="#EF4444" />
             </div>
 
-                    {/* No attendance records message */}
-                    {attendanceRecords.length === 0 && (
-                        <div className="text-center py-8 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <div className="text-yellow-800 font-medium">No attendance records found for the selected date</div>
-                            <div className="text-yellow-600 text-sm mt-1">Try selecting a different date or create daily attendance records</div>
-                        </div>
-                    )}
+            {/* No attendance records message */}
+            {attendanceRecords.length === 0 && (
+                <div className="text-center py-6 sm:py-8 bg-yellow-50 border border-yellow-200 rounded-lg px-4">
+                    <div className="text-xs sm:text-sm text-yellow-800 font-medium">No attendance records found for the selected date</div>
+                    <div className="text-xs sm:text-sm text-yellow-600 mt-1">Try selecting a different date or create daily attendance records</div>
+                </div>
+            )}
 
             {/* Attendance Table Section */}
-            <div className="bg-white p-6 rounded-xl ">
-                <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                    <h3 className="text-xl font-bold text-gray-900">Attendance</h3>
-                    <div className="flex items-center text-gray-600 space-x-3 text-sm">
-                        <span className="text-gray-500">Selected Date:</span>
-                        <span className="font-medium text-gray-800">{currentDate}</span>
+            <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6 border-b border-gray-100 pb-3 sm:pb-4">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900">Attendance</h3>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center text-gray-600 gap-2 sm:gap-3 w-full sm:w-auto">
+                        <span className="text-xs sm:text-sm text-gray-500">Selected Date:</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-800">{currentDate}</span>
                         <input 
                             type="date" 
                             value={selectedDate} 
@@ -730,69 +730,93 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                                 // Fetch attendance for the new date with all selected filters
                                 fetchAttendanceForDate(newDate, selectedBranch || null, selectedDays || null, selectedCourse || null, selectedTiming || null, 1);
                             }}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm"
+                            className="w-full sm:w-auto px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500"
                         />
                     </div>
                 </div>
 
-                {/* Table Header */}
-                <div className="grid grid-cols-7 pb-3 border-b-2 border-gray-200 font-semibold text-gray-700 text-sm sticky top-0 bg-white">
-                    <div className="pl-4">Intern Name</div>
-                    <div>Email</div>
-                    <div>Role</div>
-                    <div>Status</div>
-                    <div>Check In</div>
-                    <div>Check Out</div>
-                    <div className="text-right pr-4">Actions</div>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-7 pb-3 border-b-2 border-gray-200 font-semibold text-gray-700 text-xs sm:text-sm sticky top-0 bg-white">
+                        <div className="pl-2 sm:pl-4">Intern Name</div>
+                        <div>Email</div>
+                        <div>Role</div>
+                        <div>Status</div>
+                        <div>Check In</div>
+                        <div>Check Out</div>
+                        <div className="text-right pr-2 sm:pr-4">Actions</div>
+                    </div>
+
+                    {/* Table Body */}
+                    <div className="divide-y divide-gray-50">
+                        {attendanceRecords.map((attendanceRecord) => (
+                            <AttendanceRow
+                                key={attendanceRecord.id}
+                                attendance={attendanceRecord}
+                                isPresent={attendance[attendanceRecord.id]}
+                                onToggle={() => handleToggle(attendanceRecord.id)}
+                            />
+                        ))}
+                    </div>
                 </div>
 
-                {/* Table Body */}
-                <div className="divide-y divide-gray-50">
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3">
                     {attendanceRecords.map((attendanceRecord) => (
-                        <AttendanceRow
-                            key={attendanceRecord.id}
-                            attendance={attendanceRecord}
-                            isPresent={attendance[attendanceRecord.id]}
-                            onToggle={() => handleToggle(attendanceRecord.id)}
-                        />
+                        <div key={attendanceRecord.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{attendanceRecord.name}</div>
+                                    <div className="text-xs text-gray-500 truncate">{attendanceRecord.email || 'N/A'}</div>
+                                </div>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${
+                                    attendanceRecord.attendanceStatus 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-red-100 text-red-800'
+                                }`}>
+                                    {attendanceRecord.attendanceStatus ? 'Present' : 'Absent'}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                                <div>
+                                    <span className="font-medium">Role:</span> {attendanceRecord.mentor}
+                                </div>
+                                <div>
+                                    <span className="font-medium">Check In:</span> {attendanceRecord.checkInTime || 'N/A'}
+                                </div>
+                                <div>
+                                    <span className="font-medium">Check Out:</span> {attendanceRecord.checkOutTime || 'N/A'}
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                                <span className="text-xs text-gray-600">Toggle Status:</span>
+                                <AttendanceToggle 
+                                    isPresent={attendance[attendanceRecord.id]} 
+                                    onToggle={() => handleToggle(attendanceRecord.id)} 
+                                />
+                            </div>
+                        </div>
                     ))}
-                    
                 </div>
 
                 {/* Pagination Controls */}
                 {totalRecords > 0 && (
-                    <div className="mt-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-                        <div className="flex items-center space-x-4">
-                            {/* <div className="flex items-center space-x-2">
-                                <label htmlFor="itemsPerPage" className="text-sm text-gray-600">Show:</label>
-                                <select
-                                    id="itemsPerPage"
-                                    value={itemsPerPage}
-                                    onChange={handleItemsPerPageChange}
-                                    className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-amber-500 focus:border-amber-500"
-                                >
-                                    <option value={5}>5</option>
-                                    <option value={10}>10</option>
-                                    <option value={20}>20</option>
-                                    <option value={50}>50</option>
-                                </select>
-                                <span className="text-sm text-gray-600">per page</span>
-                            </div> */}
-                            <div className="text-sm text-gray-600">
-                                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalRecords)} of {totalRecords} records
-                            </div>
+                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
+                            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalRecords)} of {totalRecords} records
                         </div>
                         
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
-                                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
                             </button>
                             
-                            <div className="flex space-x-1">
+                            <div className="flex gap-1">
                                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                     let pageNum;
                                     if (totalPages <= 5) {
@@ -809,7 +833,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                                         <button
                                             key={pageNum}
                                             onClick={() => handlePageChange(pageNum)}
-                                            className={`px-3 py-1 text-sm border rounded ${
+                                            className={`px-2 sm:px-3 py-1 text-xs sm:text-sm border rounded ${
                                                 currentPage === pageNum
                                                     ? 'bg-amber-500 text-white border-amber-500'
                                                     : 'border-gray-300 hover:bg-gray-50'
@@ -824,7 +848,7 @@ const AttendanceContent = ({ activeTab, setActiveTab }) => {
                             <button
                                 onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next
                             </button>

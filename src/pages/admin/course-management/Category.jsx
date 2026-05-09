@@ -412,9 +412,9 @@ export const Category = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-          <div className="p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 {getIcon()}
@@ -445,19 +445,15 @@ export const Category = () => {
   return (
     <>
       <Navbar headData={headData} activeTab={activeTab} />
-      <div className="flex justify-between items-center ">
-        <div className="mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="w-full sm:w-auto">
           <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
-        <div className="flex justify-end ">
-          {/* <button className="flex items-center py-2 px-4 bg-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
-              <ExportIcon />
-              Export
-            </button> */}
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+        <div className="flex justify-end w-full sm:w-auto">
+          <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
+            {loading ? 'Exporting...' : 'Export'}
           </button>
         </div>
       </div>
@@ -467,10 +463,10 @@ export const Category = () => {
 
         {/* Tab content */}
         {activeTab === 'category-list' ? (
-          <div id="category-list-content" className="p-6">
+          <div id="category-list-content" className="p-4 sm:p-6">
 
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex-1 mr-4">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+              <div className="flex-1 sm:mr-4">
                 <div className="relative">
                   <input
                     type="text"
@@ -486,7 +482,7 @@ export const Category = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
                 <select 
                   value={filters.branch}
                   onChange={(e) => handleFilterChange('branch', e.target.value)}
@@ -499,10 +495,6 @@ export const Category = () => {
                     </option>
                   ))}
                 </select>
-                <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  {loading ? 'Exporting...' : 'Export'}
-                </button>
               </div>
             </div>
 
@@ -521,113 +513,142 @@ export const Category = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Courses</th>
-                      {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courses</th> */}
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {categories.map((category, idx) => (
-                      <tr key={category._id || idx} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                <span className="text-orange-600 font-medium text-sm">
-                                  {category.categoryName?.charAt(0)?.toUpperCase() || 'C'}
-                                </span>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Courses</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {categories.map((category, idx) => (
+                        <tr key={category._id || idx} className="hover:bg-gray-50">
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10">
+                                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                  <span className="text-orange-600 font-medium text-sm">
+                                    {category.categoryName?.charAt(0)?.toUpperCase() || 'C'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{category.categoryName}</div>
+                                <div className="text-sm text-gray-500">ID: {category._id?.slice(-6) || 'N/A'}</div>
                               </div>
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{category.categoryName}</div>
-                              <div className="text-sm text-gray-500">ID: {category._id?.slice(-6) || 'N/A'}</div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {category.branch}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              {category.totalCourses || 0}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button 
+                                onClick={() => handleViewCategory(category)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                View
+                              </button>
+                              <button 
+                                onClick={() => handleEditCategory(category)}
+                                className="text-orange-600 hover:text-orange-900"
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteCategory(category)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {categories.map((category, idx) => (
+                    <div key={category._id || idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 h-12 w-12">
+                          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                            <span className="text-orange-600 font-medium text-base">
+                              {category.categoryName?.charAt(0)?.toUpperCase() || 'C'}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900 truncate">{category.categoryName}</h3>
+                          <p className="text-xs text-gray-500">ID: {category._id?.slice(-6) || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-sm text-gray-600 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Branch:</span>
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                             {category.branch}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Total Courses:</span>
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                             {category.totalCourses || 0}
                           </span>
-                        </td>
-                        {/* <td className="px-6 py-4 whitespace-nowrap">
-                          {loading ? (
-                            <div className="inline-flex items-center px-2 py-1 text-xs font-medium text-orange-600 bg-orange-100 rounded-full border border-orange-200">
-                              <svg className="animate-spin w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                              </svg>
-                              Loading...
-                            </div>
-                          ) : category.courses?.length > 0 ? (
-                            <div className="max-w-xs">
-                              <div className="flex flex-wrap gap-1">
-                                {category.courses.slice(0, 3).map((course, i) => (
-                                  <span key={i} className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full border border-blue-200">
-                                    {course.courseName}
-                                  </span>
-                                ))}
-                                {category.courses.length > 3 && (
-                                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full border border-gray-200">
-                                    +{category.courses.length - 3} more
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full border border-gray-200">
-                              No courses
-                            </span>
-                          )}
-                        </td> */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button 
-                              onClick={() => handleViewCategory(category)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              View
-                            </button>
-                            <button 
-                              onClick={() => handleEditCategory(category)}
-                              className="text-orange-600 hover:text-orange-900"
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteCategory(category)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                        <div><span className="font-medium">Created:</span> {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                        <button 
+                          onClick={() => handleViewCategory(category)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleEditCategory(category)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-md hover:bg-orange-100 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCategory(category)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
-                <div className="flex items-center text-sm text-gray-700">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                <div className="flex items-center text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                   <span>
                     Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
                   </span>
@@ -678,12 +699,12 @@ export const Category = () => {
           </div>
         ) : (
           <div id="new-category-content">
-            <form onSubmit={handleCreateCategory} className="space-y-6 p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-6">
+            <form onSubmit={handleCreateCategory} className="space-y-6 p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">
                 {isEditMode ? `Edit Category - ${editingCategory?.categoryName}` : 'Create New Category'}
               </h2>
-              <h3 className="text-lg font-medium text-gray-900">Category Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">Category Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Category Name</label>
                   <input 
@@ -754,8 +775,8 @@ export const Category = () => {
               Add Course
             </button> */}
 
-              <h3 className="text-lg font-medium text-gray-900 mt-8">Added Courses</h3>
-              <div className="rounded-lg border border-gray-300 p-4">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mt-6 sm:mt-8">Added Courses</h3>
+              <div className="rounded-lg border border-gray-300 p-3 sm:p-4">
                 {loading ? (
                   <div className="text-center py-6">
                     <div className="inline-flex items-center px-3 py-2 text-sm font-medium text-orange-600 bg-orange-100 rounded-full border border-orange-200">
@@ -801,15 +822,15 @@ export const Category = () => {
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4 mt-8">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-6 sm:mt-8">
                 <button 
                   type="button" 
                   onClick={handleCancelEdit}
-                  className="py-2 px-6 rounded-lg bg-white border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
+                  className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-white border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
-                <button type="submit" disabled={loading} className="py-2 px-6 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-60">
+                <button type="submit" disabled={loading} className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-60">
                   {loading 
                     ? (isEditMode ? 'Updating...' : 'Creating...') 
                     : (isEditMode ? 'Update Category' : 'Create Category')
@@ -826,8 +847,8 @@ export const Category = () => {
       
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -844,17 +865,17 @@ export const Category = () => {
                 This action cannot be undone.
               </p>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteCategory}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Deleting...' : 'Delete'}
               </button>
@@ -866,26 +887,26 @@ export const Category = () => {
       {/* View Category Details Modal */}
       {showViewModal && viewingCategory && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-start">
-                <h1 className="text-xl font-semibold text-gray-900">{viewingCategory.categoryName}</h1>
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-start gap-4">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{viewingCategory.categoryName}</h1>
                 <button 
                   onClick={closeViewModal}
-                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                   </svg>
-                  Close
+                  <span className="hidden sm:inline">Close</span>
                 </button>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="px-6 py-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+            <div className="px-4 sm:px-6 py-4 sm:py-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm">
                 <p className="leading-6"><span className="font-semibold text-gray-900">Category Name:</span> <span className="text-gray-600">{viewingCategory.categoryName || 'N/A'}</span></p>
                 <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{viewingCategory.branch || 'N/A'}</span></p>
                 <p className="leading-6"><span className="font-semibold text-gray-900">Total Courses:</span> <span className="text-gray-600">{Array.isArray(viewingCategory.courses) ? viewingCategory.courses.length : (viewingCategory.totalCourses || 0)}</span></p>
@@ -893,8 +914,8 @@ export const Category = () => {
               </div>
 
               {/* Courses List */}
-              <div className="mt-5">
-                <h2 className="text-[#f7931e] font-semibold mb-3 text-base italic">Courses</h2>
+              <div className="mt-4 sm:mt-5">
+                <h2 className="text-[#f7931e] font-semibold mb-3 text-sm sm:text-base italic">Courses</h2>
                 {Array.isArray(viewingCategory.courses) && viewingCategory.courses.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {viewingCategory.courses.map((course, idx) => (
@@ -904,17 +925,17 @@ export const Category = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No courses available for this category.</p>
+                  <p className="text-xs sm:text-sm text-gray-500">No courses available for this category.</p>
                 )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200">
-              <div className="flex justify-end gap-3">
+            <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <button 
                   onClick={closeViewModal}
-                  className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="w-full sm:w-auto bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Close
                 </button>
@@ -923,7 +944,7 @@ export const Category = () => {
                     closeViewModal();
                     handleEditCategory(viewingCategory);
                   }}
-                  className="bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                  className="w-full sm:w-auto bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
                 >
                   Edit
                 </button>

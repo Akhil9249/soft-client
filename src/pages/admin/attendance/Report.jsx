@@ -22,12 +22,12 @@ const tabOptions = [
 const AttendanceIcon = ({ status }) => {
   // status: 1 = Present (Green Check), 0 = Absent (Red X), -1 = Not Marked (Blank/Default)
   if (status === 1) {
-    return <Check className="text-green-600 w-4 h-4" />;
+    return <Check className="text-green-600 w-3 h-3 sm:w-4 sm:h-4" />;
   }
   if (status === 0) {
-    return <X className="text-red-500 w-4 h-4" />;
+    return <X className="text-red-500 w-3 h-3 sm:w-4 sm:h-4" />;
   }
-  return <div className="w-4 h-4 text-gray-300"></div>; // Blank for Not Marked
+  return <div className="w-3 h-3 sm:w-4 sm:h-4 text-gray-300"></div>; // Blank for Not Marked
 };
 
 const AttendanceTable = ({ data, monthData }) => {
@@ -36,26 +36,26 @@ const AttendanceTable = ({ data, monthData }) => {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto -mx-2 sm:mx-0">
       <table className="min-w-auto divide-y divide-gray-200">
         {/* Table Header */}
         <thead className="bg-white sticky top-0 z-10">
           <tr>
             {/* Fixed Name/Adm. No. columns */}
-            <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[5rem] sticky left-0 bg-white">
+            <th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[4rem] sm:min-w-[5rem] sticky left-0 bg-white">
               Adm. No.
-            </th><th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[10rem] sticky left-20 bg-white shadow-inner">
+            </th><th scope="col" className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[8rem] sm:min-w-[10rem] sticky left-16 sm:left-20 bg-white shadow-inner">
               Name
             </th>{/* Scrollable Day columns */}
             {days.map(day => (
               <th
                 key={day}
                 scope="col"
-                className="px-2 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[2.5rem]"
+                className="px-1 sm:px-2 py-2 sm:py-3 text-center text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[2rem] sm:min-w-[2.5rem]"
               >
                 {day}
               </th>
-            ))}<th scope="col" className="min-w-[4rem]"></th>
+            ))}<th scope="col" className="min-w-[2rem] sm:min-w-[4rem]"></th>
           </tr>
           <tr className="border-b border-gray-300">
             <td colSpan={2} className="p-0 border-r border-gray-200 sticky left-0 bg-white"></td><td colSpan={days.length} className="p-0"></td><td className="p-0"></td>
@@ -63,20 +63,20 @@ const AttendanceTable = ({ data, monthData }) => {
         </thead>
         
         {/* Table Body */}
-        <tbody className="bg-white divide-y divide-gray-100 text-sm">
+        <tbody className="bg-white divide-y divide-gray-100 text-xs sm:text-sm">
           {data.map((student, index) => (
             <tr key={student._id} className="hover:bg-yellow-50/50 transition duration-150 ease-in-out">
               {/* Fixed Name/Adm. No. cells */}
-              <td className="px-6 py-4 whitespace-nowrap text-gray-900 font-medium sticky left-0 bg-white z-10">
+              <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-gray-900 font-medium sticky left-0 bg-white z-10 text-[10px] sm:text-sm">
                 {student._id.slice(-4)}
-              </td><td className="px-6 py-4 whitespace-nowrap text-gray-800 sticky left-20 bg-white z-10 shadow-inner">
+              </td><td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-gray-800 sticky left-16 sm:left-20 bg-white z-10 shadow-inner text-[10px] sm:text-sm">
                 {student.fullName}
               </td>{/* Scrollable Attendance Cells */}
               {days.map(dayIndex => (
-                <td key={dayIndex} className="px-2 py-4 whitespace-nowrap text-center">
+                <td key={dayIndex} className="px-1 sm:px-2 py-3 sm:py-4 whitespace-nowrap text-center">
                   <AttendanceIcon status={student.attendance[dayIndex - 1]} />
                 </td>
-              ))}<td className="min-w-[4rem]"></td>
+              ))}<td className="min-w-[2rem] sm:min-w-[4rem]"></td>
             </tr>
           ))}
         </tbody>
@@ -86,18 +86,18 @@ const AttendanceTable = ({ data, monthData }) => {
 };
 
 const AttendanceKey = () => (
-    <div className="flex items-center space-x-6 text-sm text-gray-600 mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Attendance</h2>
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Attendance</h2>
         <span className="flex items-center space-x-1.5">
-            <Check className="text-green-600 w-4 h-4" />
+            <Check className="text-green-600 w-3 h-3 sm:w-4 sm:h-4" />
             <span>Present</span>
         </span>
         <span className="flex items-center space-x-1.5">
-            <X className="text-red-500 w-4 h-4" />
+            <X className="text-red-500 w-3 h-3 sm:w-4 sm:h-4" />
             <span>Absent</span>
         </span>
         <span className="flex items-center space-x-1.5">
-            <div className="w-4 h-4 border border-gray-300 rounded-sm"></div>
+            <div className="w-3 h-3 sm:w-4 sm:h-4 border border-gray-300 rounded-sm"></div>
             <span>Blank - Not Marked</span>
         </span>
     </div>
@@ -422,28 +422,28 @@ const Report = ({ activeTab, setActiveTab }) => {
 
         {/* Summary Statistics */}
         {summary && (
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="p-4 bg-white rounded-xl shadow-sm flex flex-col justify-center items-center">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Total Interns</div>
-              <div className="text-2xl font-extrabold text-gray-800">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+            <div className="p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm flex flex-col justify-center items-center">
+              <div className="text-[10px] sm:text-xs font-semibold text-gray-500 mb-1">Total Interns</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-gray-800">
                 {summary.totalInterns}
               </div>
             </div>
-            <div className="p-4 bg-white rounded-xl shadow-sm flex flex-col justify-center items-center">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Present</div>
-              <div className="text-2xl font-extrabold text-green-600">
+            <div className="p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm flex flex-col justify-center items-center">
+              <div className="text-[10px] sm:text-xs font-semibold text-gray-500 mb-1">Present</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-green-600">
                 {summary.presentCount}
               </div>
             </div>
-            <div className="p-4 bg-white rounded-xl shadow-sm flex flex-col justify-center items-center">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Absent</div>
-              <div className="text-2xl font-extrabold text-red-500">
+            <div className="p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm flex flex-col justify-center items-center">
+              <div className="text-[10px] sm:text-xs font-semibold text-gray-500 mb-1">Absent</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-red-500">
                 {summary.absentCount}
               </div>
             </div>
-            <div className="p-4 bg-white rounded-xl shadow-sm flex flex-col justify-center items-center">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Not Marked</div>
-              <div className="text-2xl font-extrabold text-gray-500">
+            <div className="p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-sm flex flex-col justify-center items-center">
+              <div className="text-[10px] sm:text-xs font-semibold text-gray-500 mb-1">Not Marked</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-gray-500">
                 {summary.notMarkedCount}
               </div>
             </div>
@@ -452,31 +452,31 @@ const Report = ({ activeTab, setActiveTab }) => {
 
         {/* Attendance Grid/Table */}
         {attendanceLoading ? (
-          <div className="text-center py-8">
-            <div className="text-gray-500">Loading attendance data...</div>
+          <div className="text-center py-6 sm:py-8">
+            <div className="text-xs sm:text-sm text-gray-500">Loading attendance data...</div>
           </div>
         ) : attendanceError ? (
-          <div className="text-center py-8">
-            <div className="text-red-500">{attendanceError}</div>
+          <div className="text-center py-6 sm:py-8">
+            <div className="text-xs sm:text-sm text-red-500">{attendanceError}</div>
           </div>
         ) : attendanceData.length > 0 ? (
           <AttendanceTable data={attendanceData} monthData={monthData} />
         ) : selectedMonth ? (
-          <div className="text-center py-8 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="text-yellow-800 font-medium">No attendance records found for the selected month</div>
-            <div className="text-yellow-600 text-sm mt-1">Try selecting a different month or check if attendance has been marked</div>
+          <div className="text-center py-6 sm:py-8 bg-yellow-50 border border-yellow-200 rounded-lg px-4">
+            <div className="text-xs sm:text-sm text-yellow-800 font-medium">No attendance records found for the selected month</div>
+            <div className="text-xs sm:text-sm text-yellow-600 mt-1">Try selecting a different month or check if attendance has been marked</div>
           </div>
         ) : (
-          <div className="text-center py-8 bg-gray-50 border border-gray-200 rounded-lg">
-            <div className="text-gray-600 font-medium">Select a month to view attendance records</div>
+          <div className="text-center py-6 sm:py-8 bg-gray-50 border border-gray-200 rounded-lg px-4">
+            <div className="text-xs sm:text-sm text-gray-600 font-medium">Select a month to view attendance records</div>
           </div>
         )}
 
         {/* Report View Placeholder */}
         {activeTab === 'report' && (
-            <div className="p-10 text-center bg-gray-50 rounded-xl border border-gray-200">
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Report View</h3>
-                <p className="text-gray-500">
+            <div className="p-6 sm:p-8 lg:p-10 text-center bg-gray-50 rounded-lg sm:rounded-xl border border-gray-200">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">Report View</h3>
+                <p className="text-xs sm:text-sm text-gray-500">
                     A detailed summary report would be displayed here, aggregating the attendance data.
                 </p>
             </div>

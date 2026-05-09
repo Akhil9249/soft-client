@@ -612,20 +612,20 @@ console.log('loading=====', loading);
     };
 
     return (
-      <div className="fixed top-4 right-2 sm:right-4 z-50 transform transition-all duration-300 ease-in-out animate-pulse max-w-[calc(100vw-1rem)] sm:max-w-sm">
-        <div className={`w-full ${getToastBgColor()} border rounded-lg p-3 sm:p-4 flex items-center space-x-2 sm:space-x-3`}>
+      <div className="fixed top-4 right-4 z-50 transform transition-all duration-300 ease-in-out animate-pulse">
+        <div className={`max-w-sm w-full ${getToastBgColor()} border rounded-lg  p-4 flex items-center space-x-3`}>
           <div className="flex-shrink-0">
             {getToastIcon()}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{toastMessage}</p>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-900">{toastMessage}</p>
           </div>
           <div className="flex-shrink-0">
             <button
               onClick={closeToast}
               className="text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
             >
-              <svg className="h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -684,15 +684,15 @@ console.log('loading=====', loading);
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-          <div className="p-4 sm:p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 {getIcon()}
               </div>
               <div className="ml-3">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-gray-900">
                   {modalType === 'success' && 'Success'}
                   {modalType === 'error' && 'Error'}
                   {modalType === 'warning' && 'Warning'}
@@ -701,14 +701,14 @@ console.log('loading=====', loading);
               </div>
             </div>
             
-            <div className="mb-4 sm:mb-6">
-              <p className="text-xs sm:text-sm text-gray-500">{modalMessage}</p>
+            <div className="mb-6">
+              <p className="text-sm text-gray-500">{modalMessage}</p>
             </div>
 
             <div className="flex justify-end">
               <button
                 onClick={closeModal}
-                className={`w-full sm:w-auto px-4 py-2 text-xs sm:text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonColor()}`}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonColor()}`}
               >
                 OK
               </button>
@@ -787,25 +787,25 @@ console.log('loading=====', loading);
     return (
       <div className="h-screen bg-gray-100 font-sans flex flex-col overflow-hidden">
         <Navbar headData={headData} activeTab={activeTab} />
-        <div className="flex-1 flex flex-col lg:flex-row space-y-4 sm:space-y-6 lg:space-y-0 lg:space-x-6 overflow-y-auto p-2 sm:p-4 lg:p-6">
-          <div className="w-full lg:w-1/6 bg-white p-4 sm:p-6 rounded-lg sm:rounded-xl shadow-sm flex flex-col h-auto lg:h-full max-h-[400px] lg:max-h-none">
-            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">Batch's</h3>
-            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Drag batches to the weekly live schedule (classes.)</p>
-            <div className="relative mb-3 sm:mb-4">
+        <div className="flex-1 flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6  overflow-y-auto">
+          <div className="lg:w-1/6 bg-white p-6 rounded-xl hadow-lg flex flex-col h-full">
+            <h3 className="text-xl font-bold mb-4">Batch's</h3>
+            <p className="text-sm text-gray-500 mb-4">Drag batches to the weekly live schedule (classes.)</p>
+            <div className="relative mb-4">
               <input 
                 type="text" 
                 placeholder="Search Batch" 
                 value={searchTerm}
                 onChange={(e) => searchBatches(e.target.value)}
-                className="w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 text-sm sm:text-base border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500" 
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500" 
               />
-              <Icon path="M21 21l-6-6m2-5a7 7 01-14 0 7 7 0114 0z" className="w-4 h-4 sm:w-5 sm:h-5 absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Icon path="M21 21l-6-6m2-5a7 7 01-14 0 7 7 0114 0z" className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               {searchTerm && (
                 <button
                   onClick={() => searchBatches('')}
-                  className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  <Icon path="M6 18L18 6M6 6l12 12" className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <Icon path="M6 18L18 6M6 6l12 12" className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -817,11 +817,11 @@ console.log('loading=====', loading);
               }}
             >
               {loading ? (
-                <p className="text-center text-xs sm:text-sm text-gray-500 py-4">Loading batches...</p>
+                <p className="text-center text-gray-500 py-4">Loading batches...</p>
               ) : error ? (
-                <p className="text-center text-xs sm:text-sm text-red-500 py-4">{error}</p>
+                <p className="text-center text-red-500 py-4">{error}</p>
               ) : batches.length === 0 ? (
-                <p className="text-center text-xs sm:text-sm text-gray-500 py-4">No batches available</p>
+                <p className="text-center text-gray-500 py-4">No batches available</p>
               ) : (
                 batches.map((batch, index) => {
                   const isAssigned = isBatchAssigned(batch._id);
@@ -830,7 +830,7 @@ console.log('loading=====', loading);
                       key={batch._id || index}
                       draggable
                       onDragStart={() => handleDragStart(batch)}
-                      className={`flex justify-between items-center p-2 sm:p-3 rounded-lg border cursor-grab hover:bg-gray-100 transition-colors text-xs sm:text-sm ${
+                      className={`flex justify-between items-center p-3 rounded-lg border cursor-grab hover:bg-gray-100 transition-colors ${
                         isAssigned 
                           ? 'bg-green-100 border-green-200' 
                           : 'bg-gray-50 border-gray-200'
@@ -839,7 +839,7 @@ console.log('loading=====', loading);
                       <span className={isAssigned ? 'text-green-700' : 'text-gray-700'}>
                         {batch.batchName || batch}
                       </span>
-                      <IoEyeOutline className={`${isAssigned ? 'text-green-500' : 'text-gray-500'} w-4 h-4 sm:w-5 sm:h-5`} />
+                      <IoEyeOutline className={isAssigned ? 'text-green-500' : 'text-gray-500'} />
                     </div>
                   );
                 })
@@ -847,41 +847,41 @@ console.log('loading=====', loading);
             </div>
           </div>
 
-          <div className="flex-1 bg-white p-4 sm:p-6 rounded-lg sm:rounded-xl flex flex-col h-full min-w-0">
+          <div className="lg:flex-1 bg-white p-6 rounded-xl  flex flex-col h-full">
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl sm:text-2xl font-bold">Weekly Schedule</h2>
-                <p className="text-xs sm:text-sm text-gray-500">Total scheduled items: {canvasItems.length}</p>
+            <div className="flex flex-wrap items-center justify-between mb-6 space-y-4 sm:space-y-0">
+              <div className="flex-1 min-w-[200px] mb-4 sm:mb-0">
+                <h2 className="text-2xl font-bold">Weekly Schedule</h2>
+                <p className="text-sm text-gray-500">Total scheduled items: {canvasItems.length}</p>
               </div>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 sm:space-x-2">
-                <select className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500">
+              <div className="flex flex-wrap items-center space-x-2 sm:space-x-4">
+                <select className="p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500">
                   <option value="">{branchesLoading ? 'Loading branches...' : 'All Branches'}</option>
                   {branches.map(branch => (
                     <option key={branch._id} value={branch._id}>{branch.branchName}</option>
                   ))}
                 </select>
-                <select className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500">
+                <select className="p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-500 focus:border-orange-500">
                   <option>Alternative</option>
                 </select>
-                <input type="text" className="w-full sm:w-auto p-2 text-sm border border-gray-300 rounded-lg shadow-sm" placeholder="25/08/25 - 30/08/25" />
-                <button className="flex items-center justify-center space-x-2 py-2 px-3 sm:px-4 rounded-lg bg-white border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">
-                  <Icon path="M4 16v1a3 3 000 6h16a3 3 000-6v-1m-4-4l-4 4m0 0l-4-4m4 4V4" className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="text-xs sm:text-sm">Export</span>
+                <input type="text" className="p-2 border border-gray-300 rounded-lg shadow-sm" placeholder="25/08/25 - 30/08/25" />
+                <button className="flex items-center space-x-2 py-2 px-4 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">
+                  <Icon path="M4 16v1a3 3 000 6h16a3 3 000-6v-1m-4-4l-4 4m0 0l-4-4m4 4V4" className="w-5 h-5" />
+                  <span>Export</span>
                 </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 flex-1 -mx-2 sm:mx-0">
+            <div className="overflow-auto rounded-lg border border-gray-200 flex-1">
               <table className="min-w-full">
                 <thead className="bg-orange-500 text-white">
                   <tr>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium uppercase tracking-wider">Mentors</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium uppercase tracking-wider">Time</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium uppercase tracking-wider">Mon, Wen, Fri</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium uppercase tracking-wider">Subject</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium uppercase tracking-wider">Tue, Tur, Sat</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium uppercase tracking-wider">Subject</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Mentors</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Time</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Mon, Wen, Fri</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Subject</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Tue, Tur, Sat</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Subject</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -890,15 +890,15 @@ console.log('loading=====', loading);
                       {mentor.schedule.map((slot, slotIndex) => (
                         <tr key={`${mentorIndex}-${slotIndex}`} data-mentor-slot={`${mentorIndex}-${slotIndex}`}>
                           {slotIndex === 0 && (
-                            <td rowSpan={mentor.schedule.length} className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900 border-r border-gray-200 align-top">
+                            <td rowSpan={mentor.schedule.length} className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 align-top">
                               {mentor.name}
                             </td>
                           )}
-                          <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 border-r border-gray-200">
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200">
                             {slot.time}
                           </td>
                           <td
-                            className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 relative group drop-zone min-h-[50px] sm:min-h-[60px] border-2 border-dashed border-gray-200 hover:border-orange-300 transition-colors"
+                            className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 relative group drop-zone min-h-[60px] border-2 border-dashed border-gray-200 hover:border-orange-300 transition-colors"
                             onDrop={handleDrop}
                             onDragOver={handleDragOver}
                             data-zone-id={`${mentorIndex * 3 + slotIndex}-2`}
@@ -912,14 +912,14 @@ console.log('loading=====', loading);
 
                               if (!mentorSchedule) {
                                 return (
-                                  <span className="cursor-pointer text-[10px] sm:text-xs">No batches assigned</span>
+                                  <span className="cursor-pointer">No batches assigned</span>
                                 );
                               }
 
                               const timeSlot = mentorSchedule.schedule[slotIndex];
                               if (!timeSlot) {
                                 return (
-                                  <span className="cursor-pointer text-[10px] sm:text-xs">No batches assigned</span>
+                                  <span className="cursor-pointer">No batches assigned</span>
                                 );
                               }
 
@@ -929,7 +929,7 @@ console.log('loading=====', loading);
 
                               if (mwfBatches.length === 0) {
                                 return (
-                                  <span className="cursor-pointer text-[10px] sm:text-xs">No batches assigned</span>
+                                  <span className="cursor-pointer">No batches assigned</span>
                                 );
                               }
 
@@ -938,13 +938,13 @@ console.log('loading=====', loading);
                                   {mwfBatches.map((batch, index) => (
                                     <div
                                       key={batch._id || index}
-                                      className="bg-blue-500 text-white p-1.5 sm:p-2 rounded-md sm:rounded-lg shadow-md transition-all duration-200 text-[10px] sm:text-xs w-full flex items-center justify-between"
+                                      className="bg-blue-500 text-white p-2 rounded-lg shadow-md transition-all duration-200 text-xs w-full flex items-center justify-between"
                                     >
-                                      <span className="truncate">{batch.batchName}</span>
+                                      <span>{batch.batchName}</span>
                                       {/* Remove button */}
                                       <button
                                         onClick={() => handleRemoveBatchFromDatabase(mentorSchedule._id, slotIndex, 'MWF', batch._id)}
-                                        className="bg-red-600 text-white rounded-full w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center font-bold text-[10px] sm:text-xs leading-none transition-transform duration-200 hover:scale-110 flex-shrink-0 ml-1"
+                                        className="bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold text-xs leading-none transition-transform duration-200 hover:scale-110"
                                       >
                                         &times;
                                       </button>
@@ -958,7 +958,7 @@ console.log('loading=====', loading);
                               <Icon path="M6 18L18 6M6 6l12 12" className="w-4 h-4 text-red-500 cursor-pointer" />
                             </div>
                           </td>
-                          <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                             {/* MWF Subject */}
                             {(() => {
                               const mentorSchedule = weeklySchedules.find(ws =>
@@ -966,12 +966,12 @@ console.log('loading=====', loading);
                               );
 
                               if (!mentorSchedule) {
-                                return <span className="text-[10px] sm:text-xs text-gray-400">No class assigned</span>;
+                                return <span className="text-gray-400">No class assigned</span>;
                               }
 
                               const timeSlot = mentorSchedule.schedule[slotIndex];
                               if (!timeSlot) {
-                                return <span className="text-[10px] sm:text-xs text-gray-400">No class assigned</span>;
+                                return <span className="text-gray-400">No class assigned</span>;
                               }
 
                               const mwfDetail = timeSlot.sub_details?.find(detail => detail.days === 'MWF');
@@ -979,12 +979,12 @@ console.log('loading=====', loading);
                               const mwfSubject = mwfDetail?.subject;
 
                               if (mwfBatches.length === 0) {
-                                return <span className="text-[10px] sm:text-xs text-gray-400">No class assigned</span>;
+                                return <span className="text-gray-400">No class assigned</span>;
                               }
 
                               return (
                                 <select 
-                                  className="p-1 border border-gray-300 rounded-md shadow-sm text-[10px] sm:text-xs w-full"
+                                  className="p-1 border border-gray-300 rounded-md shadow-sm text-xs w-full"
                                   value={mwfSubject || ''}
                                   onChange={(e) => handleSubjectChange(mentorSchedule._id, slotIndex, 'MWF', e.target.value)}
                                 >
@@ -1003,7 +1003,7 @@ console.log('loading=====', loading);
                             })()}
                           </td>
                           <td
-                            className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 relative group drop-zone min-h-[50px] sm:min-h-[60px] border-2 border-dashed border-gray-200 hover:border-orange-300 transition-colors"
+                            className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 relative group drop-zone min-h-[60px] border-2 border-dashed border-gray-200 hover:border-orange-300 transition-colors"
                             onDrop={handleDrop}
                             onDragOver={handleDragOver}
                             data-zone-id={`${mentorIndex * 3 + slotIndex}-4`}
@@ -1016,14 +1016,14 @@ console.log('loading=====', loading);
 
                               if (!mentorSchedule) {
                                 return (
-                                  <span className="cursor-pointer text-[10px] sm:text-xs">No batches assigned</span>
+                                  <span className="cursor-pointer">No batches assigned</span>
                                 );
                               }
 
                               const timeSlot = mentorSchedule.schedule[slotIndex];
                               if (!timeSlot) {
                                 return (
-                                  <span className="cursor-pointer text-[10px] sm:text-xs">No batches assigned</span>
+                                  <span className="cursor-pointer">No batches assigned</span>
                                 );
                               }
 
@@ -1033,7 +1033,7 @@ console.log('loading=====', loading);
 
                               if (ttsBatches.length === 0) {
                                 return (
-                                  <span className="cursor-pointer text-[10px] sm:text-xs">No batches assigned</span>
+                                  <span className="cursor-pointer">No batches assigned</span>
                                 );
                               }
 
@@ -1042,12 +1042,12 @@ console.log('loading=====', loading);
                                   {ttsBatches.map((batch, index) => (
                                     <div
                                       key={`${batch._id}-2` || index}
-                                      className="bg-green-500 text-white p-1.5 sm:p-2 rounded-md sm:rounded-lg shadow-md transition-all duration-200 text-[10px] sm:text-xs w-full flex items-center justify-between"
+                                      className="bg-green-500 text-white p-2 rounded-lg shadow-md transition-all duration-200 text-xs w-full flex items-center justify-between"
                                     >
-                                      <span className="truncate">{batch.batchName}</span>
+                                      <span>{batch.batchName}</span>
                                       <button
                                         onClick={() => handleRemoveBatchFromDatabase(mentorSchedule._id, slotIndex, 'TTS', batch._id)}
-                                        className="bg-red-600 text-white rounded-full w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center font-bold text-[10px] sm:text-xs leading-none transition-transform duration-200 hover:scale-110 flex-shrink-0 ml-1"
+                                        className="bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold text-xs leading-none transition-transform duration-200 hover:scale-110"
                                       >
                                         &times;
                                       </button>
@@ -1061,7 +1061,7 @@ console.log('loading=====', loading);
                               <Icon path="M6 18L18 6M6 6l12 12" className="w-4 h-4 text-red-500 cursor-pointer" />
                             </div>
                           </td>
-                          <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                             {/* TTS Subject */}
                             {(() => {
                               const mentorSchedule = weeklySchedules.find(ws =>
@@ -1069,12 +1069,12 @@ console.log('loading=====', loading);
                               );
 
                               if (!mentorSchedule) {
-                                return <span className="text-[10px] sm:text-xs text-gray-400">No class assigned</span>;
+                                return <span className="text-gray-400">No class assigned</span>;
                               }
 
                               const timeSlot = mentorSchedule.schedule[slotIndex];
                               if (!timeSlot) {
-                                return <span className="text-[10px] sm:text-xs text-gray-400">No class assigned</span>;
+                                return <span className="text-gray-400">No class assigned</span>;
                               }
 
                               const ttsDetail = timeSlot.sub_details?.find(detail => detail.days === 'TTS');
@@ -1082,12 +1082,12 @@ console.log('loading=====', loading);
                               const ttsSubject = ttsDetail?.subject;
 
                               if (ttsBatches.length === 0) {
-                                return <span className="text-[10px] sm:text-xs text-gray-400">No class assigned</span>;
+                                return <span className="text-gray-400">No class assigned</span>;
                               }
 
                               return (
                                 <select 
-                                  className="p-1 border border-gray-300 rounded-md shadow-sm text-[10px] sm:text-xs w-full"
+                                  className="p-1 border border-gray-300 rounded-md shadow-sm text-xs w-full"
                                   value={ttsSubject || ''}
                                   onChange={(e) => handleSubjectChange(mentorSchedule._id, slotIndex, 'TTS', e.target.value)}
                                 >

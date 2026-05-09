@@ -8,7 +8,6 @@ export const AuthProvider = ({children})=>{
 
     const accessToken = localStorage.getItem("accessToken");
     // const username = localStorage.getItem("username");
-    // const password = localStorage.getItem("password");
     const image = localStorage.getItem("profileImage");
     const name = localStorage.getItem("name")
     const role = localStorage.getItem("role");

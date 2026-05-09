@@ -111,15 +111,15 @@ export const Timings = () => {
 
   const AddedTimings = () => {
     return (
-      <div className="mt-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900">Added Timings</h3>
-          <div className="flex items-center space-x-4">
-            <label className="text-sm text-gray-600">Filter by Branch:</label>
+      <div className="mt-4 sm:mt-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900">Added Timings</h3>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-4 w-full sm:w-auto">
+            <label className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">Filter by Branch:</label>
             <select
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="">All Branches</option>
               {branches.map(branch => (
@@ -131,12 +131,12 @@ export const Timings = () => {
           </div>
         </div>
         {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <p className="text-gray-500">Loading timings...</p>
+          <div className="flex items-center justify-center p-6 sm:p-8">
+            <p className="text-sm sm:text-base text-gray-500">Loading timings...</p>
           </div>
         ) : filteredTimings.length === 0 ? (
-          <div className="flex items-center justify-center p-8">
-            <p className="text-gray-500">
+          <div className="flex items-center justify-center p-6 sm:p-8">
+            <p className="text-xs sm:text-sm text-gray-500 text-center">
               {selectedBranch 
                 ? 'No timings found for the selected branch.' 
                 : 'No timings available. Please add timings to view them here.'
@@ -144,21 +144,21 @@ export const Timings = () => {
             </p>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-3 sm:gap-4">
             {filteredTimings.map((timing, index) => (
               <div
                 key={timing._id || index}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-full flex items-center space-x-2"
+                className="bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-full flex items-center gap-2 sm:space-x-2 text-xs sm:text-sm"
               >
-                <span>{timing.timeSlot}</span>
-                <span className="text-sm text-gray-500">
+                <span className="font-medium">{timing.timeSlot}</span>
+                <span className="text-xs sm:text-sm text-gray-500">
                   {typeof timing.branch === 'object' && timing.branch 
                     ? timing.branch.branchName 
                     : 'Unknown Branch'
                   }
                 </span>
                 <X 
-                  className="w-4 h-4 text-gray-500 cursor-pointer hover:text-red-500" 
+                  className="w-4 h-4 text-gray-500 cursor-pointer hover:text-red-500 flex-shrink-0" 
                   onClick={() => handleDeleteTiming(timing)}
                 />
               </div>
@@ -216,15 +216,15 @@ export const Timings = () => {
 
     // Component for the "Timings" list view
     const TimingsView = () => (
-      <div className="p-8 bg-white rounded-3xl h-full shadow-lg">
+      <div className="p-4 sm:p-6 lg:p-8 bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl h-full shadow-lg">
         {/* Error and Success Messages */}
         {error && (
-          <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
+          <div className="p-3 mb-4 text-xs sm:text-sm text-red-700 bg-red-100 rounded-lg">
             {error}
           </div>
         )}
         {success && (
-          <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
+          <div className="p-3 mb-4 text-xs sm:text-sm text-green-700 bg-green-100 rounded-lg">
             {success}
           </div>
         )}
@@ -234,28 +234,28 @@ export const Timings = () => {
 
       // Component for the "New Timing" form view
   const NewTimingForm = () => (
-    <div className="p-8 bg-white rounded-3xl h-full shadow-lg">
+    <div className="p-4 sm:p-6 lg:p-8 bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl h-full shadow-lg">
       {/* Error and Success Messages */}
       {error && (
-        <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
+        <div className="p-3 mb-4 text-xs sm:text-sm text-red-700 bg-red-100 rounded-lg">
           {error}
         </div>
       )}
       {success && (
-        <div className="p-3 mb-4 text-sm text-green-700 bg-green-100 rounded-lg">
+        <div className="p-3 mb-4 text-xs sm:text-sm text-green-700 bg-green-100 rounded-lg">
           {success}
         </div>
       )}
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold text-gray-900">Timings Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-4 sm:space-y-6">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900">Timings Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <div className="flex flex-col">
-            <label htmlFor="batch-name" className="text-sm text-gray-600 mb-2">
+            <label htmlFor="batch-name" className="text-xs sm:text-sm text-gray-600 mb-2">
               Batch Name
             </label>
             <select
               id="batch-name"
-              className="p-3 bg-gray-100 text-gray-800 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F9A825] appearance-none"
+              className="p-2 sm:p-3 bg-gray-100 text-gray-800 rounded-lg sm:rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F9A825] appearance-none text-sm sm:text-base"
             >
               <option value="08.30 AM - 11.30 AM">08.30 Am - 11.30 Am</option>
               <option value="11.30 AM - 02.30 PM">11.30 Pm - 02.30 Pm</option>
@@ -263,12 +263,12 @@ export const Timings = () => {
             </select>
           </div>
            <div className="flex flex-col">
-             <label htmlFor="branch-name" className="text-sm text-gray-600 mb-2">
+             <label htmlFor="branch-name" className="text-xs sm:text-sm text-gray-600 mb-2">
                Branch Name
              </label>
                <select
                  id="branch-name"
-                 className="p-3 bg-gray-100 text-gray-800 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F9A825] appearance-none"
+                 className="p-2 sm:p-3 bg-gray-100 text-gray-800 rounded-lg sm:rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#F9A825] appearance-none text-sm sm:text-base"
                >
                  <option value="">Choose Branch</option>
                  {loading ? (
@@ -287,17 +287,17 @@ export const Timings = () => {
         </div>
       </div>
 
-      <div className="mt-8 flex justify-end space-x-4">
+      <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
         <button
           onClick={handleCancel}
-          className="px-6 py-3 text-gray-700 font-medium rounded-xl border border-gray-300 hover:bg-gray-200 transition-colors duration-200"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base text-gray-700 font-medium rounded-lg sm:rounded-xl border border-gray-300 hover:bg-gray-200 transition-colors duration-200"
         >
           Cancel
         </button>
          <button
            onClick={handleCreateTiming}
            disabled={loading}
-           className="px-6 py-3 text-white font-medium bg-[#F9A825] rounded-xl hover:bg-[#F9A825] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+           className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base text-white font-medium bg-[#F9A825] rounded-lg sm:rounded-xl hover:bg-[#e8931f] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
          >
            {loading ? 'Creating...' : 'Create Timing'}
          </button>
@@ -308,7 +308,7 @@ export const Timings = () => {
   return (
     <>
     <Navbar headData={headData} activeTab={activeTab} />
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
       <div className="flex-1">
@@ -318,8 +318,8 @@ export const Timings = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -327,26 +327,26 @@ export const Timings = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">Delete Timing</h3>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Delete Timing</h3>
               </div>
             </div>
             <div className="mb-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 Are you sure you want to delete the timing <strong>"{deletingTiming?.timeSlot}"</strong>?
                 This action cannot be undone.
               </p>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={handleCancelDelete}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
                 {loading ? 'Deleting...' : 'Delete'}
               </button>

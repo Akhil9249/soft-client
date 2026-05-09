@@ -2,6 +2,7 @@ import { useEffect } from "react";
 // import Swal from "sweetalert2";
 import useAuth from "./useAuth";
 import { axiosPrivate } from "../axios";
+import { genericError } from "../utils/genericError";
 
 
 const useAxiosPrivate = () => {
@@ -41,6 +42,9 @@ const useAxiosPrivate = () => {
                 return response
             },
            async error => {
+
+            genericError(error)
+
                 // const prevRequest = error?.config;
                 // if (error?.response?.status === 403 && !prevRequest?.sent) {
                 //     prevRequest.sent = true;

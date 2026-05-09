@@ -794,10 +794,10 @@ export const Courses = () => {
   );
 
   const renderCoursesList = () => (
-    <div className="bg-white p-6 rounded-lg shadow-md flex-grow">
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md flex-grow">
 
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex-1 mr-4">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+        <div className="flex-1 sm:mr-4">
           <div className="relative">
             <input
               type="text"
@@ -813,7 +813,7 @@ export const Courses = () => {
             </div>
           </div>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
           <select 
             value={filters.category}
             onChange={(e) => handleFilterChange('category', e.target.value)}
@@ -862,49 +862,144 @@ export const Courses = () => {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fee</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Syllabus</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {courseList.map((course, idx) => (
-                <tr key={course._id || idx} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                          <span className="text-orange-600 font-medium text-sm">
-                            {course.courseName?.charAt(0)?.toUpperCase() || 'C'}
-                          </span>
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Name</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fee</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Syllabus</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {courseList.map((course, idx) => (
+                  <tr key={course._id || idx} className="hover:bg-gray-50">
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                            <span className="text-orange-600 font-medium text-sm">
+                              {course.courseName?.charAt(0)?.toUpperCase() || 'C'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{course.courseName}</div>
+                          <div className="text-sm text-gray-500">ID: {course._id?.slice(-6) || 'N/A'}</div>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{course.courseName}</div>
-                        <div className="text-sm text-gray-500">ID: {course._id?.slice(-6) || 'N/A'}</div>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {course.duration}
+                      </span>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {typeof course.category === 'object' && course.category ? course.category.categoryName : course.category}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        course.courseType === 'Regular' 
+                          ? 'bg-green-100 text-green-800' 
+                          : course.courseType === 'Fast Track'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {course.courseType}
+                      </span>
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ₹{course.courseFee?.toLocaleString() || '0'}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                      {course.syllabusFile ? (
+                        <div className="flex items-center">
+                          <svg className="w-4 h-4 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
+                          </svg>
+                          <span className="text-sm text-red-600 font-medium">PDF</span>
+                          <a 
+                            href={course.syllabusFile} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="ml-2 text-blue-600 hover:text-blue-800 text-xs"
+                          >
+                            View
+                          </a>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full border border-gray-200">
+                          No Syllabus
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handleViewCourse(course)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleEditCourse(course)}
+                          className="text-orange-600 hover:text-orange-900"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCourse(course)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            {courseList.map((course, idx) => (
+              <div key={course._id || idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="flex-shrink-0 h-12 w-12">
+                    <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                      <span className="text-orange-600 font-medium text-base">
+                        {course.courseName?.charAt(0)?.toUpperCase() || 'C'}
+                      </span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900 truncate">{course.courseName}</h3>
+                    <p className="text-xs text-gray-500">ID: {course._id?.slice(-6) || 'N/A'}</p>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm text-gray-600 mb-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium">Duration:</span>
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                       {course.duration}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {typeof course.category === 'object' && course.category ? course.category.categoryName : course.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </div>
+                  <div><span className="font-medium">Category:</span> {typeof course.category === 'object' && course.category ? course.category.categoryName : course.category || 'N/A'}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium">Type:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       course.courseType === 'Regular' 
                         ? 'bg-green-100 text-green-800' 
@@ -914,24 +1009,22 @@ export const Courses = () => {
                     }`}>
                       {course.courseType}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{course.courseFee?.toLocaleString() || '0'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </div>
+                  <div><span className="font-medium">Fee:</span> ₹{course.courseFee?.toLocaleString() || '0'}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium">Syllabus:</span>
                     {course.syllabusFile ? (
                       <div className="flex items-center">
-                        <svg className="w-4 h-4 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-red-600 mr-1" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
                         </svg>
-                        <span className="text-sm text-red-600 font-medium">PDF</span>
                         <a 
                           href={course.syllabusFile} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="ml-2 text-blue-600 hover:text-blue-800 text-xs"
+                          className="text-blue-600 hover:text-blue-800 text-xs"
                         >
-                          View
+                          View PDF
                         </a>
                       </div>
                     ) : (
@@ -939,43 +1032,39 @@ export const Courses = () => {
                         No Syllabus
                       </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => handleViewCourse(course)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        View
-                      </button>
-                      <button 
-                        onClick={() => handleEditCourse(course)}
-                        className="text-orange-600 hover:text-orange-900"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCourse(course)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <div><span className="font-medium">Created:</span> {course.createdAt ? new Date(course.createdAt).toLocaleDateString() : 'N/A'}</div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                  <button 
+                    onClick={() => handleViewCourse(course)}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                  >
+                    View
+                  </button>
+                  <button 
+                    onClick={() => handleEditCourse(course)}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-md hover:bg-orange-100 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteCourse(course)}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Pagination Controls */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
-          <div className="flex items-center text-sm text-gray-700">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4 py-3 bg-white border-t border-gray-200">
+          <div className="flex items-center text-xs sm:text-sm text-gray-700 text-center sm:text-left">
             <span>
               Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
             </span>
@@ -1078,12 +1167,12 @@ export const Courses = () => {
       } finally {
         setLoading(false);
       }
-    }} className="bg-white p-6 rounded-lg shadow-md flex-grow">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">
+    }} className="bg-white p-4 sm:p-6 rounded-lg shadow-md flex-grow">
+      <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">
         {isEditMode ? `Edit Course - ${editingCourse?.courseName}` : 'Create New Course'}
       </h2>
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Course Details</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Course Details</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div>
           <label className="block text-gray-700 font-medium mb-2">Course Name</label>
           <input 
@@ -1207,15 +1296,15 @@ export const Courses = () => {
           )}
         </div>
       </div>
-      <div className="flex justify-end mt-8 space-x-4">
+      <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-6 sm:mt-8">
         <button 
           type="button"
           onClick={handleCancelEdit}
-          className="px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-200"
         >
           Cancel
         </button>
-        <button type="submit" disabled={loading} className="px-6 py-2 bg-orange-500 text-white rounded-md font-medium shadow-md hover:bg-orange-600 transition-colors duration-200 disabled:opacity-60">
+        <button type="submit" disabled={loading} className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-orange-500 text-white rounded-md font-medium shadow-md hover:bg-orange-600 transition-colors duration-200 disabled:opacity-60">
           {loading 
             ? (isEditMode ? 'Updating...' : 'Creating...') 
             : (isEditMode ? 'Update Course' : 'Create Course')
@@ -1268,9 +1357,9 @@ export const Courses = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-          <div className="p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 {getIcon()}
@@ -1413,8 +1502,8 @@ export const Courses = () => {
       
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1431,17 +1520,17 @@ export const Courses = () => {
                 This action cannot be undone.
               </p>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={cancelDelete}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteCourse}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Deleting...' : 'Delete'}
               </button>
@@ -1453,26 +1542,26 @@ export const Courses = () => {
       {/* View Course Details Modal */}
       {showViewModal && viewingCourse && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-start">
-                <h1 className="text-xl font-semibold text-gray-900">{viewingCourse.courseName}</h1>
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-start gap-4">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{viewingCourse.courseName}</h1>
                 <button 
                   onClick={closeViewModal}
-                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                   </svg>
-                  Close
+                  <span className="hidden sm:inline">Close</span>
                 </button>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="px-6 py-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+            <div className="px-4 sm:px-6 py-4 sm:py-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm">
                 <p className="leading-6"><span className="font-semibold text-gray-900">Course Name:</span> <span className="text-gray-600">{viewingCourse.courseName || 'N/A'}</span></p>
                 <p className="leading-6"><span className="font-semibold text-gray-900">Duration:</span> <span className="text-gray-600">{viewingCourse.duration || 'N/A'}</span></p>
                 <p className="leading-6"><span className="font-semibold text-gray-900">Category:</span> <span className="text-gray-600">{typeof viewingCourse.category === 'object' && viewingCourse.category ? viewingCourse.category.categoryName : viewingCourse.category || 'N/A'}</span></p>
@@ -1483,14 +1572,14 @@ export const Courses = () => {
               </div>
 
               {/* Syllabus */}
-              <div className="mt-5">
-                <h2 className="text-[#f7931e] font-semibold mb-3 text-base italic">Syllabus</h2>
+              <div className="mt-4 sm:mt-5">
+                <h2 className="text-[#f7931e] font-semibold mb-3 text-sm sm:text-base italic">Syllabus</h2>
                 {viewingCourse.syllabusFile ? (
                   <div className="flex items-center">
                     <svg className="w-4 h-4 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
                     </svg>
-                    <span className="text-sm text-red-600 font-medium">PDF</span>
+                    <span className="text-xs sm:text-sm text-red-600 font-medium">PDF</span>
                     <a 
                       href={viewingCourse.syllabusFile} 
                       target="_blank" 
@@ -1501,17 +1590,17 @@ export const Courses = () => {
                     </a>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No syllabus uploaded.</p>
+                  <p className="text-xs sm:text-sm text-gray-500">No syllabus uploaded.</p>
                 )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200">
-              <div className="flex justify-end gap-3">
+            <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <button 
                   onClick={closeViewModal}
-                  className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="w-full sm:w-auto bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Close
                 </button>
@@ -1520,7 +1609,7 @@ export const Courses = () => {
                     closeViewModal();
                     handleEditCourse(viewingCourse);
                   }}
-                  className="bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                  className="w-full sm:w-auto bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
                 >
                   Edit
                 </button>

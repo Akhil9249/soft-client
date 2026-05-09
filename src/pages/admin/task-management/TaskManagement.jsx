@@ -892,9 +892,9 @@ export const TaskManagement = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-          <div className="p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 {getIcon()}
@@ -928,27 +928,28 @@ export const TaskManagement = () => {
       <NotificationModal />
       
       <Navbar headData={headData} activeTab={activeTab} />
-      <div className="flex justify-between items-center ">
-      <div className="mb-6">
-        <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
-      </div>
-      <div className="flex justify-end ">
-          <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="w-full sm:w-auto">
+          <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
+        </div>
+
+        <div className="flex justify-end w-full sm:w-auto">
+          <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             {loading ? 'Exporting...' : 'Export'}
           </button>
         </div>
-
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
 
         {/* Tab content */}
         {activeTab === 'tasks-list' ? (
           <div id="tasks-list-content">
 
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex-1 mr-4">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+              <div className="flex-1 sm:mr-4">
                 <div className="relative">
                   <input
                     type="text"
@@ -964,7 +965,7 @@ export const TaskManagement = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
                 <select 
                   value={filters.taskType}
                   onChange={(e) => handleFilterChange('taskType', e.target.value)}
@@ -996,10 +997,6 @@ export const TaskManagement = () => {
                   <option value="By courses">By courses</option>
                   <option value="Individual interns">Individual interns</option>
                 </select>
-                <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  {loading ? 'Exporting...' : 'Export'}
-                </button>
               </div>
             </div>
 
@@ -1018,60 +1015,145 @@ export const TaskManagement = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Module</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Audience</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {tasks.map((task, idx) => (
-                      <tr key={task._id || idx} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                <span className="text-orange-600 font-medium text-sm">
-                                  {task.title?.charAt(0)?.toUpperCase() || 'T'}
-                                </span>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task Type</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Module</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Audience</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {tasks.map((task, idx) => (
+                        <tr key={task._id || idx} className="hover:bg-gray-50">
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10">
+                                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                  <span className="text-orange-600 font-medium text-sm">
+                                    {task.title?.charAt(0)?.toUpperCase() || 'T'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{task.title}</div>
+                                <div className="text-sm text-gray-500">ID: {task._id?.slice(-6) || 'N/A'}</div>
                               </div>
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{task.title}</div>
-                              <div className="text-sm text-gray-500">ID: {task._id?.slice(-6) || 'N/A'}</div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {task.taskType}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                              {task.module}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {typeof task.assignedMentor === 'object' ? task.assignedMentor.fullName : 
+                             mentors.find(mentor => mentor._id === task.assignedMentor)?.fullName || task.assignedMentor || 'N/A'}
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                              {task.audience || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              task.status === 'Completed'
+                                ? 'bg-green-100 text-green-800'
+                                : task.status === 'In Progress'
+                                ? 'bg-blue-100 text-blue-800'
+                                : task.status === 'Cancelled'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {task.status}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button 
+                                onClick={() => handleViewTask(task)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                View
+                              </button>
+                              <button 
+                                onClick={() => handleEditTask(task)}
+                                className="text-orange-600 hover:text-orange-900"
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteClick(task)}
+                                className="text-red-600 hover:text-red-900"
+                                disabled={loading}
+                              >
+                                Delete
+                              </button>
                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {tasks.map((task, idx) => (
+                    <div key={task._id || idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 h-12 w-12">
+                          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                            <span className="text-orange-600 font-medium text-base">
+                              {task.title?.charAt(0)?.toUpperCase() || 'T'}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900 truncate">{task.title}</h3>
+                          <p className="text-xs text-gray-500">ID: {task._id?.slice(-6) || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-sm text-gray-600 mb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Task Type:</span>
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                             {task.taskType}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Module:</span>
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
                             {task.module}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {typeof task.assignedMentor === 'object' ? task.assignedMentor.fullName : 
-                           mentors.find(mentor => mentor._id === task.assignedMentor)?.fullName || task.assignedMentor || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div><span className="font-medium">Mentor:</span> {typeof task.assignedMentor === 'object' ? task.assignedMentor.fullName : mentors.find(mentor => mentor._id === task.assignedMentor)?.fullName || task.assignedMentor || 'N/A'}</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Audience:</span>
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
                             {task.audience || 'N/A'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Status:</span>
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             task.status === 'Completed'
                               ? 'bg-green-100 text-green-800'
@@ -1083,44 +1165,40 @@ export const TaskManagement = () => {
                           }`}>
                             {task.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button 
-                              onClick={() => handleViewTask(task)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              View
-                            </button>
-                            <button 
-                              onClick={() => handleEditTask(task)}
-                              className="text-orange-600 hover:text-orange-900"
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteClick(task)}
-                              className="text-red-600 hover:text-red-900"
-                              disabled={loading}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                        <div><span className="font-medium">Due Date:</span> {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                        <button 
+                          onClick={() => handleViewTask(task)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleEditTask(task)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-md hover:bg-orange-100 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClick(task)}
+                          disabled={loading}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
-                <div className="flex items-center text-sm text-gray-700">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                <div className="flex items-center text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                   <span>
                     Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
                   </span>
@@ -1172,11 +1250,11 @@ export const TaskManagement = () => {
         ) : (
           <div id="new-task-content">
 
-            <form onSubmit={handleCreateTask} className="space-y-6">
-              <h3 className="text-lg font-medium text-gray-900">
+            <form onSubmit={handleCreateTask} className="space-y-4 sm:space-y-6">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">
                 {isEditMode ? `Edit Task - ${editingTask?.title}` : 'Task Details'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Title</label>
                   <input
@@ -1291,7 +1369,7 @@ export const TaskManagement = () => {
                   required
                 ></textarea>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Attachments <span className="text-gray-400">(Optional - JPG/PNG/PDF only)</span></label>
                   <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white mt-1">
@@ -1379,7 +1457,7 @@ export const TaskManagement = () => {
                   name="status"
                   value={formData.status || ''}
                   onChange={(e) => setFormData(prev => ({...prev, status: e.target.value}))}
-                  className="mt-1 block w-1/3 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
+                  className="mt-1 block w-full sm:w-1/3 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500"
                   required
                 >
                   <option value="">Choose Status</option>
@@ -1391,8 +1469,8 @@ export const TaskManagement = () => {
               </div>
 
               {/* Task Details Section */}
-              <div className="mt-8 border-t border-gray-200 pt-6">
-                <h4 className="text-lg font-medium text-gray-900 mb-4">Task Details</h4>
+              <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-4 sm:pt-6">
+                <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Task Details</h4>
                 
                 {/* Debug Information - Only show in edit mode */}
                 {/* {isEditMode && editingTask && (
@@ -1409,7 +1487,7 @@ export const TaskManagement = () => {
                     </div>
                   </div>
                 )} */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Audience</label>
                     <select
@@ -1437,8 +1515,8 @@ export const TaskManagement = () => {
 
                 {/* Intern Search Section - Only show when Individual interns is selected */}
                 {formData.audience === 'Individual interns' && (
-                  <div className="mt-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="mt-4 sm:mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Search Section */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Search Interns</label>
@@ -1564,8 +1642,8 @@ export const TaskManagement = () => {
 
                 {/* Batch Search Section - Only show when By batches is selected */}
                 {formData.audience === 'By batches' && (
-                  <div className="mt-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="mt-4 sm:mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Search Section */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Search Batches</label>
@@ -1691,8 +1769,8 @@ export const TaskManagement = () => {
 
                 {/* Course Search Section - Only show when By courses is selected */}
                 {formData.audience === 'By courses' && (
-                  <div className="mt-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="mt-4 sm:mt-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Search Section */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Search Courses</label>
@@ -1818,18 +1896,18 @@ export const TaskManagement = () => {
 
                
               </div>
-              <div className="flex justify-end space-x-4 mt-8">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-6 sm:mt-8">
                 <button
                   type="button"
                   onClick={handleCancelEdit}
-                  className="py-2 px-6 rounded-lg bg-white border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
+                  className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-white border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="py-2 px-6 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed"
                 >
                   {loading 
                     ? (isEditMode ? 'Updating...' : 'Creating...') 
@@ -1844,9 +1922,9 @@ export const TaskManagement = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
               {/* Modal Header */}
               <div className="flex items-center mb-4">
                 <div className="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center">
@@ -1876,17 +1954,17 @@ export const TaskManagement = () => {
               </div>
               
               {/* Modal Actions */}
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleDeleteCancel}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                  className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                   disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-300 disabled:cursor-not-allowed"
                   disabled={loading}
                 >
                   {loading ? (
@@ -1907,26 +1985,26 @@ export const TaskManagement = () => {
       {/* View Task Details Modal */}
       {showViewModal && viewingTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-start">
-                <h1 className="text-xl font-semibold text-gray-900">{viewingTask.title}</h1>
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-start gap-4">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{viewingTask.title}</h1>
                 <button 
                   onClick={closeViewModal}
-                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                   </svg>
-                  Close
+                  <span className="hidden sm:inline">Close</span>
                 </button>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="px-6 py-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+            <div className="px-4 sm:px-6 py-4 sm:py-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm">
                 <p className="leading-6"><span className="font-semibold text-gray-900">Task Type:</span> <span className="text-gray-600">{viewingTask.taskType || 'N/A'}</span></p>
                 <p className="leading-6"><span className="font-semibold text-gray-900">Module:</span> <span className="text-gray-600">{viewingTask.module || 'N/A'}</span></p>
                 <p className="leading-6"><span className="font-semibold text-gray-900">Mentor:</span> <span className="text-gray-600">{typeof viewingTask.assignedMentor === 'object' ? viewingTask.assignedMentor?.fullName : mentors.find(m => m._id === viewingTask.assignedMentor)?.fullName || viewingTask.assignedMentor || 'N/A'}</span></p>
@@ -1940,23 +2018,23 @@ export const TaskManagement = () => {
               </div>
 
               {viewingTask.description && (
-                <div className="mt-4">
-                  <h2 className="text-[#f7931e] font-semibold mb-2 text-base italic">Description</h2>
-                  <p className="text-sm text-gray-700 whitespace-pre-line">{viewingTask.description}</p>
+                <div className="mt-4 sm:mt-5">
+                  <h2 className="text-[#f7931e] font-semibold mb-2 text-sm sm:text-base italic">Description</h2>
+                  <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-line">{viewingTask.description}</p>
                 </div>
               )}
 
               {viewingTask.attachments && (
-                <div className="mt-4">
-                  <h2 className="text-[#f7931e] font-semibold mb-2 text-base italic">Attachments</h2>
+                <div className="mt-4 sm:mt-5">
+                  <h2 className="text-[#f7931e] font-semibold mb-2 text-sm sm:text-base italic">Attachments</h2>
                   <div className="flex items-center gap-2">
                     <a 
                       href={viewingTask.attachments} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline flex items-center gap-2"
+                      className="text-blue-600 hover:text-blue-800 underline flex items-center gap-2 text-xs sm:text-sm"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
                       </svg>
                       View Attachment
@@ -1969,8 +2047,8 @@ export const TaskManagement = () => {
               {(viewingTask.audience === 'By batches' && viewingTask.batches?.length) ||
                (viewingTask.audience === 'By courses' && viewingTask.courses?.length) ||
                (viewingTask.audience === 'Individual interns' && viewingTask.individualInterns?.length) ? (
-                <div className="mt-5">
-                  <h2 className="text-[#f7931e] font-semibold mb-3 text-base italic">Target Audience Details</h2>
+                <div className="mt-4 sm:mt-5">
+                  <h2 className="text-[#f7931e] font-semibold mb-3 text-sm sm:text-base italic">Target Audience Details</h2>
                   <div className="flex flex-wrap gap-2">
                     {Array.isArray(viewingTask.batches) && viewingTask.batches.map((b, i) => (
                       <span key={`b-${i}`} className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full border border-green-200">
@@ -1993,11 +2071,11 @@ export const TaskManagement = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200">
-              <div className="flex justify-end gap-3">
+            <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <button 
                   onClick={closeViewModal}
-                  className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="w-full sm:w-auto bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Close
                 </button>
@@ -2006,7 +2084,7 @@ export const TaskManagement = () => {
                     closeViewModal();
                     handleEditTask(viewingTask);
                   }}
-                  className="bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                  className="w-full sm:w-auto bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
                 >
                   Edit
                 </button>

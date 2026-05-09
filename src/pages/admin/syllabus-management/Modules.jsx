@@ -502,9 +502,9 @@ export const Modules = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-          <div className="p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 {getIcon()}
@@ -539,27 +539,26 @@ export const Modules = () => {
       {/* Notification Modal */}
       <NotificationModal />
 
-      <div className="flex justify-between items-center ">
-      <div className="mb-6">
-        <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
-      </div>
-
-      <div className="flex justify-end ">
-          <button className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export
-          </button>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="w-full sm:w-auto">
+          <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
+        <div className="flex justify-end w-full sm:w-auto">
+          <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            {loading ? 'Exporting...' : 'Export'}
+          </button>
+        </div>
       </div>
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
 
         {/* Tab content */}
         {activeTab === 'modules-list' ? (
           <div id="modules-list-content">
 
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex-1 mr-4">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+              <div className="flex-1 sm:mr-4">
                 <div className="relative">
                   <input
                     type="text"
@@ -575,7 +574,7 @@ export const Modules = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
                 <select 
                   value={filters.course}
                   onChange={(e) => handleFilterChange('course', e.target.value)}
@@ -588,10 +587,6 @@ export const Modules = () => {
                     </option>
                   ))}
                 </select>
-        <button onClick={handleExport} disabled={loading} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-          {loading ? 'Exporting...' : 'Export'}
-                </button>
               </div>
             </div>
 
@@ -610,83 +605,142 @@ export const Modules = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Module Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Topics</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {modules.map((module, idx) => (
-                      <tr key={module._id || idx} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                <span className="text-orange-600 font-medium text-sm">
-                                  {module.moduleName?.charAt(0)?.toUpperCase() || 'M'}
-                                </span>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Module Name</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Topics</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {modules.map((module, idx) => (
+                        <tr key={module._id || idx} className="hover:bg-gray-50">
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10">
+                                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                  <span className="text-orange-600 font-medium text-sm">
+                                    {module.moduleName?.charAt(0)?.toUpperCase() || 'M'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{module.moduleName}</div>
+                                <div className="text-sm text-gray-500">ID: {module._id?.slice(-6) || 'N/A'}</div>
                               </div>
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{module.moduleName}</div>
-                              <div className="text-sm text-gray-500">ID: {module._id?.slice(-6) || 'N/A'}</div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {typeof module.course === 'object' && module.course ? module.course.courseName : module.course}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              {module.totalTopics || 0}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {module.createdAt ? new Date(module.createdAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button 
+                                onClick={() => handleViewModule(module)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                View
+                              </button>
+                              <button 
+                                onClick={() => handleEditModule(module)}
+                                className="text-orange-600 hover:text-orange-900"
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteModule(module)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {modules.map((module, idx) => (
+                    <div key={module._id || idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 h-12 w-12">
+                          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                            <span className="text-orange-600 font-medium text-base">
+                              {module.moduleName?.charAt(0)?.toUpperCase() || 'M'}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900 truncate">{module.moduleName}</h3>
+                          <p className="text-xs text-gray-500">ID: {module._id?.slice(-6) || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-sm text-gray-600 mb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Course:</span>
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                            {typeof module.course === 'object' && module.course ? module.course.courseName : module.course}
+                            {typeof module.course === 'object' && module.course ? module.course.courseName : module.course || 'N/A'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Total Topics:</span>
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                             {module.totalTopics || 0}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {module.createdAt ? new Date(module.createdAt).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button 
-                              onClick={() => handleViewModule(module)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              View
-                            </button>
-                            <button 
-                              onClick={() => handleEditModule(module)}
-                              className="text-orange-600 hover:text-orange-900"
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteModule(module)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                        <div><span className="font-medium">Created:</span> {module.createdAt ? new Date(module.createdAt).toLocaleDateString() : 'N/A'}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                        <button 
+                          onClick={() => handleViewModule(module)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleEditModule(module)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-md hover:bg-orange-100 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteModule(module)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
-                <div className="flex items-center text-sm text-gray-700">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                <div className="flex items-center text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                   <span>
                     Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
                   </span>
@@ -737,11 +791,11 @@ export const Modules = () => {
           </div>
         ) : (
           <div id="new-module-content">
-            <form onSubmit={handleCreateModule} className="space-y-6">
-              <h3 className="text-lg font-medium text-gray-900">
+            <form onSubmit={handleCreateModule} className="space-y-4 sm:space-y-6">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">
                 {isEditMode ? `Edit Module - ${editingModule?.moduleName}` : 'Module Details'}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Module Name</label>
                   <input 
@@ -780,7 +834,7 @@ export const Modules = () => {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Module Image/PDF <span className="text-gray-400">(Optional - JPG/PNG/PDF only)</span></label>
                   <div className="relative flex items-center w-full px-4 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent bg-white">
@@ -843,22 +897,22 @@ export const Modules = () => {
 
               {/* Show topics for the module being edited */}
               {isEditMode && editingModule && (
-                <div className="mt-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Module Topics</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                <div className="mt-6 sm:mt-8">
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Module Topics</h3>
+                  <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
                     {topicsLoading ? (
                       <div className="flex items-center justify-center py-4">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mr-2"></div>
-                        <span className="text-gray-500">Loading topics...</span>
+                        <span className="text-sm text-gray-500">Loading topics...</span>
                       </div>
                     ) : moduleTopics.length > 0 ? (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-gray-700">
+                          <span className="text-xs sm:text-sm font-medium text-gray-700">
                             {moduleTopics.length} topic{moduleTopics.length !== 1 ? 's' : ''} found
                           </span>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {moduleTopics.map((topic, index) => (
                             <div key={topic._id || index} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
                               <div className="flex items-start justify-between">
@@ -930,15 +984,15 @@ export const Modules = () => {
                 </div>
               )}
 
-              <div className="flex justify-end space-x-4 mt-8">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-6 sm:mt-8">
                 <button 
                   type="button" 
                   onClick={handleCancelEdit}
-                  className="py-2 px-6 rounded-lg bg-white border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
+                  className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-white border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
-                <button type="submit" disabled={loading} className="py-2 px-6 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-60">
+                <button type="submit" disabled={loading} className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-60">
                   {loading 
                     ? (isEditMode ? 'Updating...' : 'Creating...') 
                     : (isEditMode ? 'Update Module' : 'Create Module')
@@ -952,8 +1006,8 @@ export const Modules = () => {
 
       {/* Delete Module Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -970,17 +1024,17 @@ export const Modules = () => {
                 This action cannot be undone.
               </p>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={handleCancelDelete}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
                 {loading ? 'Deleting...' : 'Delete'}
               </button>
@@ -991,8 +1045,8 @@ export const Modules = () => {
 
       {/* Delete Topic Confirmation Modal */}
       {showDeleteTopicModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1009,17 +1063,17 @@ export const Modules = () => {
                 The topic will be removed from the module but will remain in the topics collection.
               </p>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={handleCancelDeleteTopic}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteTopic}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
                 {loading ? 'Removing...' : 'Remove Topic'}
               </button>
@@ -1031,26 +1085,26 @@ export const Modules = () => {
       {/* View Module Details Modal */}
       {showViewModal && viewingModule && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-start">
-                <h1 className="text-xl font-semibold text-gray-900">{viewingModule.moduleName}</h1>
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-start gap-4">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{viewingModule.moduleName}</h1>
                 <button 
                   onClick={closeViewModal}
-                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                   </svg>
-                  Close
+                  <span className="hidden sm:inline">Close</span>
                 </button>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="px-6 py-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+            <div className="px-4 sm:px-6 py-4 sm:py-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm">
                 <p className="leading-6"><span className="font-semibold text-gray-900">Module Name:</span> <span className="text-gray-600">{viewingModule.moduleName || 'N/A'}</span></p>
                 <p className="leading-6"><span className="font-semibold text-gray-900">Course:</span> <span className="text-gray-600">{typeof viewingModule.course === 'object' && viewingModule.course ? viewingModule.course.courseName : viewingModule.course || 'N/A'}</span></p>
                 <p className="leading-6"><span className="font-semibold text-gray-900">Total Topics:</span> <span className="text-gray-600">{moduleTopics?.length || 0}</span></p>
@@ -1061,15 +1115,15 @@ export const Modules = () => {
               </div>
 
               {/* Topics List */}
-              <div className="mt-5">
-                <h2 className="text-[#f7931e] font-semibold mb-3 text-base italic">Topics</h2>
+              <div className="mt-4 sm:mt-5">
+                <h2 className="text-[#f7931e] font-semibold mb-3 text-sm sm:text-base italic">Topics</h2>
                 {Array.isArray(moduleTopics) && moduleTopics.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {moduleTopics.map((topic) => (
                       <div key={topic._id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <div className="text-sm font-medium text-gray-900">{topic.topicName || 'Untitled Topic'}</div>
+                        <div className="text-xs sm:text-sm font-medium text-gray-900">{topic.topicName || 'Untitled Topic'}</div>
                         <div className="text-xs text-gray-500 mt-1">{topic.description || 'No description'}</div>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
                           <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">{topic.duration || '0'} min</span>
                           <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">{topic.difficulty || 'Beginner'}</span>
                         </div>
@@ -1077,17 +1131,17 @@ export const Modules = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No topics available for this module.</p>
+                  <p className="text-xs sm:text-sm text-gray-500">No topics available for this module.</p>
                 )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200">
-              <div className="flex justify-end gap-3">
+            <div className="px-4 sm:px-6 py-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
                 <button 
                   onClick={closeViewModal}
-                  className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="w-full sm:w-auto bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Close
                 </button>
@@ -1096,7 +1150,7 @@ export const Modules = () => {
                     closeViewModal();
                     handleEditModule(viewingModule);
                   }}
-                  className="bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                  className="w-full sm:w-auto bg-[#f7931e] text-white px-4 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
                 >
                   Edit
                 </button>

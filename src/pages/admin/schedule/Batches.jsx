@@ -624,9 +624,9 @@ export const Batches = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-          <div className="p-6">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 {getIcon()}
@@ -660,31 +660,28 @@ export const Batches = () => {
       <NotificationModal />
       
       <Navbar headData={headData} activeTab={activeTab} />
-      <div className="flex justify-between items-center ">
-        <div className="mb-6">
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="w-full sm:w-auto">
           <Tabs tabs={tabOptions} activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
-        <div className="flex justify-end ">
-          {/* <button className="flex items-center py-2 px-4 bg-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">
-              <ExportIcon />
-              Export
-            </button> */}
-          <button onClick={handleExport} disabled={exporting} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+        <div className="flex justify-end w-full sm:w-auto">
+          <button onClick={handleExport} disabled={exporting} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
             {exporting ? 'Exporting...' : 'Export'}
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
 
         {/* Tab content */}
         {activeTab === 'batches' ? (
           <div id="batches-list-content">
 
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex-1 mr-4">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+              <div className="flex-1 sm:mr-4">
                 <div className="relative">
                   <input
                     type="text"
@@ -700,7 +697,7 @@ export const Batches = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
                 <select 
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -723,10 +720,6 @@ export const Batches = () => {
                     </option>
                   ))}
                 </select>
-                <button onClick={handleExport} disabled={exporting} className="flex items-center px-4 py-2 bg-white text-gray-600 rounded-md font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  {exporting ? 'Exporting...' : 'Export'}
-                </button>
               </div>
             </div>
 
@@ -745,44 +738,122 @@ export const Batches = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Interns</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredBatches.map((batch, idx) => (
-                      <tr key={batch._id || idx} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                <span className="text-orange-600 font-medium text-sm">
-                                  {batch.batchName?.charAt(0)?.toUpperCase() || 'B'}
-                                </span>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Name</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Interns</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredBatches.map((batch, idx) => (
+                        <tr key={batch._id || idx} className="hover:bg-gray-50">
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{idx + 1}</td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10">
+                                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                  <span className="text-orange-600 font-medium text-sm">
+                                    {batch.batchName?.charAt(0)?.toUpperCase() || 'B'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{batch.batchName}</div>
+                                <div className="text-sm text-gray-500">ID: {batch._id?.slice(-6) || 'N/A'}</div>
                               </div>
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{batch.batchName}</div>
-                              <div className="text-sm text-gray-500">ID: {batch._id?.slice(-6) || 'N/A'}</div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {typeof batch.branch === 'object' && batch.branch ? batch.branch.branchName : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              batch.status === 'Active'
+                                ? 'bg-green-100 text-green-800'
+                                : batch.status === 'Inactive'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {batch.status}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{batch.totalInterns || 0}</div>
+                            {batch.interns && batch.interns.length > 0 && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {batch.interns?.length > 2 && ` +${batch.interns?.length - 2} more`}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {batch.createdAt ? new Date(batch.createdAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button 
+                                onClick={() => handleViewBatch(batch)}
+                                className="text-blue-600 hover:text-blue-900"
+                                title="View Details"
+                              >
+                                View
+                              </button>
+                              <button 
+                                onClick={() => handleEditBatch(batch)}
+                                className="text-orange-600 hover:text-orange-900"
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteBatch(batch)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {filteredBatches.map((batch, idx) => (
+                    <div key={batch._id || idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 h-12 w-12">
+                          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                            <span className="text-orange-600 font-medium text-base">
+                              {batch.batchName?.charAt(0)?.toUpperCase() || 'B'}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900 truncate">{batch.batchName}</h3>
+                          <p className="text-xs text-gray-500">ID: {batch._id?.slice(-6) || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-sm text-gray-600 mb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Branch:</span>
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                             {typeof batch.branch === 'object' && batch.branch ? batch.branch.branchName : 'N/A'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Status:</span>
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             batch.status === 'Active'
                               ? 'bg-green-100 text-green-800'
@@ -792,53 +863,40 @@ export const Batches = () => {
                           }`}>
                             {batch.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4  whitespace-nowrap">
-                          <div className="text-sm  text-gray-900">{batch.totalInterns || 0}</div>
-                          {batch.interns && batch.interns.length > 0 && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {/* {batch.interns.slice(0, 2).map(intern => intern.fullName).join(', ')} */}
-                              {batch.interns?.length > 2 && ` +${batch.interns?.length - 2} more`}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {batch.createdAt ? new Date(batch.createdAt).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button 
-                              onClick={() => handleViewBatch(batch)}
-                              className="text-blue-600 hover:text-blue-900"
-                              title="View Details"
-                            >
-                              View
-                            </button>
-                            <button 
-                              onClick={() => handleEditBatch(batch)}
-                              className="text-orange-600 hover:text-orange-900"
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteBatch(batch)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                        <div><span className="font-medium">Total Interns:</span> {batch.totalInterns || 0}</div>
+                        <div><span className="font-medium">Created:</span> {batch.createdAt ? new Date(batch.createdAt).toLocaleDateString() : 'N/A'}</div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                        <button 
+                          onClick={() => handleViewBatch(batch)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleEditBatch(batch)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-md hover:bg-orange-100 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteBatch(batch)}
+                          className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 px-4 py-3 bg-white border-t border-gray-200">
-                <div className="flex items-center text-sm text-gray-700">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4 py-3 bg-white border-t border-gray-200">
+                <div className="flex items-center text-xs sm:text-sm text-gray-700 text-center sm:text-left">
                   <span>
                     Showing {((pagination.currentPage - 1) * pagination.limit) + 1} to {Math.min(pagination.currentPage * pagination.limit, pagination.totalCount)} of {pagination.totalCount} results
                   </span>
@@ -889,12 +947,12 @@ export const Batches = () => {
           </div>
         ) : (
           <div id="new-batch-content">
-            <form onSubmit={handleCreateBatch} className="space-y-6">
+            <form onSubmit={handleCreateBatch} className="space-y-4 sm:space-y-6">
               <div>
-                <h3 className="text-lg font-bold mb-4">
+                <h3 className="text-base sm:text-lg font-bold mb-4">
                   {isEditMode ? `Edit Batch - ${editingBatch?.batchName}` : 'Batch Details'}
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Batch Name</label>
                     <input 
@@ -948,10 +1006,10 @@ export const Batches = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold mb-4">Intern Assignment</h3>
+                <h3 className="text-base sm:text-lg font-bold mb-4">Intern Assignment</h3>
                 <div className="space-y-4">
                   {/* Three fields in same row */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Search Interns</label>
                       <div className="relative">
@@ -1160,13 +1218,13 @@ export const Batches = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold mb-4">Added Interns</h3>
+                <h3 className="text-base sm:text-lg font-bold mb-4">Added Interns</h3>
                 {addedInterns.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">No interns added yet. Add interns using the form above.</p>
+                  <p className="text-center text-gray-500 py-8 text-sm sm:text-base">No interns added yet. Add interns using the form above.</p>
                 ) : (
-                  <div className="flex flex-wrap gap-2 ">
+                  <div className="flex flex-wrap gap-2">
                     {addedInterns.map((intern) => (
-                      <div key={intern._id} className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-3 py-1 text-sm">
+                      <div key={intern._id} className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-3 py-1 text-xs sm:text-sm">
                         <span className="text-blue-700 font-medium">{intern.fullName}</span>
                         <button
                           type="button"
@@ -1184,15 +1242,15 @@ export const Batches = () => {
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4 mt-8">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-6 sm:mt-8">
                 <button 
                   type="button" 
                   onClick={handleCancelEdit}
-                  className="py-2 px-6 rounded-lg bg-white border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
+                  className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-white border border-gray-300 font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
-                <button type="submit" disabled={loading} className="py-2 px-6 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-60">
+                <button type="submit" disabled={loading} className="w-full sm:w-auto py-2 px-4 sm:px-6 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-60">
                   {loading 
                     ? (isEditMode ? 'Updating...' : 'Creating...') 
                     : (isEditMode ? 'Update Batch' : 'Create Batch')
@@ -1232,32 +1290,32 @@ export const Batches = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:block print:bg-white print:opacity-100 print:p-0">
             <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto print-modal-content">
             {/* Modal Header */}
-            <div className="px-8 py-6 border-b border-gray-200 print:px-4 print:py-4 print-full-width">
-              <div className="flex justify-between items-start">
-                <h1 className="text-2xl font-semibold text-gray-900">{viewingBatch.batchName}</h1>
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200 print:px-4 print:py-4 print-full-width">
+              <div className="flex justify-between items-start gap-4">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 break-words">{viewingBatch.batchName}</h1>
                 <button 
                   onClick={closeViewModal}
-                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print-hide"
+                  className="flex items-center gap-1 text-sm border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors print-hide flex-shrink-0"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
                   </svg>
-                  Back
+                  <span className="hidden sm:inline">Back</span>
                 </button>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="px-8 py-6 print:px-4 print:py-4 print-full-width">
-              <div className="flex flex-col md:flex-row gap-10 print:flex-col print:gap-4 print-full-width">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 print:px-4 print:py-4 print-full-width">
+              <div className="flex flex-col md:flex-row gap-6 sm:gap-8 lg:gap-10 print:flex-col print:gap-4 print-full-width">
                 {/* Left Column - Batch Details */}
-                <div className="flex-1 space-y-6 print:flex-none print-full-width">
+                <div className="flex-1 space-y-4 sm:space-y-6 print:flex-none print-full-width">
                   {/* Basic Details */}
                   <div>
-                    <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                    <h2 className="text-[#f7931e] font-semibold mb-4 text-base sm:text-lg italic">
                       Batch Details
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm print:grid-cols-2 print-full-width">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-xs sm:text-sm print:grid-cols-2 print-full-width">
                       <p className="leading-6"><span className="font-semibold text-gray-900">Batch Name:</span> <span className="text-gray-600">{viewingBatch.batchName || 'N/A'}</span></p>
                       <p className="leading-6"><span className="font-semibold text-gray-900">Branch:</span> <span className="text-gray-600">{typeof viewingBatch.branch === 'object' && viewingBatch.branch ? viewingBatch.branch.branchName : 'N/A'}</span></p>
                       <p className="leading-6">
@@ -1281,24 +1339,24 @@ export const Batches = () => {
                   {/* Interns List */}
                   {viewingBatch.interns && viewingBatch.interns.length > 0 && (
                     <div>
-                      <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                      <h2 className="text-[#f7931e] font-semibold mb-4 text-base sm:text-lg italic">
                         Assigned Interns ({viewingBatch.interns.length})
                       </h2>
                       <div className="space-y-3">
                         {viewingBatch.interns.map((intern, index) => (
-                          <div key={intern._id || index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="font-medium text-gray-900">{intern.fullName || 'N/A'}</div>
-                                <div className="text-sm text-gray-500">{intern.email || 'N/A'}</div>
-                                <div className="text-sm text-gray-500">{intern.course?.courseName || intern.course || 'N/A'}</div>
+                          <div key={intern._id || index} className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-gray-900 text-sm sm:text-base">{intern.fullName || 'N/A'}</div>
+                                <div className="text-xs sm:text-sm text-gray-500">{intern.email || 'N/A'}</div>
+                                <div className="text-xs sm:text-sm text-gray-500">{intern.course?.courseName || intern.course || 'N/A'}</div>
                                 {intern.admissionNumber && (
-                                  <div className="text-sm text-gray-500">Admission No: {intern.admissionNumber}</div>
+                                  <div className="text-xs sm:text-sm text-gray-500">Admission No: {intern.admissionNumber}</div>
                                 )}
                               </div>
                               <div className="flex-shrink-0">
-                                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                  <span className="text-orange-600 font-medium text-sm">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                  <span className="text-orange-600 font-medium text-xs sm:text-sm">
                                     {intern.fullName?.charAt(0)?.toUpperCase() || 'I'}
                                   </span>
                                 </div>
@@ -1313,15 +1371,15 @@ export const Batches = () => {
                   {/* No Interns Message */}
                   {(!viewingBatch.interns || viewingBatch.interns.length === 0) && (
                     <div>
-                      <h2 className="text-[#f7931e] font-semibold mb-4 text-lg italic">
+                      <h2 className="text-[#f7931e] font-semibold mb-4 text-base sm:text-lg italic">
                         Assigned Interns
                       </h2>
-                      <div className="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
-                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="bg-gray-50 p-6 sm:p-8 rounded-lg border border-gray-200 text-center">
+                        <svg className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                         </svg>
                         <h3 className="mt-2 text-sm font-medium text-gray-900">No interns assigned</h3>
-                        <p className="mt-1 text-sm text-gray-500">This batch doesn't have any interns assigned yet.</p>
+                        <p className="mt-1 text-xs sm:text-sm text-gray-500">This batch doesn't have any interns assigned yet.</p>
                       </div>
                     </div>
                   )}
@@ -1329,9 +1387,9 @@ export const Batches = () => {
 
                 {/* Right Column - Batch Icon */}
                 <div className="flex flex-col items-center print-hide">
-                  <div className="w-48 h-48 rounded-full overflow-hidden mb-4">
-                    <div className="w-48 h-48 rounded-full bg-orange-100 flex items-center justify-center">
-                      <span className="text-orange-500 text-6xl font-medium">
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full overflow-hidden mb-4">
+                    <div className="w-full h-full rounded-full bg-orange-100 flex items-center justify-center">
+                      <span className="text-orange-500 text-4xl sm:text-5xl lg:text-6xl font-medium">
                         {viewingBatch.batchName?.charAt(0)?.toUpperCase() || 'B'}
                       </span>
                     </div>
@@ -1341,20 +1399,20 @@ export const Batches = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-8 py-6 border-t border-gray-200 print-hide">
-              <div className="flex justify-end gap-4">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-t border-gray-200 print-hide">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
                 <button 
                   onClick={() => {
                     closeViewModal();
                     handleEditBatch(viewingBatch);
                   }}
-                  className="bg-gray-100 border border-gray-300 text-gray-700 px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="w-full sm:w-auto bg-gray-100 border border-gray-300 text-gray-700 px-4 sm:px-5 py-2 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Edit Batch
                 </button>
                 <button
                   onClick={() => window.print()}
-                  className="bg-[#f7931e] text-white px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
+                  className="w-full sm:w-auto bg-[#f7931e] text-white px-4 sm:px-5 py-2 rounded-lg hover:bg-[#e67c00] transition-colors"
                 >
                   Print
                 </button>
@@ -1367,8 +1425,8 @@ export const Batches = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1385,17 +1443,17 @@ export const Batches = () => {
                 This action cannot be undone.
               </p>
             </div>
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={handleCancelDelete}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
               >
                 {loading ? 'Deleting...' : 'Delete'}
               </button>
